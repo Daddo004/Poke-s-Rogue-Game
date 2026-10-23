@@ -1,0 +1,21 @@
+# Build output
+bin/
+obj/
+publish/
+*.user
+.vs/
+.idea/
+*.swp
+
+# Downloaded / generated assets (rebuilt by tools/PokeRogue.DataTool)
+content/cache/
+content/sprites/
+content/portraits/
+content/fx/
+content/trainers/
+content/cries/
+content/icons/
+content/fonts/
+
+# Local preview exports
+previews/

@@ -1,0 +1,643 @@
+{
+  "version": 1,
+  "source": "PokeAPI (github.com/PokeAPI/pokeapi, data/v2/csv)",
+  "types": [
+    {
+      "type": "Normal",
+      "nameIt": "Normale",
+      "nameEn": "Normal"
+    },
+    {
+      "type": "Fighting",
+      "nameIt": "Lotta",
+      "nameEn": "Fighting"
+    },
+    {
+      "type": "Flying",
+      "nameIt": "Volante",
+      "nameEn": "Flying"
+    },
+    {
+      "type": "Poison",
+      "nameIt": "Veleno",
+      "nameEn": "Poison"
+    },
+    {
+      "type": "Ground",
+      "nameIt": "Terra",
+      "nameEn": "Ground"
+    },
+    {
+      "type": "Rock",
+      "nameIt": "Roccia",
+      "nameEn": "Rock"
+    },
+    {
+      "type": "Bug",
+      "nameIt": "Coleottero",
+      "nameEn": "Bug"
+    },
+    {
+      "type": "Ghost",
+      "nameIt": "Spettro",
+      "nameEn": "Ghost"
+    },
+    {
+      "type": "Steel",
+      "nameIt": "Acciaio",
+      "nameEn": "Steel"
+    },
+    {
+      "type": "Fire",
+      "nameIt": "Fuoco",
+      "nameEn": "Fire"
+    },
+    {
+      "type": "Water",
+      "nameIt": "Acqua",
+      "nameEn": "Water"
+    },
+    {
+      "type": "Grass",
+      "nameIt": "Erba",
+      "nameEn": "Grass"
+    },
+    {
+      "type": "Electric",
+      "nameIt": "Elettro",
+      "nameEn": "Electric"
+    },
+    {
+      "type": "Psychic",
+      "nameIt": "Psico",
+      "nameEn": "Psychic"
+    },
+    {
+      "type": "Ice",
+      "nameIt": "Ghiaccio",
+      "nameEn": "Ice"
+    },
+    {
+      "type": "Dragon",
+      "nameIt": "Drago",
+      "nameEn": "Dragon"
+    },
+    {
+      "type": "Dark",
+      "nameIt": "Buio",
+      "nameEn": "Dark"
+    }
+  ],
+  "matchups": [
+    {
+      "attack": "Normal",
+      "defense": "Rock",
+      "factor": 0.5
+    },
+    {
+      "attack": "Normal",
+      "defense": "Ghost",
+      "factor": 0
+    },
+    {
+      "attack": "Normal",
+      "defense": "Steel",
+      "factor": 0.5
+    },
+    {
+      "attack": "Fighting",
+      "defense": "Normal",
+      "factor": 2
+    },
+    {
+      "attack": "Fighting",
+      "defense": "Flying",
+      "factor": 0.5
+    },
+    {
+      "attack": "Fighting",
+      "defense": "Poison",
+      "factor": 0.5
+    },
+    {
+      "attack": "Fighting",
+      "defense": "Rock",
+      "factor": 2
+    },
+    {
+      "attack": "Fighting",
+      "defense": "Bug",
+      "factor": 0.5
+    },
+    {
+      "attack": "Fighting",
+      "defense": "Ghost",
+      "factor": 0
+    },
+    {
+      "attack": "Fighting",
+      "defense": "Steel",
+      "factor": 2
+    },
+    {
+      "attack": "Fighting",
+      "defense": "Psychic",
+      "factor": 0.5
+    },
+    {
+      "attack": "Fighting",
+      "defense": "Ice",
+      "factor": 2
+    },
+    {
+      "attack": "Fighting",
+      "defense": "Dark",
+      "factor": 2
+    },
+    {
+      "attack": "Flying",
+      "defense": "Fighting",
+      "factor": 2
+    },
+    {
+      "attack": "Flying",
+      "defense": "Rock",
+      "factor": 0.5
+    },
+    {
+      "attack": "Flying",
+      "defense": "Bug",
+      "factor": 2
+    },
+    {
+      "attack": "Flying",
+      "defense": "Steel",
+      "factor": 0.5
+    },
+    {
+      "attack": "Flying",
+      "defense": "Grass",
+      "factor": 2
+    },
+    {
+      "attack": "Flying",
+      "defense": "Electric",
+      "factor": 0.5
+    },
+    {
+      "attack": "Poison",
+      "defense": "Poison",
+      "factor": 0.5
+    },
+    {
+      "attack": "Poison",
+      "defense": "Ground",
+      "factor": 0.5
+    },
+    {
+      "attack": "Poison",
+      "defense": "Rock",
+      "factor": 0.5
+    },
+    {
+      "attack": "Poison",
+      "defense": "Ghost",
+      "factor": 0.5
+    },
+    {
+      "attack": "Poison",
+      "defense": "Steel",
+      "factor": 0
+    },
+    {
+      "attack": "Poison",
+      "defense": "Grass",
+      "factor": 2
+    },
+    {
+      "attack": "Ground",
+      "defense": "Flying",
+      "factor": 0
+    },
+    {
+      "attack": "Ground",
+      "defense": "Poison",
+      "factor": 2
+    },
+    {
+      "attack": "Ground",
+      "defense": "Rock",
+      "factor": 2
+    },
+    {
+      "attack": "Ground",
+      "defense": "Bug",
+      "factor": 0.5
+    },
+    {
+      "attack": "Ground",
+      "defense": "Steel",
+      "factor": 2
+    },
+    {
+      "attack": "Ground",
+      "defense": "Fire",
+      "factor": 2
+    },
+    {
+      "attack": "Ground",
+      "defense": "Grass",
+      "factor": 0.5
+    },
+    {
+      "attack": "Ground",
+      "defense": "Electric",
+      "factor": 2
+    },
+    {
+      "attack": "Rock",
+      "defense": "Fighting",
+      "factor": 0.5
+    },
+    {
+      "attack": "Rock",
+      "defense": "Flying",
+      "factor": 2
+    },
+    {
+      "attack": "Rock",
+      "defense": "Ground",
+      "factor": 0.5
+    },
+    {
+      "attack": "Rock",
+      "defense": "Bug",
+      "factor": 2
+    },
+    {
+      "attack": "Rock",
+      "defense": "Steel",
+      "factor": 0.5
+    },
+    {
+      "attack": "Rock",
+      "defense": "Fire",
+      "factor": 2
+    },
+    {
+      "attack": "Rock",
+      "defense": "Ice",
+      "factor": 2
+    },
+    {
+      "attack": "Bug",
+      "defense": "Fighting",
+      "factor": 0.5
+    },
+    {
+      "attack": "Bug",
+      "defense": "Flying",
+      "factor": 0.5
+    },
+    {
+      "attack": "Bug",
+      "defense": "Poison",
+      "factor": 0.5
+    },
+    {
+      "attack": "Bug",
+      "defense": "Ghost",
+      "factor": 0.5
+    },
+    {
+      "attack": "Bug",
+      "defense": "Steel",
+      "factor": 0.5
+    },
+    {
+      "attack": "Bug",
+      "defense": "Fire",
+      "factor": 0.5
+    },
+    {
+      "attack": "Bug",
+      "defense": "Grass",
+      "factor": 2
+    },
+    {
+      "attack": "Bug",
+      "defense": "Psychic",
+      "factor": 2
+    },
+    {
+      "attack": "Bug",
+      "defense": "Dark",
+      "factor": 2
+    },
+    {
+      "attack": "Ghost",
+      "defense": "Normal",
+      "factor": 0
+    },
+    {
+      "attack": "Ghost",
+      "defense": "Ghost",
+      "factor": 2
+    },
+    {
+      "attack": "Ghost",
+      "defense": "Steel",
+      "factor": 0.5
+    },
+    {
+      "attack": "Ghost",
+      "defense": "Psychic",
+      "factor": 2
+    },
+    {
+      "attack": "Ghost",
+      "defense": "Dark",
+      "factor": 0.5
+    },
+    {
+      "attack": "Steel",
+      "defense": "Rock",
+      "factor": 2
+    },
+    {
+      "attack": "Steel",
+      "defense": "Steel",
+      "factor": 0.5
+    },
+    {
+      "attack": "Steel",
+      "defense": "Fire",
+      "factor": 0.5
+    },
+    {
+      "attack": "Steel",
+      "defense": "Water",
+      "factor": 0.5
+    },
+    {
+      "attack": "Steel",
+      "defense": "Electric",
+      "factor": 0.5
+    },
+    {
+      "attack": "Steel",
+      "defense": "Ice",
+      "factor": 2
+    },
+    {
+      "attack": "Fire",
+      "defense": "Rock",
+      "factor": 0.5
+    },
+    {
+      "attack": "Fire",
+      "defense": "Bug",
+      "factor": 2
+    },
+    {
+      "attack": "Fire",
+      "defense": "Steel",
+      "factor": 2
+    },
+    {
+      "attack": "Fire",
+      "defense": "Fire",
+      "factor": 0.5
+    },
+    {
+      "attack": "Fire",
+      "defense": "Water",
+      "factor": 0.5
+    },
+    {
+      "attack": "Fire",
+      "defense": "Grass",
+      "factor": 2
+    },
+    {
+      "attack": "Fire",
+      "defense": "Ice",
+      "factor": 2
+    },
+    {
+      "attack": "Fire",
+      "defense": "Dragon",
+      "factor": 0.5
+    },
+    {
+      "attack": "Water",
+      "defense": "Ground",
+      "factor": 2
+    },
+    {
+      "attack": "Water",
+      "defense": "Rock",
+      "factor": 2
+    },
+    {
+      "attack": "Water",
+      "defense": "Fire",
+      "factor": 2
+    },
+    {
+      "attack": "Water",
+      "defense": "Water",
+      "factor": 0.5
+    },
+    {
+      "attack": "Water",
+      "defense": "Grass",
+      "factor": 0.5
+    },
+    {
+      "attack": "Water",
+      "defense": "Dragon",
+      "factor": 0.5
+    },
+    {
+      "attack": "Grass",
+      "defense": "Flying",
+      "factor": 0.5
+    },
+    {
+      "attack": "Grass",
+      "defense": "Poison",
+      "factor": 0.5
+    },
+    {
+      "attack": "Grass",
+      "defense": "Ground",
+      "factor": 2
+    },
+    {
+      "attack": "Grass",
+      "defense": "Rock",
+      "factor": 2
+    },
+    {
+      "attack": "Grass",
+      "defense": "Bug",
+      "factor": 0.5
+    },
+    {
+      "attack": "Grass",
+      "defense": "Steel",
+      "factor": 0.5
+    },
+    {
+      "attack": "Grass",
+      "defense": "Fire",
+      "factor": 0.5
+    },
+    {
+      "attack": "Grass",
+      "defense": "Water",
+      "factor": 2
+    },
+    {
+      "attack": "Grass",
+      "defense": "Grass",
+      "factor": 0.5
+    },
+    {
+      "attack": "Grass",
+      "defense": "Dragon",
+      "factor": 0.5
+    },
+    {
+      "attack": "Electric",
+      "defense": "Flying",
+      "factor": 2
+    },
+    {
+      "attack": "Electric",
+      "defense": "Ground",
+      "factor": 0
+    },
+    {
+      "attack": "Electric",
+      "defense": "Water",
+      "factor": 2
+    },
+    {
+      "attack": "Electric",
+      "defense": "Grass",
+      "factor": 0.5
+    },
+    {
+      "attack": "Electric",
+      "defense": "Electric",
+      "factor": 0.5
+    },
+    {
+      "attack": "Electric",
+      "defense": "Dragon",
+      "factor": 0.5
+    },
+    {
+      "attack": "Psychic",
+      "defense": "Fighting",
+      "factor": 2
+    },
+    {
+      "attack": "Psychic",
+      "defense": "Poison",
+      "factor": 2
+    },
+    {
+      "attack": "Psychic",
+      "defense": "Steel",
+      "factor": 0.5
+    },
+    {
+      "attack": "Psychic",
+      "defense": "Psychic",
+      "factor": 0.5
+    },
+    {
+      "attack": "Psychic",
+      "defense": "Dark",
+      "factor": 0
+    },
+    {
+      "attack": "Ice",
+      "defense": "Flying",
+      "factor": 2
+    },
+    {
+      "attack": "Ice",
+      "defense": "Ground",
+      "factor": 2
+    },
+    {
+      "attack": "Ice",
+      "defense": "Steel",
+      "factor": 0.5
+    },
+    {
+      "attack": "Ice",
+      "defense": "Fire",
+      "factor": 0.5
+    },
+    {
+      "attack": "Ice",
+      "defense": "Water",
+      "factor": 0.5
+    },
+    {
+      "attack": "Ice",
+      "defense": "Grass",
+      "factor": 2
+    },
+    {
+      "attack": "Ice",
+      "defense": "Ice",
+      "factor": 0.5
+    },
+    {
+      "attack": "Ice",
+      "defense": "Dragon",
+      "factor": 2
+    },
+    {
+      "attack": "Dragon",
+      "defense": "Steel",
+      "factor": 0.5
+    },
+    {
+      "attack": "Dragon",
+      "defense": "Dragon",
+      "factor": 2
+    },
+    {
+      "attack": "Dark",
+      "defense": "Fighting",
+      "factor": 0.5
+    },
+    {
+      "attack": "Dark",
+      "defense": "Ghost",
+      "factor": 2
+    },
+    {
+      "attack": "Dark",
+      "defense": "Steel",
+      "factor": 0.5
+    },
+    {
+      "attack": "Dark",
+      "defense": "Psychic",
+      "factor": 2
+    },
+    {
+      "attack": "Dark",
+      "defense": "Dark",
+      "factor": 0.5
+    }
+  ]
+}

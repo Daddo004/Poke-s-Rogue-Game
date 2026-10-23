@@ -1,0 +1,21 @@
+{
+  // Art direction approved in phase 0.6 (2026-10-21), extended in 1.5 (2026-10-22). Reference for every later preview.
+  "approved": "2026-10-22",
+  "virtualWidth": 640,
+  "virtualHeight": 360,
+  // "classic": Vampire Survivors-like HUD (XP bar on top, move/item slots top-left, HP under the Pokémon).
+  "hudLayout": "classic",
+  "bodyFont": "PixelifySans",
+  "bodyFontSize": 16,
+  "smallFont": "Silkscreen-Regular",
+  "smallFontSize": 8,
+  // Numbers (damage, levels, timer, coins): Pixelify's 5 reads as an S, so digits use Jersey 10 (approved in 1.5).
+  "numberFont": "Jersey10-Regular",
+  "numberFontSize": 20,
+  // "dark": dark panels with a light rim, used for menus and in-game panels alike.
+  "panelTheme": "dark",
+  // "procedural": move effects drawn as pixel art at the virtual resolution (no downscaled Showdown sprites).
+  "moveFx": "procedural",
+  // Level-up window: three cards side by side (approved in 1.5).
+  "levelUpLayout": "cards"
+}

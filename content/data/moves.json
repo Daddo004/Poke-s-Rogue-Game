@@ -1,0 +1,728 @@
+{
+  // Every move of the game. Name, type and category come from the PokeAPI catalogue (content/generated/moves-catalog.json)
+  // through "catalogKey" (defaults to "id"); "base" is level 1 and each "upgrades" entry lists what changes at the next level.
+  // Units: pixels, pixels per second, seconds, degrees. "enabled": false keeps a move out of level-ups until its animation
+  // is approved (the first twelve in phase 2.2, the rest in phase 2.4); "vfx" picks a look other than the archetype's default.
+  "version": 1,
+  "moves": [
+    {
+      // Approved in phase 1.4: chaining arc.
+      "id": "thundershock",
+      "catalogKey": "thunder-shock",
+      "archetype": "Arc",
+      "descriptionIt": "Un fulmine colpisce il nemico più vicino e rimbalza su quelli accanto.",
+      "status": "Paralysis",
+      "statusChance": 0.1,
+      "base": { "power": 10, "cooldown": 1.0, "range": 150, "knockback": 40, "chainRange": 70 },
+      "upgrades": [
+        { "power": 2, "cooldown": -0.05, "range": 10, "chains": 1 },
+        { "power": 2, "cooldown": -0.05, "range": 10, "knockback": 5 },
+        { "power": 2, "cooldown": -0.05, "range": 10, "chains": 1 },
+        { "power": 2, "cooldown": -0.05, "range": 10, "knockback": 5 },
+        { "power": 3, "cooldown": -0.05, "range": 10, "chains": 1 },
+        { "power": 3, "cooldown": -0.05, "range": 10, "knockback": 5 },
+        { "power": 4, "cooldown": -0.1, "range": 10, "chains": 1, "knockback": 5 }
+      ]
+    },
+    {
+      "id": "ember",
+      "archetype": "Projectile",
+      "descriptionIt": "Lancia piccole fiamme verso i nemici più vicini. Può scottare.",
+      "status": "Burn",
+      "statusChance": 0.1,
+      "base": { "power": 9, "cooldown": 1.1, "speed": 230, "range": 220, "radius": 5, "duration": 1.4, "pierce": 1, "knockback": 50, "spread": 30 },
+      "upgrades": [
+        { "amount": 1 },
+        { "power": 3 },
+        { "cooldown": -0.1 },
+        { "amount": 1, "pierce": 1 },
+        { "power": 3 },
+        { "amount": 1 },
+        { "power": 5, "pierce": 1 }
+      ]
+    },
+    {
+      "id": "aerial-ace",
+      "archetype": "Homing",
+      "descriptionIt": "Un colpo d'aria che insegue i nemici, non manca mai e ne attraversa due.",
+      // Phase 2.8: through one more enemy and a little more power (was pierce 1, power 8 + 11): a third of the median move.
+      "base": { "power": 9, "cooldown": 1.2, "speed": 200, "range": 260, "radius": 5, "duration": 2.5, "pierce": 2, "turnRate": 300, "knockback": 40, "spread": 40 },
+      "upgrades": [
+        { "amount": 1 },
+        { "power": 3 },
+        { "turnRate": 90, "speed": 30 },
+        { "amount": 1 },
+        { "power": 4, "cooldown": -0.1 },
+        { "amount": 1 },
+        { "power": 6, "pierce": 1 }
+      ]
+    },
+    {
+      "id": "bonemerang",
+      "archetype": "Boomerang",
+      "descriptionIt": "Lancia un osso che torna indietro, colpendo all'andata e al ritorno.",
+      "base": { "power": 12, "cooldown": 1.6, "speed": 260, "range": 170, "radius": 7, "duration": 3.0, "knockback": 70, "spread": 40 },
+      "upgrades": [
+        { "power": 4 },
+        { "amount": 1 },
+        { "range": 30 },
+        { "power": 4, "radius": 2 },
+        { "amount": 1 },
+        { "cooldown": -0.2 },
+        { "power": 8, "radius": 2 }
+      ]
+    },
+    {
+      "id": "razor-leaf",
+      "archetype": "Orbit",
+      "descriptionIt": "Foglie affilate ruotano attorno a te per qualche secondo.",
+      "base": { "power": 7, "cooldown": 4.0, "amount": 2, "speed": 220, "range": 46, "radius": 6, "duration": 2.5, "hitInterval": 0.4, "knockback": 70 },
+      "upgrades": [
+        { "amount": 1 },
+        { "power": 3, "range": 6 },
+        { "duration": 0.5 },
+        { "amount": 1 },
+        { "power": 3, "speed": 40 },
+        { "duration": 0.5, "cooldown": -0.5 },
+        { "amount": 1, "power": 4 }
+      ]
+    },
+    {
+      "id": "smog",
+      "archetype": "Aura",
+      "descriptionIt": "Una nube tossica ti avvolge e danneggia chi ti sta vicino. Può avvelenare.",
+      "status": "Poison",
+      "statusChance": 0.25,
+      "base": { "power": 4, "cooldown": 1.0, "radius": 36, "knockback": 15 },
+      "upgrades": [
+        { "radius": 6 },
+        { "power": 2 },
+        { "cooldown": -0.1 },
+        { "radius": 6 },
+        { "power": 2 },
+        { "cooldown": -0.1 },
+        { "radius": 8, "power": 3 }
+      ]
+    },
+    {
+      "id": "vine-whip",
+      "archetype": "Slash",
+      "descriptionIt": "Una frustata davanti a te; ai livelli alti colpisce anche dietro e ai lati.",
+      "base": { "power": 12, "cooldown": 1.3, "range": 70, "spread": 110, "delay": 0.15, "knockback": 80 },
+      "upgrades": [
+        { "amount": 1 },
+        { "power": 4 },
+        { "range": 10 },
+        { "power": 4 },
+        { "cooldown": -0.15 },
+        { "range": 10, "power": 3 },
+        { "amount": 2, "power": 5 }
+      ]
+    },
+    {
+      "id": "aurora-beam",
+      "archetype": "Beam",
+      "descriptionIt": "Un raggio gelido verso il nemico più vicino che colpisce più volte. Può congelare.",
+      "status": "Freeze",
+      "statusChance": 0.05,
+      "base": { "power": 6, "cooldown": 2.4, "range": 200, "radius": 4, "duration": 0.6, "hitInterval": 0.2, "spread": 30, "knockback": 20 },
+      "upgrades": [
+        { "power": 2 },
+        { "duration": 0.2 },
+        { "radius": 2 },
+        { "amount": 1 },
+        { "power": 3, "hitInterval": -0.05 },
+        { "range": 40 },
+        { "amount": 1, "power": 4 }
+      ]
+    },
+    {
+      "id": "rock-slide",
+      "archetype": "Strike",
+      "descriptionIt": "Rocce cadono dal cielo su nemici a caso.",
+      "base": { "power": 18, "cooldown": 2.2, "amount": 2, "range": 260, "radius": 16, "delay": 0.45, "knockback": 60 },
+      "upgrades": [
+        { "amount": 1 },
+        { "power": 6 },
+        { "radius": 4 },
+        { "amount": 1 },
+        { "cooldown": -0.3 },
+        { "power": 6, "radius": 4 },
+        { "amount": 2, "power": 8 }
+      ]
+    },
+    {
+      "id": "mud-bomb",
+      "archetype": "Zone",
+      "descriptionIt": "Lancia fango che lascia pozze dannose sotto i nemici.",
+      "base": { "power": 5, "cooldown": 3.0, "range": 220, "radius": 18, "duration": 2.5, "hitInterval": 0.5, "knockback": 0 },
+      "upgrades": [
+        { "amount": 1 },
+        { "power": 2, "radius": 3 },
+        { "duration": 0.5 },
+        { "amount": 1 },
+        { "power": 2, "hitInterval": -0.1 },
+        { "radius": 4, "duration": 0.5 },
+        { "amount": 1, "power": 3 }
+      ]
+    },
+    {
+      "id": "flame-wheel",
+      "archetype": "Zone",
+      "spawnAtPlayer": true,
+      "descriptionIt": "Corri avvolto dalle fiamme e lasci una scia ardente. Può scottare.",
+      "status": "Burn",
+      "statusChance": 0.15,
+      "base": { "power": 4, "cooldown": 0.35, "radius": 10, "duration": 1.8, "hitInterval": 0.5, "knockback": 0 },
+      "upgrades": [
+        { "power": 1 },
+        { "radius": 2 },
+        { "duration": 0.6 },
+        { "power": 2 },
+        { "cooldown": -0.05, "radius": 2 },
+        { "duration": 0.6 },
+        { "power": 3, "radius": 3 }
+      ]
+    },
+    {
+      "id": "earthquake",
+      "archetype": "Ring",
+      "descriptionIt": "Un'onda d'urto si propaga da te e colpisce tutti al suo passaggio.",
+      // Phase 2.8: half the power and a longer wait (was power 14 + 18, cooldown 3.5): each wave hits everyone around,
+      // and with neutral types it dealt 5.6 times the median move.
+      "base": { "power": 7, "cooldown": 5.0, "speed": 220, "range": 130, "radius": 7, "delay": 0.4, "knockback": 90 },
+      "upgrades": [
+        { "power": 2 },
+        { "range": 25 },
+        { "amount": 1 },
+        { "power": 2, "radius": 2 },
+        { "cooldown": -0.5 },
+        { "range": 25, "power": 2 },
+        { "amount": 1, "power": 3 }
+      ]
+    },
+    {
+      // Phase 2.4, group 1 (Normale, Acqua, Elettro, Ghiaccio): approved.
+      "id": "swift",
+      "archetype": "Homing",
+      "vfx": "Star",
+      "descriptionIt": "Tre stelle che inseguono i nemici, non mancano mai il bersaglio e ne attraversano tre.",
+      // Phase 2.8: each star goes through three enemies and hits a little harder (was pierce 1, power 4 + 7): in a crowd
+      // it dealt a seventh of the median move.
+      "base": { "power": 5, "cooldown": 1.4, "amount": 3, "speed": 190, "range": 240, "radius": 5, "duration": 2.2, "pierce": 3, "turnRate": 360, "knockback": 30, "spread": 60 },
+      "upgrades": [
+        { "power": 2 },
+        { "amount": 1 },
+        { "cooldown": -0.15 },
+        { "power": 2 },
+        { "amount": 1 },
+        { "speed": 40, "turnRate": 90 },
+        { "power": 4, "amount": 1 }
+      ]
+    },
+    {
+      "id": "hyper-voice",
+      "archetype": "Ring",
+      "vfx": "Sonic",
+      "descriptionIt": "Un grido potentissimo: onde sonore si allargano da te e respingono i nemici.",
+      // Phase 2.8: a second more to wait and a little less power (was power 10 + 12, cooldown 3.0): 3 times the median move.
+      "base": { "power": 9, "cooldown": 4.0, "speed": 260, "range": 110, "radius": 6, "delay": 0.35, "knockback": 120 },
+      "upgrades": [
+        { "power": 3 },
+        { "range": 20 },
+        { "amount": 1 },
+        { "power": 2, "knockback": 30 },
+        { "cooldown": -0.4 },
+        { "range": 20, "power": 2 },
+        { "amount": 1, "power": 3 }
+      ]
+    },
+    {
+      "id": "water-gun",
+      "archetype": "Beam",
+      "vfx": "Jet",
+      "descriptionIt": "Un getto d'acqua continuo verso il nemico più vicino, che lo spinge lontano.",
+      "base": { "power": 5, "cooldown": 2.0, "range": 150, "radius": 5, "duration": 0.5, "hitInterval": 0.15, "spread": 20, "knockback": 80 },
+      "upgrades": [
+        { "power": 2 },
+        { "duration": 0.2 },
+        { "radius": 2, "knockback": 20 },
+        { "range": 30 },
+        { "power": 2, "hitInterval": -0.03 },
+        { "amount": 1 },
+        { "power": 3, "duration": 0.2 }
+      ]
+    },
+    {
+      "id": "bubble",
+      "archetype": "Projectile",
+      "vfx": "Bubble",
+      "descriptionIt": "Un ventaglio di bolle lente: ognuna colpisce fino a tre nemici prima di scoppiare.",
+      // Phase 2.8: each bubble hits up to three enemies and a little harder (was pierce 1, power 5 + 7): a fifth of the median.
+      "base": { "power": 6, "cooldown": 1.4, "amount": 3, "speed": 110, "range": 160, "radius": 6, "duration": 1.8, "pierce": 3, "knockback": 30, "spread": 50 },
+      "upgrades": [
+        { "amount": 1 },
+        { "power": 2 },
+        { "duration": 0.4, "speed": 20 },
+        { "amount": 1 },
+        { "power": 3, "radius": 1 },
+        { "cooldown": -0.2 },
+        { "amount": 2, "power": 3 }
+      ]
+    },
+    {
+      // A status move in the games: here a trickle of damage, while it paralyses often (approved in phase 2.4).
+      "id": "thunder-wave",
+      "archetype": "Aura",
+      "category": "Special",
+      "vfx": "Static",
+      "descriptionIt": "Un campo elettrico intorno a te paralizza spesso i nemici vicini. Fa pochissimo danno.",
+      "status": "Paralysis",
+      "statusChance": 0.35,
+      "base": { "power": 1, "cooldown": 1.5, "radius": 40, "knockback": 0 },
+      "upgrades": [
+        { "radius": 6 },
+        { "cooldown": -0.15 },
+        { "radius": 6 },
+        { "power": 1 },
+        { "radius": 8 },
+        { "cooldown": -0.15 },
+        { "radius": 10, "power": 1 }
+      ]
+    },
+    {
+      "id": "ice-shard",
+      "archetype": "Orbit",
+      "vfx": "Shard",
+      "descriptionIt": "Schegge di ghiaccio ti girano intorno e a volte congelano chi toccano.",
+      "status": "Freeze",
+      "statusChance": 0.1,
+      "base": { "power": 6, "cooldown": 3.5, "amount": 3, "speed": 260, "range": 40, "radius": 5, "duration": 2.5, "hitInterval": 0.4, "knockback": 40 },
+      "upgrades": [
+        { "amount": 1 },
+        { "power": 2 },
+        { "duration": 0.5 },
+        { "range": 6, "amount": 1 },
+        { "power": 2, "speed": 40 },
+        { "cooldown": -0.5, "duration": 0.5 },
+        { "amount": 1, "power": 3 }
+      ]
+    },
+    {
+      // Phase 2.4, group 2 (Lotta, Veleno, Volante, Psico): approved.
+      "id": "karate-chop",
+      "archetype": "Slash",
+      "vfx": "Chop",
+      "descriptionIt": "Un colpo di taglio rapido davanti a te; i brutti colpi sono molto più frequenti.",
+      "critBonus": 0.25,
+      "base": { "power": 11, "cooldown": 1.1, "range": 55, "spread": 70, "delay": 0.12, "knockback": 70 },
+      "upgrades": [
+        { "power": 3 },
+        { "amount": 1 },
+        { "cooldown": -0.1 },
+        { "power": 3 },
+        { "range": 10 },
+        { "amount": 1 },
+        { "power": 5 }
+      ]
+    },
+    {
+      "id": "aura-sphere",
+      "archetype": "Homing",
+      "vfx": "Sphere",
+      "descriptionIt": "Una sfera d'aura che insegue i nemici, non manca mai e ne attraversa due.",
+      // Phase 2.8: 40% more power and through one more enemy (was power 12 + 14, pierce 1): a fifth of the median move.
+      "base": { "power": 17, "cooldown": 2.0, "speed": 170, "range": 280, "radius": 7, "duration": 3.0, "pierce": 2, "turnRate": 420, "knockback": 60 },
+      "upgrades": [
+        { "power": 5 },
+        { "cooldown": -0.2 },
+        { "amount": 1 },
+        { "power": 6 },
+        { "radius": 2, "speed": 30 },
+        { "amount": 1 },
+        { "power": 8, "pierce": 1 }
+      ]
+    },
+    {
+      "id": "poison-sting",
+      "archetype": "Projectile",
+      "vfx": "Needle",
+      "descriptionIt": "Aghi velenosi rapidissimi che trapassano i nemici e possono avvelenarli.",
+      "status": "Poison",
+      "statusChance": 0.3,
+      "base": { "power": 5, "cooldown": 0.9, "amount": 2, "speed": 320, "range": 200, "radius": 3, "duration": 0.9, "pierce": 2, "knockback": 15, "spread": 20 },
+      "upgrades": [
+        { "amount": 1 },
+        { "power": 2 },
+        { "pierce": 1 },
+        { "amount": 1 },
+        { "cooldown": -0.15 },
+        { "power": 2, "speed": 40 },
+        { "amount": 2 }
+      ]
+    },
+    {
+      "id": "gust",
+      "archetype": "Ring",
+      "vfx": "Wind",
+      "descriptionIt": "Una folata che si allarga da te e spinge lontanissimo tutti i nemici.",
+      "base": { "power": 5, "cooldown": 2.5, "speed": 300, "range": 100, "radius": 8, "delay": 0.3, "knockback": 220 },
+      "upgrades": [
+        { "knockback": 40 },
+        { "range": 15 },
+        { "power": 2 },
+        { "amount": 1 },
+        { "cooldown": -0.3 },
+        { "range": 15, "knockback": 40 },
+        { "amount": 1, "power": 3 }
+      ]
+    },
+    {
+      "id": "confusion",
+      "archetype": "Strike",
+      "vfx": "Psywave",
+      "descriptionIt": "Scoppi psichici colpiscono nemici a caso e possono confonderli.",
+      "status": "Confusion",
+      "statusChance": 0.2,
+      "base": { "power": 9, "cooldown": 1.8, "amount": 2, "range": 220, "radius": 14, "delay": 0.35, "knockback": 30 },
+      "upgrades": [
+        { "amount": 1 },
+        { "power": 3 },
+        { "radius": 3 },
+        { "amount": 1 },
+        { "cooldown": -0.3 },
+        { "power": 3, "radius": 3 },
+        { "amount": 2 }
+      ]
+    },
+    {
+      // A status move in the games: here a trickle of damage, while it puts enemies to sleep often (approved in phase 2.4).
+      "id": "hypnosis",
+      "archetype": "Ring",
+      "category": "Special",
+      "vfx": "Hypno",
+      "descriptionIt": "Onde ipnotiche si allargano da te e addormentano spesso i nemici. Fanno pochissimo danno.",
+      "status": "Sleep",
+      "statusChance": 0.45,
+      "base": { "power": 1, "cooldown": 3.0, "speed": 120, "range": 100, "radius": 8, "delay": 0.5, "knockback": 0 },
+      "upgrades": [
+        { "range": 15 },
+        { "cooldown": -0.3 },
+        { "amount": 1 },
+        { "range": 15 },
+        { "power": 1 },
+        { "cooldown": -0.3 },
+        { "range": 20, "amount": 1 }
+      ]
+    },
+    {
+      // Phase 2.4, group 3 (Coleottero, Roccia, Spettro, Drago): approved, Ombra Notturna as a long shadow on the ground.
+      "id": "x-scissor",
+      "archetype": "Boomerang",
+      "vfx": "Scissor",
+      "descriptionIt": "Due lame incrociate volano verso i nemici e tornano indietro, colpendo all'andata e al ritorno.",
+      "base": { "power": 11, "cooldown": 1.7, "speed": 240, "range": 150, "radius": 8, "duration": 3.0, "knockback": 50, "spread": 30 },
+      "upgrades": [
+        { "power": 3 },
+        { "amount": 1 },
+        { "range": 25 },
+        { "power": 3, "radius": 2 },
+        { "cooldown": -0.2 },
+        { "amount": 1 },
+        { "power": 6 }
+      ]
+    },
+    {
+      "id": "leech-life",
+      "archetype": "Arc",
+      "vfx": "Drain",
+      "descriptionIt": "Un morso che salta da un nemico all'altro e ti restituisce come PS parte dei danni.",
+      "drain": 0.2,
+      // Phase 2.8: twice the power and one more jump (was power 7 + 7, chains 1): a fifth of the median move. Healing grows with it.
+      "base": { "power": 14, "cooldown": 1.2, "range": 130, "knockback": 20, "chains": 2, "chainRange": 60 },
+      "upgrades": [
+        { "power": 4 },
+        { "chains": 1 },
+        { "cooldown": -0.1 },
+        { "power": 4, "chainRange": 10 },
+        { "chains": 1 },
+        { "power": 6 },
+        { "chains": 1, "cooldown": -0.1 }
+      ]
+    },
+    {
+      "id": "rock-tomb",
+      "archetype": "Zone",
+      "vfx": "Pillars",
+      "descriptionIt": "Rocce aguzze spuntano dal terreno sotto i nemici e li colpiscono più volte.",
+      "base": { "power": 6, "cooldown": 3.0, "range": 200, "radius": 16, "duration": 2.0, "hitInterval": 0.5, "knockback": 10 },
+      "upgrades": [
+        { "power": 2 },
+        { "amount": 1 },
+        { "radius": 4 },
+        { "power": 2 },
+        { "duration": 0.5 },
+        { "amount": 1 },
+        { "power": 3, "radius": 4 }
+      ]
+    },
+    {
+      "id": "shadow-ball",
+      "archetype": "Projectile",
+      "vfx": "Shadow",
+      "descriptionIt": "Una grossa sfera d'ombra, lenta, che trapassa tutti i nemici che incontra.",
+      "base": { "power": 13, "cooldown": 1.8, "speed": 140, "range": 220, "radius": 8, "duration": 2.4, "pierce": 0, "knockback": 40, "spread": 30 },
+      "upgrades": [
+        { "power": 4 },
+        { "radius": 2 },
+        { "cooldown": -0.2 },
+        { "amount": 1 },
+        { "power": 4 },
+        { "speed": 30, "radius": 2 },
+        { "power": 6, "amount": 1 }
+      ]
+    },
+    {
+      "id": "night-shade",
+      "archetype": "Beam",
+      "vfx": "Shade",
+      "descriptionIt": "Un raggio d'ombra colpisce più volte il nemico più vicino.",
+      "base": { "power": 7, "cooldown": 2.6, "range": 180, "radius": 6, "duration": 0.8, "hitInterval": 0.25, "spread": 25, "knockback": 15 },
+      "upgrades": [
+        { "power": 2 },
+        { "duration": 0.2 },
+        { "radius": 2 },
+        { "power": 3 },
+        { "cooldown": -0.3 },
+        { "amount": 1 },
+        { "power": 4, "duration": 0.2 }
+      ]
+    },
+    {
+      "id": "twister",
+      "archetype": "Orbit",
+      "vfx": "Twister",
+      "descriptionIt": "Due piccoli tornado ti girano intorno e travolgono i nemici.",
+      "base": { "power": 6, "cooldown": 3.8, "amount": 2, "speed": 160, "range": 52, "radius": 9, "duration": 3.0, "hitInterval": 0.45, "knockback": 60 },
+      "upgrades": [
+        { "power": 2 },
+        { "duration": 0.5 },
+        { "amount": 1 },
+        { "radius": 2, "power": 2 },
+        { "range": 8 },
+        { "cooldown": -0.5 },
+        { "amount": 1, "power": 3 }
+      ]
+    },
+    {
+      "id": "draco-meteor",
+      "archetype": "Strike",
+      "vfx": "Meteor",
+      "descriptionIt": "Meteore cadono dal cielo su nemici a caso: è lenta, ma fortissima.",
+      "base": { "power": 30, "cooldown": 4.5, "amount": 3, "range": 260, "radius": 22, "delay": 0.7, "knockback": 80 },
+      "upgrades": [
+        { "power": 8 },
+        { "amount": 1 },
+        { "radius": 4 },
+        { "cooldown": -0.4 },
+        { "power": 8 },
+        { "amount": 2 },
+        { "power": 12, "radius": 4 }
+      ]
+    },
+    {
+      // Phase 2.4, group 4 (Buio, Acciaio): approved.
+      "id": "bite",
+      "archetype": "Slash",
+      "vfx": "Bite",
+      "descriptionIt": "Fauci d'ombra azzannano chi ti sta davanti.",
+      "base": { "power": 14, "cooldown": 1.4, "range": 45, "spread": 80, "delay": 0.15, "knockback": 60 },
+      "upgrades": [
+        { "power": 4 },
+        { "cooldown": -0.1 },
+        { "amount": 1 },
+        { "power": 4 },
+        { "range": 8 },
+        { "amount": 1 },
+        { "power": 6 }
+      ]
+    },
+    {
+      "id": "dark-pulse",
+      "archetype": "Aura",
+      "vfx": "DarkPulse",
+      "descriptionIt": "Onde d'oscurità partono da te a intervalli e respingono chi ti sta intorno.",
+      "base": { "power": 6, "cooldown": 1.6, "radius": 48, "knockback": 50 },
+      "upgrades": [
+        { "radius": 6 },
+        { "power": 2 },
+        { "cooldown": -0.15 },
+        { "radius": 6 },
+        { "power": 2 },
+        { "cooldown": -0.15 },
+        { "radius": 8, "power": 3 }
+      ]
+    },
+    {
+      "id": "gyro-ball",
+      "archetype": "Boomerang",
+      "vfx": "Gyro",
+      "descriptionIt": "Una sfera d'acciaio rotante parte verso i nemici e torna indietro, travolgendoli due volte.",
+      "base": { "power": 13, "cooldown": 1.9, "speed": 220, "range": 140, "radius": 9, "duration": 3.0, "knockback": 90 },
+      "upgrades": [
+        { "power": 4 },
+        { "radius": 2 },
+        { "amount": 1 },
+        { "power": 4 },
+        { "cooldown": -0.2 },
+        { "range": 25 },
+        { "power": 6, "amount": 1 }
+      ]
+    },
+    {
+      "id": "flash-cannon",
+      "archetype": "Beam",
+      "vfx": "Flash",
+      "descriptionIt": "Un raggio di luce argentata colpisce più volte il nemico più vicino.",
+      "base": { "power": 9, "cooldown": 2.4, "range": 200, "radius": 7, "duration": 0.5, "hitInterval": 0.2, "spread": 20, "knockback": 40 },
+      "upgrades": [
+        { "power": 3 },
+        { "radius": 2 },
+        { "duration": 0.2 },
+        { "power": 3 },
+        { "cooldown": -0.3 },
+        { "amount": 1 },
+        { "power": 5 }
+      ]
+    },
+
+    // Phase 2.6 evolutions: a base move at level 8 plus its item (any level) gives a single-level, much stronger move
+    // that takes the base move's slot. Offered on a golden level-up card until boss chests exist (Block 3).
+    {
+      "id": "thunder",
+      "archetype": "Arc",
+      "vfx": "Thunder",
+      "evolvesFrom": "thundershock",
+      "evolveItem": "magnet",
+      "descriptionIt": "Fulmini dal cielo si abbattono su una lunghissima catena di nemici e li paralizzano spesso.",
+      "status": "Paralysis",
+      "statusChance": 0.3,
+      "base": { "power": 40, "cooldown": 0.6, "range": 240, "knockback": 60, "chains": 7, "chainRange": 100 }
+    },
+    {
+      "id": "flamethrower",
+      "archetype": "Beam",
+      "vfx": "Flamethrower",
+      "evolvesFrom": "ember",
+      "evolveItem": "wise-glasses",
+      "descriptionIt": "Un getto continuo di fiamme brucia tutto ciò che incontra e scotta spesso.",
+      "status": "Burn",
+      "statusChance": 0.25,
+      "base": { "power": 14, "cooldown": 1.6, "amount": 2, "range": 170, "radius": 7, "duration": 1.0, "hitInterval": 0.15, "spread": 30, "knockback": 40 }
+    },
+    {
+      "id": "air-slash",
+      "archetype": "Homing",
+      "vfx": "AirBlade",
+      "evolvesFrom": "aerial-ace",
+      "evolveItem": "quick-claw",
+      "descriptionIt": "Una raffica di lame d'aria che inseguono i nemici e li trapassano.",
+      "base": { "power": 26, "cooldown": 0.7, "amount": 5, "speed": 280, "range": 280, "radius": 7, "duration": 2.5, "pierce": 3, "turnRate": 480, "knockback": 50, "spread": 60 }
+    },
+    {
+      "id": "bone-rush",
+      "archetype": "Boomerang",
+      "vfx": "BoneRush",
+      "evolvesFrom": "bonemerang",
+      "evolveItem": "muscle-band",
+      "descriptionIt": "Una raffica di ossa vola verso i nemici e torna indietro, colpendo due volte.",
+      "base": { "power": 36, "cooldown": 1.2, "amount": 4, "speed": 300, "range": 220, "radius": 12, "duration": 3.0, "knockback": 80, "spread": 50 }
+    },
+    {
+      "id": "leaf-storm",
+      "archetype": "Orbit",
+      "vfx": "LeafStorm",
+      "evolvesFrom": "razor-leaf",
+      "evolveItem": "light-clay",
+      "permanent": true,
+      "descriptionIt": "Una tempesta di foglie ti gira intorno senza fermarsi mai.",
+      "base": { "power": 24, "cooldown": 1.0, "amount": 8, "speed": 300, "range": 60, "radius": 8, "hitInterval": 0.3, "knockback": 80 }
+    },
+    {
+      // A status move in the games: here a strong poison aura.
+      "id": "toxic",
+      "archetype": "Aura",
+      "category": "Special",
+      "vfx": "Toxic",
+      "evolvesFrom": "smog",
+      "evolveItem": "leftovers",
+      "descriptionIt": "Una grande nube velenosa ti avvolge e avvelena quasi sempre chi ci entra.",
+      "status": "Poison",
+      "statusChance": 0.7,
+      "base": { "power": 16, "cooldown": 0.7, "radius": 72, "knockback": 20 }
+    },
+    {
+      "id": "power-whip",
+      "archetype": "Slash",
+      "vfx": "PowerWhip",
+      "evolvesFrom": "vine-whip",
+      "evolveItem": "hp-up",
+      "drain": 0.05,
+      "descriptionIt": "Frustate potentissime in tutte le direzioni; ogni colpo ti restituisce un po' di PS.",
+      "base": { "power": 40, "cooldown": 1.0, "amount": 4, "range": 110, "spread": 130, "delay": 0.1, "knockback": 100 }
+    },
+    {
+      "id": "ice-beam",
+      "archetype": "Beam",
+      "vfx": "IceBeam",
+      "evolvesFrom": "aurora-beam",
+      "evolveItem": "wide-lens",
+      "descriptionIt": "Raggi di ghiaccio larghi e lunghi che congelano spesso.",
+      "status": "Freeze",
+      "statusChance": 0.2,
+      "base": { "power": 20, "cooldown": 2.0, "amount": 3, "range": 280, "radius": 10, "duration": 1.2, "hitInterval": 0.15, "spread": 40, "knockback": 30 }
+    },
+    {
+      "id": "stone-edge",
+      "archetype": "Strike",
+      "vfx": "StoneEdge",
+      "evolvesFrom": "rock-slide",
+      "evolveItem": "scope-lens",
+      "critBonus": 0.5,
+      "descriptionIt": "Punte di roccia spuntano dal suolo sotto i nemici; i brutti colpi sono frequentissimi.",
+      "base": { "power": 46, "cooldown": 1.6, "amount": 7, "range": 280, "radius": 22, "delay": 0.3, "knockback": 70 }
+    },
+    {
+      "id": "earth-power",
+      "archetype": "Zone",
+      "vfx": "Eruption",
+      "evolvesFrom": "mud-bomb",
+      "evolveItem": "metronome",
+      "descriptionIt": "Il terreno si spacca sotto i nemici ed erutta più volte.",
+      "base": { "power": 18, "cooldown": 2.5, "amount": 6, "range": 240, "radius": 28, "duration": 3.5, "hitInterval": 0.35, "knockback": 40 }
+    },
+    {
+      "id": "flare-blitz",
+      "archetype": "Zone",
+      "spawnAtPlayer": true,
+      "vfx": "FlareBlitz",
+      "evolvesFrom": "flame-wheel",
+      "evolveItem": "carbos",
+      "descriptionIt": "Corri avvolto da fiamme roventi: bruci chi tocchi e lasci una scia larghissima.",
+      "status": "Burn",
+      "statusChance": 0.3,
+      "base": { "power": 16, "cooldown": 0.2, "radius": 22, "duration": 3.0, "hitInterval": 0.4, "knockback": 30 }
+    },
+    {
+      "id": "fissure",
+      "archetype": "Ring",
+      "vfx": "Fissure",
+      "evolvesFrom": "earthquake",
+      "evolveItem": "iron",
+      "ohkoChance": 0.12,
+      "descriptionIt": "Onde che spaccano la terra: ogni nemico colpito può essere mandato KO all'istante.",
+      // Phase 2.8: half the power and a longer wait (was power 40, cooldown 2.6): 8 times the median move.
+      "base": { "power": 20, "cooldown": 3.5, "amount": 3, "speed": 240, "range": 220, "radius": 10, "delay": 0.35, "knockback": 100 }
+    }
+  ]
+}

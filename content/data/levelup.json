@@ -1,0 +1,18 @@
+{
+  "version": 1,
+
+  // Phase 2.7: share of the level-up cards for each kind of card. A share is split evenly among the cards of its kind,
+  // so 0.35 for moveUpgrade means about one card in three upgrades a move the player owns, once it owns a few.
+  // A kind with nothing to offer (slots full, everything maxed) leaves its share to the others; 0 never shows that kind.
+  // Evolutions are not drawn: a ready one is always the first card.
+  "shares": {
+    "moveUpgrade": 0.35,
+    "itemUpgrade": 0.25,
+    "newMove": 0.25,
+    "newItem": 0.15
+  },
+
+  // A share is split among at least this many cards: at the start, when the starting move is the only one owned, its
+  // upgrade takes a third of the share rather than all of it (otherwise it would be on almost every card and dominate).
+  "splitAtLeast": 3
+}

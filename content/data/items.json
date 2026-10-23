@@ -1,0 +1,26 @@
+{
+  // Passive held items (phase 2.5, all approved), like Vampire Survivors' passives: every level adds "perLevel" once more.
+  // Fractions: 0.1 = +10%. The icon is content/icons/items/<id>.png. "enabled": false keeps an item out of level-ups.
+  "version": 1,
+  "items": [
+    { "id": "muscle-band", "nameIt": "Muscolbanda", "descriptionIt": "Potenzia le mosse fisiche.", "maxLevel": 5, "perLevel": { "physicalPowerPercent": 0.1 } },
+    { "id": "wise-glasses", "nameIt": "Saggiocchiali", "descriptionIt": "Potenzia le mosse speciali.", "maxLevel": 5, "perLevel": { "specialPowerPercent": 0.1 } },
+    { "id": "iron", "nameIt": "Ferro", "descriptionIt": "Riduce i danni dei nemici fisici.", "maxLevel": 5, "perLevel": { "physicalResistPercent": 0.06 } },
+    // Out of level-ups until special enemies (Special Attack above Attack) appear: the prototype horde is all physical.
+    { "id": "zinc", "nameIt": "Zinco", "descriptionIt": "Riduce i danni dei nemici speciali.", "maxLevel": 5, "enabled": false, "perLevel": { "specialResistPercent": 0.06 } },
+    { "id": "hp-up", "nameIt": "PS-Su", "descriptionIt": "Aumenta i PS massimi.", "maxLevel": 5, "perLevel": { "maxHpPercent": 0.2 } },
+    { "id": "leftovers", "nameIt": "Avanzi", "descriptionIt": "Recupera PS col passare del tempo.", "maxLevel": 5, "perLevel": { "regenPerSecond": 0.2 } },
+    { "id": "quick-claw", "nameIt": "Rapidartigli", "descriptionIt": "Riduce la ricarica delle mosse.", "maxLevel": 5, "perLevel": { "cooldownReductionPercent": 0.08 } },
+    { "id": "wide-lens", "nameIt": "Grandelente", "descriptionIt": "Allarga l'area delle mosse.", "maxLevel": 5, "perLevel": { "areaPercent": 0.1 } },
+    { "id": "light-clay", "nameIt": "Creta Luce", "descriptionIt": "Le mosse che restano in campo durano di più.", "maxLevel": 5, "perLevel": { "durationPercent": 0.1 } },
+    { "id": "carbos", "nameIt": "Carburante", "descriptionIt": "Aumenta la velocità di movimento.", "maxLevel": 5, "perLevel": { "moveSpeedPercent": 0.1 } },
+    { "id": "magnet", "nameIt": "Calamita", "descriptionIt": "Attira le gemme Esp da più lontano.", "maxLevel": 5, "perLevel": { "pickupRadiusPercent": 0.3 } },
+    { "id": "lucky-egg", "nameIt": "Fortunuovo", "descriptionIt": "Aumenta l'esperienza ottenuta.", "maxLevel": 5, "perLevel": { "growthPercent": 0.08 } },
+    // Out of level-ups until coins drop from enemies (phase 3.5) and buy something (shop, Block 6).
+    { "id": "amulet-coin", "nameIt": "Monetamuleto", "descriptionIt": "Aumenta le monete ottenute.", "maxLevel": 5, "enabled": false, "perLevel": { "coinPercent": 0.2 } },
+    { "id": "scope-lens", "nameIt": "Mirino", "descriptionIt": "I brutti colpi diventano più frequenti.", "maxLevel": 5, "perLevel": { "critChance": 0.05 } },
+    { "id": "focus-sash", "nameIt": "Focalnastro", "descriptionIt": "Quando vai KO torni in piedi con metà dei PS.", "maxLevel": 2, "perLevel": { "revives": 1 } },
+    { "id": "metronome", "nameIt": "Metronomo", "descriptionIt": "Ogni mossa lancia un colpo in più.", "maxLevel": 2, "perLevel": { "amountBonus": 1 } },
+    { "id": "shell-bell", "nameIt": "Conchinella", "descriptionIt": "Ti cura di una parte dei danni che infliggi.", "maxLevel": 5, "perLevel": { "lifestealPercent": 0.01 } }
+  ]
+}

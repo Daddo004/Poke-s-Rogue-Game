@@ -1,0 +1,73 @@
+{
+  // Status conditions (phase 2.3). Moves inflict them through "status" and "statusChance" in moves.json.
+  // One status per enemy at a time, as in the games: the same status refreshes its duration, a different one does not stick.
+  // Units: seconds; shares are fractions (0.15 = 15%). "enabled": false keeps a status out of real runs until its look
+  // is approved (previews still show it). All six approved in phase 2.3, with the symbol icon over the head.
+  "version": 1,
+  "statuses": [
+    {
+      // Short and intense: each tick deals a share of the hit that caused it, and burned enemies hit softer (Attack halved).
+      "kind": "Burn",
+      "nameIt": "Scottatura",
+      "enabled": true,
+      "duration": 3.0,
+      "tickInterval": 0.5,
+      "hitDamageShare": 0.15,
+      "contactDamage": 0.5,
+      "immuneTypes": [ "Fire" ]
+    },
+    {
+      // Long and steady: a share of the enemy's max HP every second, good against sturdy Pokémon.
+      "kind": "Poison",
+      "nameIt": "Avvelenamento",
+      "enabled": true,
+      "duration": 5.0,
+      "tickInterval": 1.0,
+      "maxHpShare": 0.05,
+      "immuneTypes": [ "Poison", "Steel" ]
+    },
+    {
+      // Speed halved, and every second a 25% chance to lock up for half a second.
+      "kind": "Paralysis",
+      "nameIt": "Paralisi",
+      "enabled": true,
+      "duration": 4.0,
+      "tickInterval": 1.0,
+      "speed": 0.5,
+      "chance": 0.25,
+      "blockDuration": 0.5,
+      "immuneTypes": [ "Electric" ]
+    },
+    {
+      // Stuck in ice and harmless; a Fire hit thaws it at once.
+      "kind": "Freeze",
+      "nameIt": "Congelamento",
+      "enabled": true,
+      "duration": 2.5,
+      "speed": 0,
+      "contactDamage": 0,
+      "curedBy": "Fire",
+      "immuneTypes": [ "Ice" ]
+    },
+    {
+      // Asleep on the spot and harmless; hits do not wake it, as in the games.
+      "kind": "Sleep",
+      "nameIt": "Sonno",
+      "enabled": true,
+      "duration": 4.0,
+      "speed": 0,
+      "contactDamage": 0
+    },
+    {
+      // Wanders at random instead of chasing; every second a 33% chance to hurt itself.
+      "kind": "Confusion",
+      "nameIt": "Confusione",
+      "enabled": true,
+      "duration": 4.0,
+      "tickInterval": 1.0,
+      "chance": 0.33,
+      "maxHpShare": 0.08,
+      "wanderTurn": 0.8
+    }
+  ]
+}

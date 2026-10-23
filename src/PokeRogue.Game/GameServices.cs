@@ -1,0 +1,55 @@
+using Microsoft.Xna.Framework.Graphics;
+using PokeRogue.Core.Data;
+using PokeRogue.Game.Graphics;
+using PokeRogue.Game.Input;
+using PokeRogue.Game.Text;
+
+namespace PokeRogue.Game;
+
+/// <summary>Shared engine services handed to every scene.</summary>
+public sealed class GameServices(GraphicsDevice device, string contentRoot, VirtualScreen screen)
+{
+    public GraphicsDevice Device { get; } = device;
+
+    public string ContentRoot { get; } = contentRoot;
+
+    public VirtualScreen Screen { get; } = screen;
+
+    public InputState Input { get; } = new();
+
+    public Primitives Primitives { get; } = new(device);
+
+    public PickupArt Pickups { get; } = new(device);
+
+    public MoveIcons MoveIcons { get; } = new(device);
+
+    public StatusIcons StatusIcons { get; } = new(device);
+
+    public SpriteLibrary Sprites { get; } = new(device, contentRoot);
+
+    private ItemIcons? _itemIcons;
+
+    /// <summary>Held item icons, with their palette swaps.</summary>
+    public ItemIcons ItemIcons => _itemIcons ??= new ItemIcons(Device, Sprites);
+
+    public Fonts Fonts { get; } = new(contentRoot);
+
+    public UiStyle Style { get; } = UiStyle.Load(contentRoot);
+
+    /// <summary>Closes the game (set by <see cref="PokeRogueGame"/>).</summary>
+    public Action Exit { get; set; } = () => { };
+
+    public Lazy<PokedexFile> Pokedex { get; } = new(() => GameDataFiles.LoadPokedex(contentRoot));
+
+    public Lazy<TypeChart> TypeChart { get; } = new(() => new TypeChart(GameDataFiles.LoadTypeChart(contentRoot).Matchups));
+
+    public Lazy<Core.Run.Moves.MoveLibrary> Moves { get; } = new(() => Core.Run.Moves.MoveLibrary.Load(contentRoot));
+
+    public Lazy<Core.Run.Statuses.StatusLibrary> Statuses { get; } = new(() => Core.Run.Statuses.StatusLibrary.Load(contentRoot));
+
+    public Lazy<Core.Run.Items.ItemLibrary> Items { get; } = new(() => Core.Run.Items.ItemLibrary.Load(contentRoot));
+
+    public Lazy<Core.Run.Progression.LevelUpRules> LevelUpRules { get; } = new(() => Core.Run.Progression.LevelUpRules.Load(contentRoot));
+
+    public SpeciesData? Species(int id) => id >= 1 && id <= Pokedex.Value.Species.Count ? Pokedex.Value.Species[id - 1] : null;
+}
