@@ -32,7 +32,11 @@ public sealed class RunStats
 
     public void RecordDamageTaken(float amount) => DamageTaken += amount;
 
+    public int ChestsOpened { get; private set; }
+
     public void RecordCoins(int amount) => CoinsCollected += amount;
+
+    public void RecordChest() => ChestsOpened++;
 
     /// <summary>Most defeated species first.</summary>
     public IReadOnlyList<(int SpeciesId, int Count)> TopKills(int count) =>

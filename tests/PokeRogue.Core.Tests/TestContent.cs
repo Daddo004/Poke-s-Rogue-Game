@@ -21,6 +21,10 @@ internal static class TestContent
 
     public static readonly Lazy<PokeRogue.Core.Run.Progression.LevelUpRules> LevelUpRules = new(() => PokeRogue.Core.Run.Progression.LevelUpRules.Load(Root));
 
+    public static readonly Lazy<PokeRogue.Core.Run.Enemies.EnemyLibrary> Enemies = new(() => PokeRogue.Core.Run.Enemies.EnemyLibrary.Load(Root, Pokedex.Value.Species, Moves.Value));
+
+    public static readonly Lazy<PokeRogue.Core.Run.Pickups.LootRules> Loot = new(() => PokeRogue.Core.Run.Pickups.LootRules.Load(Root));
+
     public static ItemDefinition Item(string id) => Items.Value[id];
 
     public static SpeciesData Species(int id) => Pokedex.Value.Species.Single(s => s.Id == id);

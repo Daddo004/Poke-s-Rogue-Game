@@ -99,6 +99,16 @@ public sealed class GemPool(int capacity = 400)
     }
 }
 
+/// <summary>A chest on the ground (a Poké, Mega or Ultra Ball). Age counts ticks since it dropped, for its pop-out arc.</summary>
+public readonly record struct Chest(int Serial, Vector2 Position, ChestTier Tier, int Age = 0)
+{
+    /// <summary>The player opens it from this close (plus its own radius).</summary>
+    public const float Radius = 8f;
+
+    /// <summary>It cannot be opened while it is still popping out of the fallen Dominante.</summary>
+    public const int LandTicks = 40;
+}
+
 /// <summary>Magnetises gems inside the pickup radius, flies them to the player and grants experience.</summary>
 public sealed class PickupSystem
 {
@@ -111,9 +121,26 @@ public sealed class PickupSystem
 
     public GemPool Gems { get; } = new();
 
+    /// <summary>Chests left by Dominanti (phase 3.3): they wait on the ground until the player walks over one.</summary>
+    public List<Chest> Chests { get; } = [];
+
     public void Tick(RunState run)
     {
         var player = run.Player;
+        for (var i = Chests.Count - 1; i >= 0; i--)
+        {
+            var chest = Chests[i] = Chests[i] with { Age = Chests[i].Age + 1 };
+            if (chest.Age < Chest.LandTicks)
+                continue;
+
+            var reach = player.Radius + Chest.Radius;
+            if (Vector2.DistanceSquared(chest.Position, player.Position) <= reach * reach && !player.IsDown)
+            {
+                Chests.RemoveAt(i);
+                run.OpenChest(chest.Tier, chest.Position);
+            }
+        }
+
         var radiusSquared = player.PickupRadius * player.PickupRadius;
         var items = Gems.Items;
 

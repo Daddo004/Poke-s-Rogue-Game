@@ -40,7 +40,7 @@ public sealed partial class MoveVfx
             _dust.Emit(at + dir * 4, dir * Rand(40, 90) + new Vector2(0, -70), color, color * 0.6f, 20, 2f, drag: 0.93f, gravity: 7f);
         }
 
-        Shake.Add(0.12f);
+        Shake.AddFromMove(0.12f);
     }
 
     /// <summary>Pietrataglio: three sharp stones shooting out of the ground, a tall one in front, then sinking back. Alpha batch.</summary>
@@ -74,7 +74,7 @@ public sealed partial class MoveVfx
         var center = zone.Position.ToXna();
         if (fresh)
         {
-            Shake.Add(0.06f);
+            Shake.AddFromMove(0.06f);
             for (var i = 0; i < 10; i++)
             {
                 var angle = Rand(0f, MathF.Tau);

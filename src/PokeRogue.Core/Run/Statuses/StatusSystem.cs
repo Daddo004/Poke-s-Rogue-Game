@@ -17,9 +17,13 @@ public static class StatusSystem
     public static bool Apply(RunState run, int index, StatusKind kind, float hitDamage = 0f, int sourceSlot = -1)
     {
         ref var e = ref run.Enemies[index];
-        if (!e.IsAlive || run.StatusRules?[kind] is not { } rule || rule.IsImmune(e.Type1, e.Type2))
+        if (!e.IsAlive || e.Rank == EnemyRank.Prop || run.StatusRules?[kind] is not { } rule || rule.IsImmune(e.Type1, e.Type2))
             return false;
         if (e.Status != StatusKind.None && e.Status != kind)
+            return false;
+
+        // Dominanti and bosses are never frozen or put to sleep.
+        if (e.ResistsStatus && kind is StatusKind.Freeze or StatusKind.Sleep)
             return false;
 
         if (e.Status != kind)
@@ -32,7 +36,7 @@ public static class StatusSystem
             run.AddEvent(new RunEvent(RunEventType.StatusApplied, e.Position, 0f, e.SpeciesId, Status: kind));
         }
 
-        e.StatusTicks = rule.DurationTicks;
+        e.StatusTicks = e.ResistsStatus ? Math.Max(1, rule.DurationTicks / 2) : rule.DurationTicks;
         e.StatusSource = sourceSlot;
 
         // A refreshed burn keeps the stronger of the two.

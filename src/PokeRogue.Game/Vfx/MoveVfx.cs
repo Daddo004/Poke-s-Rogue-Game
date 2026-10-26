@@ -141,6 +141,8 @@ public sealed partial class MoveVfx
         _bubbles.Clear();
         _seenZones.Clear();
         _seenRings.Clear();
+        _views.Clear();
+        _playerViews = 0;
         Shake.Reset();
     }
 
@@ -186,6 +188,12 @@ public sealed partial class MoveVfx
                 break;
             case RunEventType.PlayerHurt:
                 Shake.Add(0.12f);
+                break;
+            case RunEventType.EnemyShotFired:
+                Muzzle(e);
+                break;
+            case RunEventType.EnemyShotEnded:
+                Impact(e, run);
                 break;
         }
     }
@@ -371,7 +379,7 @@ public sealed partial class MoveVfx
             _dust.Emit(at + dir * 4, dir * Rand(50, 110) + new Vector2(0, -60), color, color * 0.6f, 20, i % 4 == 0 ? 3f : 2f, drag: 0.93f, gravity: 7f);
         }
 
-        Shake.Add(0.22f);
+        Shake.AddFromMove(0.22f);
     }
 
     // ---------------------------------------------------------------- per tick
@@ -387,11 +395,12 @@ public sealed partial class MoveVfx
         Age(_timed, t => t with { Age = t.Age + 1 }, t => t.Age >= t.Life);
         Age(_arcs, a => a with { Age = a.Age + 1 }, a => a.Age >= ArcFx.Life);
         UpdateBubbles();
+        CollectProjectiles(run);
         if (paused)
             return;
 
         var moves = run.MoveSystem;
-        foreach (ref readonly var p in moves.Projectiles.Items)
+        foreach (ref readonly var p in ProjectileViews)
         {
             if (!p.Active || p.Move is null)
                 continue;
@@ -468,7 +477,7 @@ public sealed partial class MoveVfx
                 case FxStyle.Sonic:
                     // A shout, not a quake: only a nudge of the camera.
                     if (fresh)
-                        Shake.Add(0.1f);
+                        Shake.AddFromMove(0.1f);
                     continue;
                 case FxStyle.Wind:
                     UpdateWind(ring);
@@ -482,7 +491,7 @@ public sealed partial class MoveVfx
             }
 
             if (fresh)
-                Shake.Add(0.32f);
+                Shake.AddFromMove(0.32f);
 
             for (var i = 0; i < 3; i++)
             {
@@ -626,6 +635,7 @@ public sealed partial class MoveVfx
     {
         var p = _services.Primitives;
         var moves = run.MoveSystem;
+        DrawEnemyShotMarks(batch);
 
         // Lingering aura (Smog): a faint area and a slow ring of toxic puffs around the player.
         foreach (var move in run.Player.Moves)
@@ -804,7 +814,7 @@ public sealed partial class MoveVfx
         var p = _services.Primitives;
         var moves = run.MoveSystem;
 
-        foreach (ref readonly var projectile in moves.Projectiles.Items)
+        foreach (ref readonly var projectile in ProjectileViews)
         {
             if (!projectile.Active || projectile.Move is null)
                 continue;
@@ -905,6 +915,8 @@ public sealed partial class MoveVfx
                     break;
             }
         }
+
+        DrawEnemyShotRims(batch);
 
         foreach (var zone in moves.Zones)
         {
@@ -1030,7 +1042,7 @@ public sealed partial class MoveVfx
         var p = _services.Primitives;
         var moves = run.MoveSystem;
 
-        foreach (ref readonly var projectile in moves.Projectiles.Items)
+        foreach (ref readonly var projectile in ProjectileViews)
         {
             if (!projectile.Active || projectile.Move is null)
                 continue;

@@ -30,10 +30,14 @@ public sealed class RunEndBanner(GameServices services)
 
     public bool IsActive { get; private set; }
 
-    public void Start(RunOutcome outcome, string subtitle)
+    private bool _bossBeaten;
+
+    /// <param name="bossBeaten">A won level whose boss fell (phase 3.4) says "VITTORIA!" rather than "SOPRAVVISSUTO!".</param>
+    public void Start(RunOutcome outcome, string subtitle, bool bossBeaten = false)
     {
         Outcome = outcome;
         _subtitle = subtitle;
+        _bossBeaten = bossBeaten;
         Age = 0;
         IsActive = true;
     }
@@ -88,7 +92,7 @@ public sealed class RunEndBanner(GameServices services)
             p.Rect(batch, new Rectangle(0, 61, width, 1), (victory ? Gold : Red) * (0.6f * ease));
             p.Rect(batch, new Rectangle(0, 140, width, 1), (victory ? Gold : Red) * (0.6f * ease));
             // Above the player (screen centre) so the faint or victory pose stays visible.
-            var title = victory ? "SOPRAVVISSUTO!" : "ESAUSTO!";
+            var title = victory ? _bossBeaten ? "VITTORIA!" : "SOPRAVVISSUTO!" : "ESAUSTO!";
             var color = victory ? Gold : Red;
             var y = 72 - (1f - ease) * 14f;
             UiDraw.TextCentered(batch, services.Fonts.Title(services.Style), title, width / 2f, y, color * ease, Ink * ease);

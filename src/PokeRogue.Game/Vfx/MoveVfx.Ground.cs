@@ -38,7 +38,7 @@ public sealed partial class MoveVfx
             _flames.Emit(center + Jitter(zone.Radius * 0.3f) * new Vector2(1f, 0.5f), new Vector2(Rand(-20, 20), Rand(-120, -70)), Magma, FirePalette.Dark, 16, 2f, drag: 0.95f, gravity: 6f);
 
         if (fresh)
-            Shake.Add(0.05f);
+            Shake.AddFromMove(0.05f);
     }
 
     /// <summary>Geoforza: a dark hollow crossed by cracks that glow brightest right after each eruption, then cool. Alpha batch.</summary>
@@ -70,7 +70,7 @@ public sealed partial class MoveVfx
     private void UpdateFissure(MoveRing ring, bool fresh)
     {
         if (fresh)
-            Shake.Add(0.3f);
+            Shake.AddFromMove(0.3f);
 
         for (var i = 0; i < 2; i++)
         {

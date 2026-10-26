@@ -3,13 +3,14 @@ using PokeRogue.Core.Run;
 using PokeRogue.Core.Run.Items;
 using PokeRogue.Core.Run.Moves;
 using PokeRogue.Core.Run.Progression;
+using PokeRogue.Core.Run.Waves;
 
 namespace PokeRogue.Core.Tests.Run;
 
 public class RunOutcomeTests
 {
     private static RunState NewRun(int? timeLimitTicks = null) =>
-        new(TestContent.Pokedex.Value.Species, TestContent.TypeChart.Value, 25, [new SpawnEntry(19, 1)], new Vector2(640, 360))
+        new(TestContent.Pokedex.Value.Species, TestContent.TypeChart.Value, 25, WaveTimeline.Constant([new SpawnEntry(19, 1)], spawnsPerSecond: 30), new Vector2(640, 360))
         {
             TimeLimitTicks = timeLimitTicks,
             ItemPool = TestContent.Items.Value.Enabled,
@@ -54,7 +55,6 @@ public class RunOutcomeTests
     {
         var run = NewRun(timeLimitTicks: 120);
         run.Player.Invincible = true;
-        run.Spawner.SpawnsPerSecond = 30;
 
         for (var i = 0; i < 120; i++)
             run.Tick(default);

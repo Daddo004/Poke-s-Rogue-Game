@@ -437,7 +437,8 @@
       "archetype": "Arc",
       "vfx": "Drain",
       "descriptionIt": "Un morso che salta da un nemico all'altro e ti restituisce come PS parte dei danni.",
-      "drain": 0.2,
+      // Phase 3.6: was 0.2; with a horde all around it healed faster than any hit (the player could stand still and win).
+      "drain": 0.08,
       // Phase 2.8: twice the power and one more jump (was power 7 + 7, chains 1): a fifth of the median move. Healing grows with it.
       "base": { "power": 14, "cooldown": 1.2, "range": 130, "knockback": 20, "chains": 2, "chainRange": 60 },
       "upgrades": [

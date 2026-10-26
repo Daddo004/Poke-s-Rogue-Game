@@ -23,7 +23,7 @@ public class ItemLibraryTests
     {
         Assert.Equal("Danni dai nemici fisici -6%.", LevelUp.Describe(TestContent.Item("iron").PerLevel));
         Assert.Equal("+1 rinascita.", LevelUp.Describe(TestContent.Item("focus-sash").PerLevel));
-        Assert.Equal("Recuperi il 1% dei danni inflitti.", LevelUp.Describe(TestContent.Item("shell-bell").PerLevel));
+        Assert.Equal("Recuperi il 0,5% dei danni inflitti.", LevelUp.Describe(TestContent.Item("shell-bell").PerLevel));
     }
 
     [Fact]

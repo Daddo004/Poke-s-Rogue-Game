@@ -1,0 +1,39 @@
+{
+  "version": 1,
+
+  // Phase 3.5: breakables, things on the ground, shinies.
+  // The map is cut into square cells "cellSize" px wide; each cell holds tall grass with chance grass.chance, else a
+  // boulder with chance rock.chance, else nothing. The same cells come back when the player returns; broken ones do not.
+  // "hp" is before the minute's growth (one hit cuts grass; boulders take a few). "dropChance": chance to leave an item.
+  "cellSize": 100,
+  "grass": { "chance": 0.3, "hp": 1, "defense": 10, "dropChance": 0.15 },
+  "rock": { "chance": 0.08, "hp": 40, "defense": 80, "dropChance": 0.7 },
+
+  // What a broken prop leaves, by weight:
+  // coin (a few coins), nugget (Pepita: more coins), potion (Pozione: heals), rareCandy (Caramella Rara: +1 level),
+  // repel (Repellente: every regular enemy on screen faints), expShare (Condividi Esp.: every gem flies to you).
+  "drops": [
+    { "kind": "coin", "weight": 50 },
+    { "kind": "potion", "weight": 16 },
+    { "kind": "nugget", "weight": 10 },
+    { "kind": "expShare", "weight": 8 },
+    { "kind": "rareCandy", "weight": 8 },
+    { "kind": "repel", "weight": 6 }
+  ],
+
+  // Now and then a regular Pokémon leaves a coin; rarely a wave sends a shiny one (10× PS, harder hits, 5× experience; it leaves a big nugget and a held item).
+  "enemyCoinChance": 0.01,
+  "shinyChance": 0.004,
+
+  // Phase 3.6: now and then a defeated Pokémon leaves a Baccarancia that restores "foodHeal" PS, like Vampire Survivors'
+  // floor chicken. With about a thousand KO by minute 5, 0.3% gives three or four before then.
+  "enemyFoodChance": 0.003,
+  "foodHeal": 30,
+
+  "coinValue": 2,
+  "nuggetValue": 10,
+  "bigNuggetValue": 25,
+
+  // Share of the maximum PS a Pozione restores.
+  "potionHeal": 0.3
+}

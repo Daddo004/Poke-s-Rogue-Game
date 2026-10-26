@@ -16,4 +16,7 @@ namespace PokeRogue.Core.Data;
 [JsonSerializable(typeof(PokeRogue.Core.Run.Statuses.StatusFile))]
 [JsonSerializable(typeof(PokeRogue.Core.Run.Items.ItemFile))]
 [JsonSerializable(typeof(PokeRogue.Core.Run.Progression.LevelUpFile))]
+[JsonSerializable(typeof(PokeRogue.Core.Run.Waves.WaveFile))]
+[JsonSerializable(typeof(PokeRogue.Core.Run.Enemies.EnemyFile))]
+[JsonSerializable(typeof(PokeRogue.Core.Run.Pickups.LootFile))]
 public sealed partial class DataJsonContext : JsonSerializerContext;

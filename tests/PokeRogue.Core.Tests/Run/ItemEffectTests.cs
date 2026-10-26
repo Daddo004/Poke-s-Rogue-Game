@@ -87,7 +87,7 @@ public class ItemEffectTests
     public void Conchinella_heals_a_share_of_the_damage_dealt()
     {
         var run = NewRun();
-        Hold(run, "shell-bell", 5);
+        Hold(run, "shell-bell", 3);
         run.Player.Hp -= 40f;
         var before = run.Player.Hp;
         var index = run.Enemies.Spawn(TestContent.Species(19), new Vector2(300, 0), hpMultiplier: 100f);
@@ -95,7 +95,23 @@ public class ItemEffectTests
         run.HitEnemy(index, new MoveInstance(TestContent.Move("ember")), Vector2.UnitX);
 
         var dealt = run.Events.Single(e => e.Type == RunEventType.EnemyHit).Value;
-        Assert.Equal(before + dealt * 0.05f, run.Player.Hp, 3);
+        Assert.Equal(before + dealt * 0.015f, run.Player.Hp, 3);
+    }
+
+    [Fact]
+    public void Healing_from_damage_dealt_is_capped_per_second()
+    {
+        var run = NewRun();
+        Hold(run, "shell-bell", 3);
+        run.Player.Hp = 10f;
+        var index = run.Enemies.Spawn(TestContent.Species(19), new Vector2(300, 0), hpMultiplier: 10000f);
+        var drain = new MoveInstance(TestContent.Move("leech-life") with { Drain = 1f });
+
+        // Fifty big draining hits in one tick heal at most a second's worth of the cap.
+        for (var i = 0; i < 50; i++)
+            run.HitEnemy(index, drain, Vector2.UnitX);
+
+        Assert.Equal(10f + run.Player.MaxHp * Player.DamageHealCapPerSecond, run.Player.Hp, 2);
     }
 
     [Fact]
@@ -128,12 +144,13 @@ public class ItemEffectTests
     }
 
     [Fact]
-    public void Zinco_and_Monetamuleto_wait_until_they_matter()
+    public void Zinco_and_Monetamuleto_are_offered_now_that_they_matter()
     {
         var enabled = TestContent.Items.Value.Enabled.Select(i => i.Id).ToList();
 
-        Assert.Equal(15, enabled.Count);
-        Assert.DoesNotContain("zinc", enabled);
-        Assert.DoesNotContain("amulet-coin", enabled);
+        // Special attackers arrived with the waves of phase 3.1 and coins drop since phase 3.5.
+        Assert.Equal(17, enabled.Count);
+        Assert.Contains("zinc", enabled);
+        Assert.Contains("amulet-coin", enabled);
     }
 }

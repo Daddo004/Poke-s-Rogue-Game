@@ -16,6 +16,16 @@ public sealed class ScreenShake
 
     public void Add(float trauma) => _trauma = MathHelper.Clamp(_trauma + trauma, 0f, 1f);
 
+    /// <summary>The player's own moves (phase 3.6): half as strong, and they never push the shake past this ceiling.</summary>
+    public const float MoveCeiling = 0.22f;
+
+    /// <summary>Shake from the player's moves: halved, and capped at <see cref="MoveCeiling"/> however many land at once (Tuono).</summary>
+    public void AddFromMove(float trauma)
+    {
+        if (_trauma < MoveCeiling)
+            _trauma = MathF.Min(MoveCeiling, _trauma + trauma * 0.5f);
+    }
+
     public void Update() => _trauma = MathF.Max(0f, _trauma - DecayPerTick);
 
     public void Reset() => _trauma = 0f;

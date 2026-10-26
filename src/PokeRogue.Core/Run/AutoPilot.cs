@@ -56,19 +56,44 @@ public static class AutoPilot
         var nearest = float.MaxValue;
         foreach (ref readonly var e in run.Enemies.Items)
         {
-            if (!e.IsAlive)
+            if (!e.IsAlive || e.Rank == EnemyRank.Prop)
                 continue;
 
+            // Measured from the enemy's edge, so a big Dominante is given room.
             var offset = e.Position - player;
-            var distance = offset.Length();
+            var centre = offset.Length();
+            var distance = centre - e.Radius;
             nearest = MathF.Min(nearest, distance);
-            if (distance < CrowdRadius && distance > 0.01f)
-                crowd += offset / distance * (CrowdRadius - distance);
+            if (distance < CrowdRadius && centre > 0.01f)
+                crowd += offset / centre * (CrowdRadius - distance);
         }
 
         // An invincible player (previews, simulations) has nothing to fear: it walks through the crowd to the gems.
         if (nearest < PersonalSpace && crowd != Vector2.Zero && !run.Player.Invincible)
             return Vector2.Normalize(-crowd);
+
+        // A Dominante's chest is worth a detour.
+        foreach (var chest in run.Pickups.Chests)
+        {
+            if (Vector2.DistanceSquared(chest.Position, player) < FarGemReach * FarGemReach)
+                return Vector2.Normalize(chest.Position - player + new Vector2(0.001f, 0));
+        }
+
+        // Items on the ground (a potion, a candy...) are worth a short walk.
+        var loot = Vector2.Zero;
+        var best = GemReach * GemReach;
+        foreach (var item in run.Loot.Items)
+        {
+            var d = Vector2.DistanceSquared(item.Position, player);
+            if (d < best && !item.Magnetized)
+            {
+                best = d;
+                loot = item.Position - player;
+            }
+        }
+
+        if (loot != Vector2.Zero)
+            return Vector2.Normalize(loot);
 
         var target = NearestGem(run, player, GemReach);
         if (target == Vector2.Zero)

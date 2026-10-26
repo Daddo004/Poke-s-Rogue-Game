@@ -25,6 +25,8 @@ public sealed class GameServices(GraphicsDevice device, string contentRoot, Virt
 
     public StatusIcons StatusIcons { get; } = new(device);
 
+    public BreakableArt Breakables { get; } = new(device);
+
     public SpriteLibrary Sprites { get; } = new(device, contentRoot);
 
     private ItemIcons? _itemIcons;
@@ -34,10 +36,19 @@ public sealed class GameServices(GraphicsDevice device, string contentRoot, Virt
 
     public Fonts Fonts { get; } = new(contentRoot);
 
+    /// <summary>Pokémon cries (phase 3.4); muted for captures and with --muto.</summary>
+    public Audio.Cries Cries { get; } = new(contentRoot);
+
     public UiStyle Style { get; } = UiStyle.Load(contentRoot);
 
     /// <summary>Closes the game (set by <see cref="PokeRogueGame"/>).</summary>
     public Action Exit { get; set; } = () => { };
+
+    /// <summary>Player settings (phase 3.6). Captures and previews use the defaults and never save.</summary>
+    public Settings Settings { get; set; } = new();
+
+    /// <summary>Switches full screen on or off (set by <see cref="PokeRogueGame"/>).</summary>
+    public Action<bool> SetFullScreen { get; set; } = _ => { };
 
     public Lazy<PokedexFile> Pokedex { get; } = new(() => GameDataFiles.LoadPokedex(contentRoot));
 

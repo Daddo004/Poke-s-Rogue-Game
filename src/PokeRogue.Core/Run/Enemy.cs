@@ -12,6 +12,98 @@ public enum EnemyState : byte
     Fainting,
 }
 
+/// <summary>How an enemy moves and fights (phases 3.1 and 3.2).</summary>
+public enum EnemyBehavior : byte
+{
+    /// <summary>Walks towards the player.</summary>
+    Chase,
+
+    /// <summary>Keeps going along <see cref="Enemy.Heading"/>, whatever the player does (swarms, stampedes).</summary>
+    Straight,
+
+    /// <summary>Keeps its distance and shoots at the player now and then.</summary>
+    Ranged,
+
+    /// <summary>Walks closer, stops to take aim, then charges in a straight line and stands dazed.</summary>
+    Charger,
+
+    /// <summary>Walks towards the player, slow and sturdy, and barely moves when hit.</summary>
+    Tank,
+
+    /// <summary>Rushes the player, lights its fuse when close and blows up (Voltorb's Self-Destruct).</summary>
+    Kamikaze,
+
+    /// <summary>Keeps its distance and teleports around the player (Abra).</summary>
+    Teleport,
+}
+
+/// <summary>Regular horde member, mini boss (phase 3.3) or boss (phase 3.4).</summary>
+public enum EnemyRank : byte
+{
+    Normal,
+
+    /// <summary>A "Dominante": twice the size, an aura, lots of HP; drops a chest.</summary>
+    Dominant,
+
+    /// <summary>The level boss (phase 3.4): beating it wins the level.</summary>
+    Boss,
+
+    /// <summary>
+    /// Not a Pokémon: tall grass or a boulder that the player's moves break (phase 3.5). It never moves or attacks,
+    /// moves never aim at it, and it does not count as an enemy alive.
+    /// </summary>
+    Prop,
+}
+
+/// <summary>What a breakable prop is (phase 3.5).</summary>
+public enum BreakableKind : byte
+{
+    None,
+    Grass,
+    Rock,
+}
+
+/// <summary>The chest a Dominante drops: a Poké, Mega or Ultra Ball with 1, 3 or 5 rewards.</summary>
+public enum ChestTier : byte
+{
+    Poke,
+    Great,
+    Ultra,
+}
+
+/// <summary>What a fighting enemy is busy with; <see cref="None"/> means it follows its behaviour's walk.</summary>
+public enum EnemyAction : byte
+{
+    None,
+
+    /// <summary>Ranged: standing still, about to shoot.</summary>
+    Aim,
+
+    /// <summary>Charger: standing still, aiming the charge along <see cref="Enemy.ActionDirection"/>.</summary>
+    WindUp,
+
+    /// <summary>Charger: rushing along <see cref="Enemy.ActionDirection"/>.</summary>
+    Dash,
+
+    /// <summary>Charger: dazed after a charge.</summary>
+    Recover,
+
+    /// <summary>Kamikaze: the fuse is burning.</summary>
+    Fuse,
+
+    /// <summary>Teleport: shrinking away before the hop.</summary>
+    Vanish,
+
+    /// <summary>Teleport: growing back where it landed.</summary>
+    Appear,
+
+    /// <summary>Boss: roaring at the start of a new phase, out of reach.</summary>
+    Roar,
+
+    /// <summary>Boss: calling down rocks.</summary>
+    Slam,
+}
+
 /// <summary>One horde member. Stored by value in <see cref="EnemyPool"/> to keep thousands of them cache-friendly.</summary>
 public struct Enemy
 {
@@ -41,6 +133,50 @@ public struct Enemy
     public float SpDefense;
     public PokemonType Type1;
     public PokemonType? Type2;
+
+    public EnemyBehavior Behavior;
+
+    /// <summary>Straight: the direction it travels (unit vector).</summary>
+    public Vector2 Heading;
+
+    /// <summary>Tick when it leaves the field without a drop (a ring burrows back); 0 = never.</summary>
+    public int ExpiresAtTick;
+
+    /// <summary>Its fighting profile in <see cref="RunState.EnemyRules"/> (phase 3.2); null for plain chasers and travellers.</summary>
+    public Enemies.EnemyProfile? Profile;
+
+    public EnemyAction Action;
+
+    /// <summary>Ticks left in <see cref="Action"/>.</summary>
+    public int ActionTicks;
+
+    /// <summary>Ticks before it may shoot, charge or teleport again.</summary>
+    public int CooldownTicks;
+
+    /// <summary>Charge direction (unit vector).</summary>
+    public Vector2 ActionDirection;
+
+    /// <summary>Multiplies the knockback of hits (tanks take less).</summary>
+    public float KnockbackScale;
+
+    public EnemyRank Rank;
+
+    /// <summary>Dominanti: the chest left when defeated.</summary>
+    public ChestTier Chest;
+
+    /// <summary>Props: grass or rock, and the map cell it belongs to (a broken prop does not come back).</summary>
+    public BreakableKind Breakable;
+
+    public long PropCell;
+
+    /// <summary>A shiny Pokémon (phase 3.5): rare, sturdier, and it leaves a big nugget.</summary>
+    public bool Shiny;
+
+    /// <summary>Statuses never freeze or put it to sleep, and others last half as long (Dominanti and bosses).</summary>
+    public readonly bool ResistsStatus => Rank != EnemyRank.Normal;
+
+    /// <summary>A roaring boss cannot be hurt.</summary>
+    public readonly bool IsShielded => Rank == EnemyRank.Boss && Action == EnemyAction.Roar;
 
     public int FlashTicks;
     public int FaintTicksLeft;
@@ -162,6 +298,35 @@ public sealed class EnemyPool
             XpValue = System.Math.Max(1, (int)MathF.Round(StatFormulas.EnemyXp(s) * xpMultiplier)),
             LastHit = Enemy.MoveHitTicks.Never(),
             StatusSource = -1,
+            KnockbackScale = 1f,
+        };
+        return index;
+    }
+
+    /// <summary>A breakable prop (phase 3.5): a still object the player's moves can hit. It does not count in <see cref="AliveCount"/>.</summary>
+    public int SpawnProp(BreakableKind kind, Vector2 position, float hp, float defense, PokemonType type, long cell)
+    {
+        if (_free.Count == 0)
+            return -1;
+
+        var index = _free.Pop();
+        HighWater = Math.Max(HighWater, index + 1);
+        _items[index] = new Enemy
+        {
+            State = EnemyState.Alive,
+            Serial = ++_serial,
+            Rank = EnemyRank.Prop,
+            Breakable = kind,
+            PropCell = cell,
+            Position = position,
+            Radius = kind == BreakableKind.Rock ? 9f : 7f,
+            Hp = hp,
+            MaxHp = hp,
+            Defense = defense,
+            SpDefense = defense,
+            Type1 = type,
+            LastHit = Enemy.MoveHitTicks.Never(),
+            StatusSource = -1,
         };
         return index;
     }
@@ -178,7 +343,9 @@ public sealed class EnemyPool
         e.Velocity = Vector2.Zero;
         e.Status = StatusKind.None;
         e.StuckTicks = 0;
-        AliveCount--;
+        e.Action = EnemyAction.None;
+        if (e.Rank != EnemyRank.Prop)
+            AliveCount--;
     }
 
     public void Release(int index)
@@ -186,7 +353,7 @@ public sealed class EnemyPool
         ref var e = ref _items[index];
         if (e.State == EnemyState.Inactive)
             return;
-        if (e.State == EnemyState.Alive)
+        if (e.State == EnemyState.Alive && e.Rank != EnemyRank.Prop)
             AliveCount--;
 
         e.State = EnemyState.Inactive;

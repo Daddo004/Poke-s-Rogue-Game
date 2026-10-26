@@ -94,18 +94,6 @@ public class RunStateTests
         }
     }
 
-    [Fact]
-    public void Spawner_respects_max_alive()
-    {
-        var run = NewRun(spawning: true);
-        run.Spawner.MaxAlive = 20;
-        run.Spawner.SpawnsPerSecond = 120;
-
-        for (var i = 0; i < 120; i++)
-            run.Tick(default);
-
-        Assert.Equal(20, run.Enemies.AliveCount);
-    }
 
     [Fact]
     public void A_crit_bonus_makes_critical_hits_more_likely()

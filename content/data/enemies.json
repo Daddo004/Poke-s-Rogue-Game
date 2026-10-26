@@ -1,0 +1,35 @@
+{
+  "version": 1,
+
+  // Phase 3.2: how enemy species fight. Species not listed simply walk at the player.
+  // Behaviours:
+  // - ranged: keeps about "range" pixels away and shoots every "cooldown" seconds, after "windUp" seconds of aim.
+  //   Its shots borrow the look and type of "move" and deal "shotDamage" × its contact damage.
+  // - charger: within "range" it stops for "windUp" seconds (the line it will take shows on the ground), rushes at
+  //   "dashSpeed" × its speed for "dashTime" seconds, then stands dazed for "recover" seconds.
+  // - tank: walks at the player; use "hp", "speed" and "knockback" to make it sturdy and hard to push.
+  // - kamikaze: within "trigger" pixels it lights a fuse of "windUp" seconds, then blows up: "blastDamage" × its
+  //   contact damage to the player if within "blastRadius". It leaves no gem.
+  // - teleport: keeps about "range" pixels away and hops every "cooldown" seconds (sooner if the player gets close)
+  //   to a spot between "hopMin" and "hopMax" pixels from the player. With a "move" it shoots after each hop.
+  // "hp", "speed", "knockback" and "contact" multiply the species' own stats, for any behaviour.
+  // "enabled": false keeps a profile out of real runs until its look is approved; previews show it anyway.
+  "enemies": [
+    { "pokemon": "beedrill", "behavior": "ranged", "move": "poison-sting", "range": 130, "cooldown": 3, "windUp": 0.4, "shotSpeed": 110 },
+    { "pokemon": "butterfree", "behavior": "ranged", "move": "swift", "range": 150, "cooldown": 3.5, "windUp": 0.5, "shotSpeed": 90 },
+    { "pokemon": "venomoth", "behavior": "ranged", "move": "poison-sting", "range": 150, "cooldown": 3, "windUp": 0.4, "shotSpeed": 100 },
+
+    // A charge runs about 50 px past the player: range is shorter than speed × dashSpeed × dashTime.
+    { "pokemon": "tauros", "behavior": "charger", "hp": 1.5, "range": 110, "cooldown": 4, "windUp": 0.7, "dashSpeed": 4, "dashTime": 0.6, "recover": 0.8 },
+    { "pokemon": "raticate", "behavior": "charger", "range": 80, "cooldown": 3.5, "windUp": 0.5, "dashSpeed": 3.5, "dashTime": 0.6, "recover": 0.6 },
+    { "pokemon": "fearow", "behavior": "charger", "range": 95, "cooldown": 3.5, "windUp": 0.5, "dashSpeed": 4, "dashTime": 0.6, "recover": 0.6 },
+
+    { "pokemon": "metapod", "behavior": "tank", "hp": 3, "speed": 0.6, "knockback": 0.15 },
+    { "pokemon": "kakuna", "behavior": "tank", "hp": 3, "speed": 0.6, "knockback": 0.15 },
+    { "pokemon": "parasect", "behavior": "tank", "hp": 2.5, "speed": 0.8, "knockback": 0.3 },
+
+    { "pokemon": "voltorb", "behavior": "kamikaze", "speed": 1.3, "trigger": 36, "windUp": 1, "blastRadius": 48, "blastDamage": 3 },
+
+    { "pokemon": "abra", "behavior": "teleport", "contact": 0.5, "range": 150, "cooldown": 3.5, "hopMin": 110, "hopMax": 170 }
+  ]
+}

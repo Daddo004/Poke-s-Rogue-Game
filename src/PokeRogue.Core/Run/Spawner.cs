@@ -1,5 +1,5 @@
 using System.Numerics;
-using PokeRogue.Core.Data;
+using PokeRogue.Core.Run.Waves;
 
 namespace PokeRogue.Core.Run;
 
@@ -7,23 +7,47 @@ namespace PokeRogue.Core.Run;
 public readonly record struct SpawnEntry(int SpeciesId, int Weight);
 
 /// <summary>
-/// Prototype spawner: keeps a steady trickle of enemies just outside the screen and recycles stragglers.
-/// Replaced by the data-driven wave director in phase 3.1.
+/// The wave director (phase 3.1): plays the level's <see cref="WaveTimeline"/>. Each wave keeps a minimum of enemies alive
+/// just outside the screen, plus a steady trickle up to a cap; special events (swarms, rings, stampedes) fire on schedule.
+/// Chasers left far behind are moved back next to the screen; travellers leave once they are past it.
 /// </summary>
-public sealed class Spawner(IReadOnlyList<SpawnEntry> table, Vector2 viewSize)
+public sealed class Spawner
 {
     /// <summary>Distance beyond the screen edge where enemies appear.</summary>
     public const float SpawnMargin = 32f;
 
+    /// <summary>Most enemies a wave refills in one tick, so a cleared screen fills up again over a few frames.</summary>
+    private const int RefillPerTick = 4;
+
+    /// <summary>A swarm is a stream this long and this wide (pixels).</summary>
+    private const float SwarmLength = 160f;
+
+    private const float SwarmWidth = 70f;
+
+    /// <summary>Travellers cross the screen at most this far to either side of the player.</summary>
+    private const float LaneSpread = 80f;
+
+    /// <summary>Travellers that never got past the screen give up after this long.</summary>
+    private static readonly int TravellerLifetimeTicks = RunClock.Seconds(30f);
+
+    private readonly int[] _nextEventTick;
     private float _accumulator;
+
+    public Spawner(WaveTimeline timeline, Vector2 viewSize)
+    {
+        Timeline = timeline;
+        ViewSize = viewSize;
+        _nextEventTick = timeline.Events.Select(e => e.AtTick).ToArray();
+    }
+
+    public WaveTimeline Timeline { get; }
 
     public bool Enabled { get; set; } = true;
 
-    public float SpawnsPerSecond { get; set; } = 2f;
+    /// <summary>Stress tests: refill up to at least this many enemies alive, whatever the wave says.</summary>
+    public int StressMinAlive { get; set; }
 
-    public int MaxAlive { get; set; } = 300;
-
-    public Vector2 ViewSize { get; } = viewSize;
+    public Vector2 ViewSize { get; }
 
     /// <summary>Enemies farther than this from the player are moved back next to the screen.</summary>
     public float RecycleDistance => ViewSize.Length() * 0.75f;
@@ -33,24 +57,29 @@ public sealed class Spawner(IReadOnlyList<SpawnEntry> table, Vector2 viewSize)
         if (!Enabled)
             return;
 
-        // Gradual ramp so the prototype gets busier over time.
-        var minutes = run.Ticks / (float)(RunClock.TicksPerSecond * 60);
-        _accumulator += SpawnsPerSecond * (1f + minutes * 0.5f) * RunClock.Dt;
-        while (_accumulator >= 1f)
-        {
-            _accumulator -= 1f;
-            if (run.Enemies.AliveCount >= MaxAlive)
-                break;
-            SpawnOne(run, 1f + minutes * 0.15f, 1f + minutes * 0.1f);
-        }
-
+        SpawnWave(run);
+        FireEvents(run);
         Recycle(run);
     }
 
-    public int SpawnOne(RunState run, float hpMultiplier = 1f, float xpMultiplier = 1f)
+    /// <summary>Playtests that start the run later: the events before <paramref name="tick"/> never fire, their repeats still do.</summary>
+    public void SkipEventsBefore(int tick)
     {
-        var species = PickSpecies(run.Random, run.Pokedex);
-        return run.Enemies.Spawn(species, OffscreenPoint(run.Random, run.Player.Position), hpMultiplier, xpMultiplier);
+        for (var i = 0; i < _nextEventTick.Length; i++)
+        {
+            var e = Timeline.Events[i];
+            var next = e.AtTick;
+            while (e.EveryTicks > 0 && next < tick)
+                next += e.EveryTicks;
+            _nextEventTick[i] = next >= tick && (e.EveryTicks == 0 || next <= e.UntilTick) ? next : int.MaxValue;
+        }
+    }
+
+    /// <summary>Cheats and stress tests: one enemy of the current wave (or the first one) just outside the screen.</summary>
+    public int SpawnOne(RunState run)
+    {
+        var wave = Timeline.WaveAt(run.Ticks) ?? Timeline.Waves.FirstOrDefault();
+        return wave is null ? -1 : SpawnOne(run, wave);
     }
 
     /// <summary>Uniform point on the rectangle just outside the visible area.</summary>
@@ -73,36 +102,245 @@ public sealed class Spawner(IReadOnlyList<SpawnEntry> table, Vector2 viewSize)
         return center + offset;
     }
 
+    private void SpawnWave(RunState run)
+    {
+        if (Timeline.WaveAt(run.Ticks) is not { } wave)
+        {
+            _accumulator = 0f;
+            return;
+        }
+
+        var minAlive = Math.Max(wave.MinAlive, StressMinAlive);
+        for (var i = 0; i < RefillPerTick && run.Enemies.AliveCount < minAlive; i++)
+            SpawnOne(run, wave);
+
+        _accumulator += wave.SpawnsPerSecond * RunClock.Dt;
+        while (_accumulator >= 1f)
+        {
+            _accumulator -= 1f;
+            if (run.Enemies.AliveCount >= wave.MaxAlive)
+            {
+                _accumulator = 0f;
+                break;
+            }
+
+            SpawnOne(run, wave);
+        }
+    }
+
+    /// <summary>One enemy of the wave just off screen; now and then a shiny one (phase 3.5).</summary>
+    private int SpawnOne(RunState run, Wave wave)
+    {
+        var index = Spawn(run, PickSpecies(run.Random, wave), OffscreenPoint(run.Random, run.Player.Position));
+        if (index >= 0 && run.LootRules is { } loot && run.Random.NextSingle() < loot.File.ShinyChance)
+            MakeShiny(run, index);
+        return index;
+    }
+
+    /// <summary>
+    /// A shiny Pokémon: ten times the PS, harder hits, a bit faster, five times the experience, and when it falls a big
+    /// nugget and a held item (phase 3.6: three times the PS made it a free prize).
+    /// </summary>
+    public static void MakeShiny(RunState run, int index)
+    {
+        ref var e = ref run.Enemies[index];
+        e.Shiny = true;
+        e.MaxHp *= 10f;
+        e.Hp = e.MaxHp;
+        e.ContactDamage *= 1.5f;
+        e.Speed *= 1.15f;
+        e.KnockbackScale *= 0.3f;
+        e.XpValue *= 5;
+        run.AddEventOnResume(new RunEvent(RunEventType.ShinyAppeared, e.Position, 0f, e.SpeciesId));
+    }
+
+    private int Spawn(RunState run, int speciesId, Vector2 position, float hpMultiplier = 1f)
+    {
+        var index = run.SpawnEnemy(speciesId, position, Timeline.HpMultiplier(run.Ticks) * hpMultiplier, Timeline.XpMultiplier(run.Ticks));
+        if (index >= 0)
+            run.Enemies[index].ContactDamage *= Timeline.DamageMultiplier(run.Ticks);
+        return index;
+    }
+
+    /// <summary>Fires each event whose time has come; a time jump (cheat) fires a skipped event once, not once per repeat.</summary>
+    private void FireEvents(RunState run)
+    {
+        for (var i = 0; i < _nextEventTick.Length; i++)
+        {
+            if (run.Ticks < _nextEventTick[i])
+                continue;
+
+            var e = Timeline.Events[i];
+            var origin = e.Kind switch
+            {
+                WaveEventKind.Ring => SpawnRing(run, e),
+                WaveEventKind.Dominant => SpawnDominant(run, e),
+                _ => SpawnTravellers(run, e),
+            };
+            run.AddEvent(new RunEvent(RunEventType.WaveEventStarted, origin, (int)e.Kind, e.SpeciesId));
+
+            var next = _nextEventTick[i];
+            while (e.EveryTicks > 0 && next <= run.Ticks)
+                next += e.EveryTicks;
+            _nextEventTick[i] = e.EveryTicks > 0 && next <= e.UntilTick ? next : int.MaxValue;
+        }
+    }
+
+    /// <summary>A Dominante walking in from just off screen. Returns where it appears.</summary>
+    private Vector2 SpawnDominant(RunState run, WaveEvent e)
+    {
+        var at = OffscreenPoint(run.Random, run.Player.Position);
+        var index = Spawn(run, e.SpeciesId, at, e.Hp);
+        if (index >= 0)
+            MakeDominant(run, index, e.Chest, e.Speed);
+        return at;
+    }
+
+    /// <summary>
+    /// Turns a freshly spawned enemy into a Dominante: twice the size, hits a quarter harder, barely pushed, ten times the
+    /// experience, and a chest when it falls. Its HP comes from the caller. Previews use it too.
+    /// </summary>
+    public static void MakeDominant(RunState run, int index, ChestTier chest, float speed = 1f)
+    {
+        ref var enemy = ref run.Enemies[index];
+        enemy.Rank = EnemyRank.Dominant;
+        enemy.Chest = chest;
+        enemy.Radius *= DominantHitboxScale;
+        enemy.Speed *= speed;
+        enemy.ContactDamage *= 1.25f;
+        enemy.KnockbackScale *= 0.1f;
+        enemy.XpValue *= 10;
+        // Announced with the next tick, so a Dominante spawned between ticks (cheats, previews) is announced too.
+        run.AddEventOnResume(new RunEvent(RunEventType.DominantAppeared, enemy.Position, (int)chest, enemy.SpeciesId));
+    }
+
+    /// <summary>Dominanti are drawn at this size.</summary>
+    public const float DominantScale = 2f;
+
+    /// <summary>Their body is smaller than the picture: PMD frames have room around the Pokémon, and a hitbox twice as big hit from too far.</summary>
+    public const float DominantHitboxScale = 1.5f;
+
+    /// <summary>A circle of enemies around the player that closes in. Returns the centre.</summary>
+    private Vector2 SpawnRing(RunState run, WaveEvent e)
+    {
+        var center = run.Player.Position;
+        var start = run.Random.NextSingle() * MathF.Tau;
+        for (var k = 0; k < e.Count; k++)
+        {
+            var angle = start + k * MathF.Tau / e.Count;
+            var index = Spawn(run, e.SpeciesId, center + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * e.Radius, e.Hp);
+            if (index < 0)
+                break;
+
+            ref var enemy = ref run.Enemies[index];
+            enemy.Speed *= e.Speed;
+            if (e.LifetimeTicks > 0)
+                enemy.ExpiresAtTick = run.Ticks + e.LifetimeTicks;
+        }
+
+        return center;
+    }
+
+    /// <summary>
+    /// A swarm (a loose stream) or a stampede (a wall abreast) entering from a random side and travelling straight across,
+    /// on a lane that passes close to the player. Returns where it enters.
+    /// </summary>
+    private Vector2 SpawnTravellers(RunState run, WaveEvent e)
+    {
+        var random = run.Random;
+        var angle = random.NextSingle() * MathF.Tau;
+        var heading = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
+        var across = new Vector2(-heading.Y, heading.X);
+        var lane = run.Player.Position + across * ((random.NextSingle() - 0.5f) * 2f * LaneSpread);
+        var entry = lane - heading * (EdgeDistance(heading) + SpawnMargin);
+
+        var species = run.Pokedex[e.SpeciesId - 1];
+        var spacing = StatFormulas.Radius(species) * 2f + 4f;
+        var lifetime = e.LifetimeTicks > 0 ? e.LifetimeTicks : TravellerLifetimeTicks;
+        for (var k = 0; k < e.Count; k++)
+        {
+            var offset = e.Kind == WaveEventKind.Swarm
+                ? -heading * (random.NextSingle() * SwarmLength) + across * ((random.NextSingle() - 0.5f) * SwarmWidth)
+                : across * ((k - (e.Count - 1) / 2f) * spacing) - heading * (random.NextSingle() * 8f);
+            var index = Spawn(run, e.SpeciesId, entry + offset, e.Hp);
+            if (index < 0)
+                break;
+
+            // Travellers keep their course: a Tauros in a stampede does not stop to aim like a lone charger.
+            ref var enemy = ref run.Enemies[index];
+            enemy.Profile = null;
+            enemy.Behavior = EnemyBehavior.Straight;
+            enemy.Heading = heading;
+            enemy.Speed *= e.Speed;
+            enemy.ExpiresAtTick = run.Ticks + lifetime;
+        }
+
+        return entry;
+    }
+
+    /// <summary>Distance from the centre of the screen to its edge along <paramref name="direction"/> (a unit vector).</summary>
+    private float EdgeDistance(Vector2 direction)
+    {
+        var half = ViewSize / 2f;
+        var x = MathF.Abs(direction.X) > 1e-4f ? half.X / MathF.Abs(direction.X) : float.MaxValue;
+        var y = MathF.Abs(direction.Y) > 1e-4f ? half.Y / MathF.Abs(direction.Y) : float.MaxValue;
+        return MathF.Min(x, y);
+    }
+
+    /// <summary>Expired enemies leave, travellers past the screen are gone, and chasers left far behind come back.</summary>
     private void Recycle(RunState run)
     {
         var limitSquared = RecycleDistance * RecycleDistance;
+        var player = run.Player.Position;
+        var visible = ViewSize / 2f + new Vector2(SpawnMargin);
         var items = run.Enemies.Items;
         for (var i = 0; i < items.Length; i++)
         {
             ref var e = ref items[i];
-            if (e.IsAlive && Vector2.DistanceSquared(e.Position, run.Player.Position) > limitSquared)
+            if (!e.IsAlive || e.Rank == EnemyRank.Prop)
+                continue;
+
+            var offset = e.Position - player;
+            if (e.ExpiresAtTick > 0 && run.Ticks >= e.ExpiresAtTick)
             {
-                // Reappear on the side the player is heading towards, like Vampire Survivors.
-                var heading = run.Player.Velocity.NormalizedOrZero();
-                var point = OffscreenPoint(run.Random, run.Player.Position);
-                if (heading != Vector2.Zero && Vector2.Dot(point - run.Player.Position, heading) < 0f)
-                    point = run.Player.Position - (point - run.Player.Position);
-                e.Position = point;
-                e.Knockback = Vector2.Zero;
+                // On screen it faints (without a drop or a KO), off screen it just goes.
+                if (MathF.Abs(offset.X) < visible.X && MathF.Abs(offset.Y) < visible.Y)
+                    run.Enemies.Defeat(i);
+                else
+                    run.Enemies.Release(i);
+                continue;
             }
+
+            if (offset.LengthSquared() <= limitSquared)
+                continue;
+
+            if (e.Behavior == EnemyBehavior.Straight)
+            {
+                // Still on its way in, or already past: once past, it never comes back.
+                if (Vector2.Dot(offset, e.Heading) > 0f)
+                    run.Enemies.Release(i);
+                continue;
+            }
+
+            // Reappear on the side the player is heading towards, like Vampire Survivors.
+            var heading = run.Player.Velocity.NormalizedOrZero();
+            var point = OffscreenPoint(run.Random, player);
+            if (heading != Vector2.Zero && Vector2.Dot(point - player, heading) < 0f)
+                point = player - (point - player);
+            e.Position = point;
+            e.Knockback = Vector2.Zero;
         }
     }
 
-    private SpeciesData PickSpecies(Random random, IReadOnlyList<SpeciesData> pokedex)
+    private static int PickSpecies(Random random, Wave wave)
     {
-        var total = table.Sum(e => e.Weight);
-        var roll = random.Next(total);
-        foreach (var entry in table)
+        var roll = random.Next(wave.TotalWeight);
+        foreach (var entry in wave.Species)
         {
             if ((roll -= entry.Weight) < 0)
-                return pokedex[entry.SpeciesId - 1];
+                return entry.SpeciesId;
         }
 
-        return pokedex[table[0].SpeciesId - 1];
+        return wave.Species[0].SpeciesId;
     }
 }

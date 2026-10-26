@@ -14,7 +14,7 @@ public sealed partial class MoveVfx
     {
         ElectricFx.ImpactSparks(_glow, feet - new Vector2(0, 2), _random, 6);
         _dust.Burst(feet, 3, 40f, Scorch, Scorch * 0.3f, 16, _random, size: 2f);
-        Shake.Add(0.04f);
+        Shake.AddFromMove(0.04f);
     }
 
     /// <summary>Tuono: a bolt falls from the sky onto each enemy of the chain, with a flash where it lands. Additive.</summary>

@@ -14,6 +14,9 @@ public sealed record ItemSpec
 
     public bool Enabled { get; set; } = true;
 
+    /// <summary>How often its cards come up compared to other items: 1 normal, below 1 rarer.</summary>
+    public float Rarity { get; set; } = 1f;
+
     public int MaxLevel { get; set; } = 5;
 
     /// <summary>What each level adds; fields not written stay at zero.</summary>
@@ -61,6 +64,8 @@ public sealed class ItemLibrary
                 throw new InvalidDataException($"Item '{spec.Id}' has {spec.MaxLevel} levels; it needs 1 to {MaxLevels}.");
             if (spec.PerLevel == ItemBonus.None)
                 throw new InvalidDataException($"Item '{spec.Id}' does nothing: give it a \"perLevel\" bonus.");
+            if (spec.Rarity <= 0f)
+                throw new InvalidDataException($"Item '{spec.Id}' needs a positive \"rarity\".");
         }
 
         var duplicate = file.Items.GroupBy(i => i.Id).FirstOrDefault(g => g.Count() > 1);
@@ -68,7 +73,7 @@ public sealed class ItemLibrary
             throw new InvalidDataException($"Item '{duplicate.Key}' appears twice in {FileName}.");
 
         return new ItemLibrary(file.Items
-            .Select(s => new ItemDefinition(s.Id, s.NameIt, s.Id, s.DescriptionIt, s.MaxLevel, s.PerLevel) { Enabled = s.Enabled })
+            .Select(s => new ItemDefinition(s.Id, s.NameIt, s.Id, s.DescriptionIt, s.MaxLevel, s.PerLevel) { Enabled = s.Enabled, Rarity = s.Rarity })
             .ToList());
     }
 }

@@ -85,6 +85,6 @@ public sealed partial class MoveVfx
         }
 
         _glow.Burst(at - new Vector2(0, 6), 10, 140f, new Color(255, 240, 180), MeteorOrange, 14, _random, size: 2f);
-        Shake.Add(0.3f);
+        Shake.AddFromMove(0.3f);
     }
 }

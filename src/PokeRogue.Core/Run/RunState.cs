@@ -2,11 +2,13 @@ using System.Numerics;
 using PokeRogue.Core.Combat;
 using PokeRogue.Core.Data;
 using PokeRogue.Core.Geometry;
+using PokeRogue.Core.Run.Enemies;
 using PokeRogue.Core.Run.Items;
 using PokeRogue.Core.Run.Moves;
 using PokeRogue.Core.Run.Pickups;
 using PokeRogue.Core.Run.Progression;
 using PokeRogue.Core.Run.Statuses;
+using PokeRogue.Core.Run.Waves;
 
 namespace PokeRogue.Core.Run;
 
@@ -24,8 +26,9 @@ public sealed class RunState
 
     private readonly List<RunEvent> _events = [];
     private readonly List<RunEvent> _resumeEvents = [];
+    private int _chestSerial;
 
-    public RunState(IReadOnlyList<SpeciesData> pokedex, TypeChart typeChart, int playerSpeciesId, IReadOnlyList<SpawnEntry> spawnTable, Vector2 viewSize, int seed = 1)
+    public RunState(IReadOnlyList<SpeciesData> pokedex, TypeChart typeChart, int playerSpeciesId, WaveTimeline waves, Vector2 viewSize, int seed = 1)
     {
         Pokedex = pokedex;
         TypeChart = typeChart;
@@ -33,7 +36,13 @@ public sealed class RunState
         Player = new Player(pokedex[playerSpeciesId - 1]);
         Enemies = new EnemyPool(4096);
         Grid = new SpatialGrid(32f, 64);
-        Spawner = new Spawner(spawnTable, viewSize);
+        Spawner = new Spawner(waves, viewSize);
+    }
+
+    /// <summary>Tests and previews: the same species forever (<see cref="WaveTimeline.Constant"/>).</summary>
+    public RunState(IReadOnlyList<SpeciesData> pokedex, TypeChart typeChart, int playerSpeciesId, IReadOnlyList<SpawnEntry> spawnTable, Vector2 viewSize, int seed = 1)
+        : this(pokedex, typeChart, playerSpeciesId, WaveTimeline.Constant(spawnTable), viewSize, seed)
+    {
     }
 
     public IReadOnlyList<SpeciesData> Pokedex { get; }
@@ -43,8 +52,14 @@ public sealed class RunState
     /// <summary>Moves that level-ups may offer (the enabled moves of <see cref="MoveLibrary"/>).</summary>
     public IReadOnlyList<MoveDefinition> MovePool { get; init; } = [];
 
-    /// <summary>Evolutions level-ups may offer once their move is maxed and their item held (phase 2.6).</summary>
+    /// <summary>Evolutions a Dominante's chest gives once their move is maxed and their item held (phases 2.6 and 3.3).</summary>
     public IReadOnlyList<MoveDefinition> Evolutions { get; init; } = [];
+
+    /// <summary>
+    /// The gold EVOLUZIONE level-up card of phase 2.6. Since phase 3.3 evolutions come only from chests, as in Vampire
+    /// Survivors; previews of the card switch it back on.
+    /// </summary>
+    public bool EvolutionsAtLevelUp { get; init; }
 
     /// <summary>Held items that level-ups may offer (the enabled items of <see cref="ItemLibrary"/>).</summary>
     public IReadOnlyList<ItemDefinition> ItemPool { get; init; } = [];
@@ -55,9 +70,27 @@ public sealed class RunState
     /// <summary>Status condition rules (content/data/statuses.json); null = no statuses at all. Previews may swap them.</summary>
     public StatusLibrary? StatusRules { get; set; }
 
+    /// <summary>How enemy species fight (content/data/enemies.json); null = everyone just chases. Previews may swap it.</summary>
+    public EnemyLibrary? EnemyRules { get; set; }
+
+    /// <summary>Shots fired by ranged enemies.</summary>
+    public EnemyShotPool EnemyShots { get; } = new(512);
+
+    /// <summary>Rocks a boss has called down, waiting to land.</summary>
+    public List<Hazard> Hazards { get; } = [];
+
+    /// <summary>The boss fight, once the time has run out on a level with a boss (phase 3.4).</summary>
+    public BossFight? Boss { get; private set; }
+
     public MoveSystem MoveSystem { get; } = new();
 
     public PickupSystem Pickups { get; } = new();
+
+    /// <summary>Breakables, drops and shinies (content/data/loot.json, phase 3.5); null = none of them.</summary>
+    public LootRules? LootRules { get; set; }
+
+    /// <summary>Tall grass and boulders on the map, and the items lying on the ground.</summary>
+    public LootSystem Loot { get; } = new();
 
     /// <summary>Level-ups earned but not chosen yet.</summary>
     public int PendingLevelUps { get; private set; }
@@ -127,13 +160,25 @@ public sealed class RunState
         Grid.Rebuild(Enemies, Player.Position);
         StatusSystem.Tick(this);
         UpdateEnemies();
+        EnemyShots.Tick(this);
+        BossAi.TickHazards(this);
         MoveSystem.Tick(this);
         Pickups.Tick(this);
+        Loot.Tick(this);
         Spawner.Tick(this);
         CheckOutcome();
     }
 
     public void AddEvent(in RunEvent e) => _events.Add(e);
+
+    /// <summary>Spawns an enemy with its species' fighting profile from <see cref="EnemyRules"/>, if it has one. -1 when the pool is full.</summary>
+    public int SpawnEnemy(int speciesId, Vector2 position, float hpMultiplier = 1f, float xpMultiplier = 1f)
+    {
+        var index = Enemies.Spawn(Pokedex[speciesId - 1], position, hpMultiplier, xpMultiplier);
+        if (index >= 0 && EnemyRules?.For(speciesId) is { } profile)
+            EnemyAi.Apply(this, ref Enemies[index], profile);
+        return index;
+    }
 
     /// <summary>For changes made while the game is frozen (level-up choices): the event comes out with the first tick after it resumes.</summary>
     public void AddEventOnResume(in RunEvent e) => _resumeEvents.Add(e);
@@ -155,6 +200,8 @@ public sealed class RunState
         Outcome = outcome;
         LevelUpChoices = null;
         PendingLevelUps = 0;
+        EnemyShots.Clear();
+        Hazards.Clear();
         if (outcome == RunOutcome.Defeat)
             Player.Hp = 0f;
         if (outcome == RunOutcome.Victory)
@@ -162,7 +209,7 @@ public sealed class RunState
             // The horde scatters: every enemy faints at once, without drops or KO credit.
             for (var i = 0; i < Enemies.HighWater; i++)
             {
-                if (Enemies[i].IsAlive)
+                if (Enemies[i].IsAlive && Enemies[i].Rank != EnemyRank.Prop)
                     Enemies.Defeat(i);
             }
         }
@@ -176,8 +223,23 @@ public sealed class RunState
             _events.Add(new RunEvent(RunEventType.PlayerRevived, Player.Position, Player.RevivesLeft));
         else if (Player.IsDown)
             End(RunOutcome.Defeat);
-        else if (TimeLimitTicks is { } limit && Ticks >= limit)
+        else if (Boss?.DefeatedTick is { } defeated && Ticks >= defeated + BossAi.VictoryDelayTicks)
             End(RunOutcome.Victory);
+        else if (TimeLimitTicks is { } limit && Ticks >= limit && Boss is null)
+        {
+            // Time is up: the level's boss arrives, or, without one, the level is won.
+            if (Spawner.Timeline.Boss is { } boss)
+                Boss = BossAi.Spawn(this, boss, Spawner.Timeline.HpMultiplier(Ticks));
+            else
+                End(RunOutcome.Victory);
+        }
+    }
+
+    /// <summary>Previews and cheats: the boss arrives now, whatever the time.</summary>
+    public void SummonBoss()
+    {
+        if (Boss is null && Spawner.Timeline.Boss is { } boss)
+            Boss = BossAi.Spawn(this, boss, Spawner.Timeline.HpMultiplier(Ticks));
     }
 
     /// <summary>Called by the pickup system when a gem reaches the player.</summary>
@@ -265,7 +327,7 @@ public sealed class RunState
     public void HitEnemy(int index, MoveInstance move, Vector2 direction)
     {
         ref var e = ref Enemies[index];
-        if (!e.IsAlive)
+        if (!e.IsAlive || e.IsShielded)
             return;
 
         var definition = move.Definition;
@@ -276,18 +338,18 @@ public sealed class RunState
             attacker = attacker with { CritChance = attacker.CritChance + definition.CritBonus };
         var result = DamageCalculator.Compute(power, definition.Category, definition.Type, attacker, defender, TypeChart, Random);
 
-        // Abisso: now and then the ground swallows the enemy whole (bosses will be immune, Block 3).
-        var ohko = definition.OhkoChance > 0f && Random.NextSingle() < definition.OhkoChance;
+        // Abisso: now and then the ground swallows the enemy whole; Dominanti and bosses are immune.
+        var ohko = definition.OhkoChance > 0f && e.Rank == EnemyRank.Normal && Random.NextSingle() < definition.OhkoChance;
         if (ohko)
             result = result with { Amount = MathF.Max(result.Amount, e.Hp) };
 
         var dealt = MathF.Min(result.Amount, e.Hp);
         move.DamageDealt += dealt;
 
-        // Sanguisuga's drain and Conchinella's lifesteal both give back part of the damage.
+        // Sanguisuga's drain and Conchinella's lifesteal both give back part of the damage (not from grass and rocks).
         var heal = definition.Drain + Player.Lifesteal;
-        if (heal > 0f)
-            Player.Heal(dealt * heal);
+        if (heal > 0f && e.Rank != EnemyRank.Prop)
+            Player.HealFromDamage(dealt * heal);
 
         _events.Add(new RunEvent(RunEventType.EnemyHit, e.Position, result.Amount, e.SpeciesId,
             Effectiveness: result.Effectiveness, Critical: result.Critical, MoveId: definition.Id, Ohko: ohko));
@@ -313,20 +375,74 @@ public sealed class RunState
     public void DamageEnemy(int index, float damage, Vector2 knockback = default, bool flash = true)
     {
         ref var e = ref Enemies[index];
-        if (!e.IsAlive)
+        if (!e.IsAlive || e.IsShielded)
             return;
 
         e.Hp -= damage;
         if (flash)
             e.FlashTicks = Enemy.HitFlashTicks;
-        e.Knockback += knockback;
+        e.Knockback += knockback * e.KnockbackScale;
+        if (e.Hp <= 0f && e.Rank == EnemyRank.Prop)
+        {
+            // Grass is cut and boulders shatter: no KO, no gem, maybe something left behind.
+            _events.Add(new RunEvent(RunEventType.PropBroken, e.Position, (int)e.Breakable));
+            Loot.OnBroken(this, e);
+            Enemies.Release(index);
+            return;
+        }
+
         if (e.Hp <= 0f)
         {
             Enemies.Defeat(index);
             Stats.RecordKill(e.SpeciesId);
             _events.Add(new RunEvent(RunEventType.EnemyDefeated, e.Position, 0f, e.SpeciesId));
             Pickups.Gems.Spawn(e.Position, e.XpValue);
+
+            // A shiny leaves a big nugget and a held item; now and then a regular Pokémon drops a coin or a Baccarancia.
+            if (e.Shiny)
+            {
+                Loot.Drop(e.Position + new Vector2(6, 0), LootKind.BigNugget);
+                if (LootSystem.ShinyItem(this) is { } item)
+                    Loot.Drop(e.Position + new Vector2(-6, 2), LootKind.HeldItem, item);
+            }
+            else if (e.Rank == EnemyRank.Normal && LootRules is { } loot)
+            {
+                var roll = Random.NextSingle();
+                if (roll < loot.File.EnemyFoodChance)
+                    Loot.Drop(e.Position + new Vector2(-4, 3), LootKind.OranBerry);
+                else if (roll < loot.File.EnemyFoodChance + loot.File.EnemyCoinChance)
+                    Loot.Drop(e.Position + new Vector2(5, 2), LootKind.Coin);
+            }
+
+            if (e.Rank == EnemyRank.Boss && Boss is { DefeatedTick: null } fight)
+            {
+                fight.DefeatedTick = Ticks;
+                Hazards.Clear();
+                _events.Add(new RunEvent(RunEventType.BossDefeated, e.Position, 0f, e.SpeciesId));
+            }
+
+            if (e.Rank == EnemyRank.Dominant)
+            {
+                Pickups.Chests.Add(new Chest(++_chestSerial, e.Position, e.Chest));
+                _events.Add(new RunEvent(RunEventType.ChestDropped, e.Position, (int)e.Chest, e.SpeciesId));
+            }
         }
+    }
+
+    /// <summary>The last chest opened: its rewards are already applied; the game shows them (phase 3.3).</summary>
+    public ChestOpening? LastChest { get; private set; }
+
+    /// <summary>
+    /// Opens a chest: 1, 3 or 5 rewards are applied at once (a ready evolution first, then upgrades of what the player
+    /// has), and a ChestOpened event tells the game to show them. Also used by previews and cheats.
+    /// </summary>
+    public ChestOpening OpenChest(ChestTier tier, Vector2 position)
+    {
+        var rewards = ChestRewards.Open(this, ChestRewards.CountFor(tier));
+        LastChest = new ChestOpening(tier, rewards, Ticks);
+        Stats.RecordChest();
+        _events.Add(new RunEvent(RunEventType.ChestOpened, position, (int)tier));
+        return LastChest;
     }
 
     public void AdvanceTime(int ticks) => Ticks += ticks;
@@ -357,9 +473,29 @@ public sealed class RunState
             if (e.FlashTicks > 0)
                 e.FlashTicks--;
 
-            var toPlayer = playerPosition - e.Position;
-            var desired = toPlayer.NormalizedOrZero() * e.Speed;
+            // Grass and boulders just stand there.
+            if (e.Rank == EnemyRank.Prop)
+                continue;
+
+            // Chasers aim at the player; swarms and stampedes keep their course; fighters follow their profile.
             var contactDamage = e.ContactDamage;
+            Vector2 aim, desired;
+            if (e.Rank == EnemyRank.Boss && Boss is { } fight && fight.Index == i)
+            {
+                BossAi.Think(this, fight, ref e, playerPosition - e.Position, out desired, out aim, ref contactDamage);
+            }
+            else if (e.Profile is null)
+            {
+                aim = e.Behavior == EnemyBehavior.Straight ? e.Heading : playerPosition - e.Position;
+                desired = aim.NormalizedOrZero() * e.Speed;
+            }
+            else
+            {
+                EnemyAi.Think(this, i, ref e, playerPosition - e.Position, out desired, out aim, ref contactDamage);
+                if (!e.IsAlive)
+                    continue;
+            }
+
             StatusSystem.Steer(this, e, ref desired, ref contactDamage);
             e.Velocity = desired;
             e.Position += (desired + e.Knockback) * RunClock.Dt;
@@ -367,7 +503,7 @@ public sealed class RunState
 
             // Face where it walks; frozen, sleeping or locked-up Pokémon keep their pose.
             if (!e.IsImmobilized)
-                e.Facing = Direction8Extensions.FromVector(e.Status == StatusKind.Confusion ? desired : toPlayer, e.Facing);
+                e.Facing = Direction8Extensions.FromVector(e.Status == StatusKind.Confusion ? desired : aim, e.Facing);
 
             var separation = new SeparationState(i, e.Position, e.Radius, items);
             Grid.Query(e.Position, e.Radius * 2f, ref separation, AccumulateSeparation);
@@ -400,7 +536,11 @@ public sealed class RunState
         if (index == state.Self)
             return;
 
+        // Pokémon walk through grass and over boulders.
         ref var other = ref state.Items[index];
+        if (other.Rank == EnemyRank.Prop)
+            return;
+
         var delta = state.Position - other.Position;
         var minDistance = (state.Radius + other.Radius) * 0.8f;
         var distanceSquared = delta.LengthSquared();

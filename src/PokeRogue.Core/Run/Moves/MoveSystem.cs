@@ -641,7 +641,8 @@ public sealed class MoveSystem
         var items = run.Enemies.Items;
         for (var i = 0; i < items.Length; i++)
         {
-            if (!items[i].IsAlive || (exclude?.Contains(i) ?? false))
+            // Moves aim at Pokémon, never at grass or boulders (they still break what they pass through).
+            if (!items[i].IsAlive || items[i].Rank == EnemyRank.Prop || (exclude?.Contains(i) ?? false))
                 continue;
 
             var d = Vector2.DistanceSquared(items[i].Position, from);

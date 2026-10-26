@@ -46,16 +46,28 @@ public sealed class PokemonSpriteSet
 
     public int DirectionRows(PmdAnim anim) => System.Math.Max(1, _sheets[anim.SheetName].Height / anim.FrameHeight);
 
-    public void Draw(SpriteBatch batch, PmdAnim anim, int frame, Direction8 direction, Vector2 feet, Color tint, float scale = 1f, bool silhouette = false)
+    /// <summary>How far round the colour wheel a shiny's colours turn (phase 3.5): PMD has no shiny sheets downloaded.</summary>
+    public const float ShinyHueDegrees = 150f;
+
+    public void Draw(SpriteBatch batch, PmdAnim anim, int frame, Direction8 direction, Vector2 feet, Color tint, float scale = 1f, bool silhouette = false, bool shiny = false)
     {
         if (!_sheets.ContainsKey(anim.SheetName))
             return;
 
-        var sheet = silhouette ? Silhouette(anim.SheetName) : _sheets[anim.SheetName];
+        var sheet = silhouette ? Silhouette(anim.SheetName) : shiny ? Shiny(anim.SheetName) : _sheets[anim.SheetName];
         var row = DirectionRows(anim) > 1 ? (int)direction : 0;
         var source = new Rectangle(frame * anim.FrameWidth, row * anim.FrameHeight, anim.FrameWidth, anim.FrameHeight);
         var origin = new Vector2(anim.FrameWidth / 2f, anim.FrameHeight / 2f + FootOffset);
         batch.Draw(sheet, Round(feet), source, tint, 0f, origin, scale, SpriteEffects.None, 0f);
+    }
+
+    private readonly Dictionary<string, Texture2D> _shinies = new(StringComparer.Ordinal);
+
+    private Texture2D Shiny(string sheetName)
+    {
+        if (!_shinies.TryGetValue(sheetName, out var texture))
+            _shinies[sheetName] = texture = TextureLoader.CreateHueShift(_device, _sheets[sheetName], ShinyHueDegrees);
+        return texture;
     }
 
     private Texture2D Silhouette(string sheetName)

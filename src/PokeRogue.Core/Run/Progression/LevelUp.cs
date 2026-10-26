@@ -41,7 +41,8 @@ public sealed record LevelUpOption(
 /// <summary>Builds and applies level-up choices, Vampire Survivors style: upgrade or add moves and held items.</summary>
 public static class LevelUp
 {
-    public const int MaxMoves = 6;
+    /// <summary>Move slots in a run (phase 3.6: five; the sixth will be bought with the meta-progression of Block 6).</summary>
+    public const int MaxMoves = 5;
     public const int MaxItems = 6;
     public const int HealAmount = 30;
     public const int CoinAmount = 25;
@@ -51,7 +52,8 @@ public static class LevelUp
     public static IReadOnlyList<LevelUpOption> Generate(RunState run, int count)
     {
         var player = run.Player;
-        var evolutions = Evolutions(run);
+        // Evolutions come from chests; the gold level-up card only when switched back on.
+        var evolutions = run.EvolutionsAtLevelUp ? ReadyEvolutions(run) : [];
         var candidates = new List<LevelUpOption>();
 
         foreach (var move in player.Moves.Where(m => m.Level < m.Definition.MaxLevel))
@@ -64,7 +66,7 @@ public static class LevelUp
         }
 
         foreach (var item in player.Items.Where(i => i.Level < i.Definition.MaxLevel))
-            candidates.Add(new LevelUpOption(LevelUpKind.ItemUpgrade, item.Definition.Id, item.Definition.NameIt, item.Level, item.Level + 1, Describe(item.Definition.PerLevel), item.Definition.IconKey));
+            candidates.Add(ItemUpgrade(item));
 
         if (player.Items.Count < MaxItems)
         {
@@ -99,6 +101,10 @@ public static class LevelUp
         {
             var kind = candidates[i].Kind;
             weights[i] = run.LevelUpRules is { } rules ? rules.WeightOf(kind, candidates.Count(c => c.Kind == kind)) : 1f;
+
+            // Rare items (Metronomo) come up less often, as new items and as upgrades.
+            if (kind is LevelUpKind.NewItem or LevelUpKind.ItemUpgrade && run.ItemPool.FirstOrDefault(d => d.Id == candidates[i].Id) is { } item)
+                weights[i] *= item.Rarity;
         }
 
         var remaining = Enumerable.Range(0, candidates.Count).ToList();
@@ -132,7 +138,7 @@ public static class LevelUp
     }
 
     /// <summary>Evolution cards for every maxed move whose evolution is approved, not banished, and whose item is held.</summary>
-    private static List<LevelUpOption> Evolutions(RunState run)
+    public static List<LevelUpOption> ReadyEvolutions(RunState run)
     {
         var player = run.Player;
         var options = new List<LevelUpOption>();
@@ -194,7 +200,10 @@ public static class LevelUp
         run.AddEventOnResume(new RunEvent(RunEventType.MoveEvolved, run.Player.Position, slot, MoveId: evolution.Id));
     }
 
-    private static LevelUpOption MoveUpgrade(MoveInstance move)
+    internal static LevelUpOption ItemUpgrade(ItemInstance item) =>
+        new(LevelUpKind.ItemUpgrade, item.Definition.Id, item.Definition.NameIt, item.Level, item.Level + 1, Describe(item.Definition.PerLevel), item.Definition.IconKey);
+
+    internal static LevelUpOption MoveUpgrade(MoveInstance move)
     {
         var from = move.Stats;
         var to = move.Definition.Levels[move.Level];
@@ -260,7 +269,8 @@ public static class LevelUp
         return char.ToUpperInvariant(text[0]) + text[1..];
     }
 
-    private static string Percent(float fraction) => $"{MathF.Round(fraction * 100f).ToString("0", Italian)}%";
+    /// <summary>0.08 → "8%", 0.005 → "0,5%" (Italian decimal comma).</summary>
+    private static string Percent(float fraction) => $"{(fraction * 100f).ToString("0.#", Italian).Replace('.', ',')}%";
 
     /// <summary>Italian decimal comma: 0.05 → "0,05".</summary>
     private static string Number(float value) => value.ToString("0.##", Italian).Replace('.', ',');

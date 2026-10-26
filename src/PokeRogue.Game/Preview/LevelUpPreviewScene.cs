@@ -43,6 +43,7 @@ public sealed class LevelUpPreviewScene(GameServices services, string? variant, 
 
             // Every evolution, even one still waiting for approval.
             Evolutions = _evolution ? Services.Moves.Value.All.Where(m => m.IsEvolution).Select(m => m with { Enabled = true }).ToList() : [],
+            EvolutionsAtLevelUp = _evolution,
         };
         _run.Spawner.Enabled = false;
         _run.Player.Invincible = true;

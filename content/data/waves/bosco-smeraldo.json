@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "id": "bosco-smeraldo",
+  "nameIt": "Bosco Smeraldo",
+
+  // Phase 3.1: the level lasts this long; when the timer runs out the boss comes (phase 3.4).
+  "minutes": 15,
+
+  // Every minute enemies gain this share of their HP, and their gems this share of their experience.
+  // Later waves also bring sturdier species (evolved forms), which grow on top of this.
+  "hpPerMinute": 0.3,
+  "xpPerMinute": 0,
+
+  // Phase 3.6: enemy contact damage (and their shots, blasts and rocks) grows by this share every minute: at 14:00 they hit twice as hard.
+  // Before, damage never grew while the player's PS and healing did, and the late game was a walk.
+  "damagePerMinute": 0.07,
+
+  // Each wave covers a stretch of time ("m:ss"). Below minAlive enemies alive it refills at once (as in Vampire
+  // Survivors); on top of that it adds spawnsPerSecond, until maxAlive. Weights are the species' share of the spawns.
+  // After the last wave ends, the last wave keeps going.
+  "waves": [
+    { "from": "0:00", "to": "1:00", "minAlive": 12, "spawnsPerSecond": 1.5, "maxAlive": 60,
+      "species": [ { "pokemon": "caterpie", "weight": 3 }, { "pokemon": "weedle", "weight": 3 } ] },
+
+    { "from": "1:00", "to": "2:00", "minAlive": 18, "spawnsPerSecond": 2.2, "maxAlive": 100,
+      "species": [ { "pokemon": "caterpie", "weight": 2 }, { "pokemon": "weedle", "weight": 2 }, { "pokemon": "pidgey", "weight": 3 } ] },
+
+    { "from": "2:00", "to": "3:00", "minAlive": 24, "spawnsPerSecond": 2.8, "maxAlive": 140,
+      "species": [ { "pokemon": "pidgey", "weight": 3 }, { "pokemon": "rattata", "weight": 4 }, { "pokemon": "weedle", "weight": 2 } ] },
+
+    // Metapod and Kakuna: slow and sturdy, they clog the way.
+    { "from": "3:00", "to": "4:00", "minAlive": 30, "spawnsPerSecond": 3.4, "maxAlive": 180,
+      "species": [ { "pokemon": "metapod", "weight": 2 }, { "pokemon": "kakuna", "weight": 2 }, { "pokemon": "pidgey", "weight": 3 }, { "pokemon": "spearow", "weight": 3 } ] },
+
+    // Abra (phase 3.2): a rare guest that teleports around the player; Voltorb from minute 8 blows up.
+    { "from": "4:00", "to": "5:00", "minAlive": 38, "spawnsPerSecond": 4.4, "maxAlive": 200,
+      "species": [ { "pokemon": "rattata", "weight": 3 }, { "pokemon": "spearow", "weight": 3 }, { "pokemon": "ekans", "weight": 3 }, { "pokemon": "abra", "weight": 1 } ] },
+
+    { "from": "5:00", "to": "6:00", "minAlive": 46, "spawnsPerSecond": 5.4, "maxAlive": 220,
+      "species": [ { "pokemon": "oddish", "weight": 3 }, { "pokemon": "paras", "weight": 3 }, { "pokemon": "venonat", "weight": 3 }, { "pokemon": "bellsprout", "weight": 2 } ] },
+
+    // From here the evolved forms arrive.
+    { "from": "6:00", "to": "7:00", "minAlive": 60, "spawnsPerSecond": 6.8, "maxAlive": 240,
+      "species": [ { "pokemon": "pidgeotto", "weight": 3 }, { "pokemon": "butterfree", "weight": 2 }, { "pokemon": "beedrill", "weight": 2 }, { "pokemon": "venonat", "weight": 2 } ] },
+
+    { "from": "7:00", "to": "8:00", "minAlive": 85, "spawnsPerSecond": 8.5, "maxAlive": 260,
+      "species": [ { "pokemon": "raticate", "weight": 3 }, { "pokemon": "fearow", "weight": 2 }, { "pokemon": "arbok", "weight": 2 }, { "pokemon": "pidgeotto", "weight": 2 } ] },
+
+    { "from": "8:00", "to": "9:00", "minAlive": 105, "spawnsPerSecond": 9.5, "maxAlive": 280,
+      "species": [ { "pokemon": "gloom", "weight": 3 }, { "pokemon": "parasect", "weight": 2 }, { "pokemon": "weepinbell", "weight": 3 }, { "pokemon": "venomoth", "weight": 1 }, { "pokemon": "voltorb", "weight": 1 } ] },
+
+    { "from": "9:00", "to": "10:00", "minAlive": 120, "spawnsPerSecond": 10.5, "maxAlive": 300,
+      "species": [ { "pokemon": "beedrill", "weight": 3 }, { "pokemon": "butterfree", "weight": 3 }, { "pokemon": "pidgeotto", "weight": 2 }, { "pokemon": "raticate", "weight": 2 }, { "pokemon": "abra", "weight": 1 } ] },
+
+    { "from": "10:00", "to": "11:00", "minAlive": 150, "spawnsPerSecond": 11.5, "maxAlive": 320,
+      "species": [ { "pokemon": "venomoth", "weight": 3 }, { "pokemon": "parasect", "weight": 2 }, { "pokemon": "gloom", "weight": 2 }, { "pokemon": "beedrill", "weight": 2 } ] },
+
+    { "from": "11:00", "to": "12:00", "minAlive": 175, "spawnsPerSecond": 12.5, "maxAlive": 340,
+      "species": [ { "pokemon": "fearow", "weight": 3 }, { "pokemon": "arbok", "weight": 3 }, { "pokemon": "raticate", "weight": 3 }, { "pokemon": "pidgeotto", "weight": 2 }, { "pokemon": "voltorb", "weight": 1 } ] },
+
+    // Scyther and Pinsir: rare, strong, the forest's toughest.
+    { "from": "12:00", "to": "13:00", "minAlive": 200, "spawnsPerSecond": 13.5, "maxAlive": 360,
+      "species": [ { "pokemon": "scyther", "weight": 1 }, { "pokemon": "pinsir", "weight": 1 }, { "pokemon": "beedrill", "weight": 3 }, { "pokemon": "venomoth", "weight": 2 }, { "pokemon": "weepinbell", "weight": 2 } ] },
+
+    { "from": "13:00", "to": "14:00", "minAlive": 225, "spawnsPerSecond": 14.5, "maxAlive": 380,
+      "species": [ { "pokemon": "pidgeot", "weight": 2 }, { "pokemon": "fearow", "weight": 2 }, { "pokemon": "arbok", "weight": 2 }, { "pokemon": "parasect", "weight": 2 }, { "pokemon": "scyther", "weight": 1 }, { "pokemon": "voltorb", "weight": 2 } ] },
+
+    { "from": "14:00", "to": "15:00", "minAlive": 260, "spawnsPerSecond": 16, "maxAlive": 400,
+      "species": [ { "pokemon": "beedrill", "weight": 4 }, { "pokemon": "scyther", "weight": 2 }, { "pokemon": "pinsir", "weight": 2 }, { "pokemon": "pidgeot", "weight": 2 } ] }
+  ],
+
+  // Special events, at a time ("m:ss") and optionally again every so often until a time.
+  // - swarm: a loose flock enters from a random side and flies straight across, close to the player;
+  // - ring: a circle appears around the player (radius in pixels) and closes in; after lifetime seconds the survivors burrow away;
+  // - stampede: a wall abreast charges straight across;
+  // - dominant: a mini boss (see below).
+  // speed multiplies the species' speed, hp its HP (on top of the minute's growth). Event enemies ignore maxAlive.
+  "events": [
+    { "at": "1:30", "kind": "swarm", "pokemon": "zubat", "count": 20, "speed": 2.2 },
+    { "at": "3:30", "kind": "ring", "pokemon": "diglett", "count": 12, "radius": 150, "speed": 0.4, "lifetime": 10 },
+    { "at": "5:00", "kind": "stampede", "pokemon": "tauros", "count": 4, "speed": 2.6, "hp": 3 },
+
+    { "at": "6:30", "every": "2:30", "until": "13:00", "kind": "swarm", "pokemon": "zubat", "count": 40, "speed": 2.4 },
+    { "at": "8:00", "every": "3:00", "until": "14:30", "kind": "ring", "pokemon": "diglett", "count": 28, "radius": 150, "speed": 0.5, "hp": 3, "lifetime": 10 },
+    { "at": "10:15", "every": "2:00", "until": "14:30", "kind": "stampede", "pokemon": "tauros", "count": 7, "speed": 2.6, "hp": 3 },
+
+    // The forest's own swarm: Beedrill, slower but sturdier than the Zubat.
+    { "at": "12:45", "kind": "swarm", "pokemon": "beedrill", "count": 30, "speed": 1.8, "hp": 1.5 },
+
+    // Phase 3.3, the Dominanti: one big Pokémon with an aura walks in from off screen. "hp" multiplies its HP (on top
+    // of the minute's growth); its "chest" (poke, great or ultra) holds 1, 3 or 5 rewards.
+    { "at": "3:00", "kind": "dominant", "pokemon": "pidgeotto", "hp": 18, "speed": 0.85, "chest": "poke" },
+    { "at": "6:00", "kind": "dominant", "pokemon": "beedrill", "hp": 25, "chest": "poke" },
+    { "at": "8:30", "kind": "dominant", "pokemon": "butterfree", "hp": 30, "chest": "great" },
+    { "at": "11:00", "kind": "dominant", "pokemon": "fearow", "hp": 40, "chest": "great" },
+    { "at": "13:30", "kind": "dominant", "pokemon": "scyther", "hp": 45, "chest": "ultra" }
+  ],
+
+  // Phase 3.6: things lying on the map from the start, at x, y pixels from where the player begins (the screen is
+  // 640 × 360). "item" is a held item (gained, or one level more if already held); "loot" an item on the ground.
+  "mapItems": [
+    { "item": "magnet", "x": 650, "y": -420 },
+    { "loot": "potion", "x": -480, "y": 260 },
+    { "item": "lucky-egg", "x": -900, "y": -700 },
+    { "loot": "rareCandy", "x": 1100, "y": 520 },
+    { "item": "hp-up", "x": -320, "y": 1150 },
+    { "loot": "expShare", "x": 1500, "y": -1100 },
+    { "item": "wide-lens", "x": -1600, "y": 300 },
+    { "loot": "potion", "x": 300, "y": -1400 }
+  ],
+
+  // Phase 3.4: when the time runs out the boss lands next to the player; beating it wins the level.
+  // "hp" multiplies its HP on top of the growth at that minute. Each phase starts when its PS drop to "below" of the
+  // maximum (the boss roars, untouchable for a second, and throws the horde back), and uses its attacks in turn,
+  // walking "rest" seconds between them:
+  // - charge: aims for "windUp" s (its lane shows on the ground), rushes at "dashSpeed" × its speed for "dashTime" s;
+  // - volley: aims for "windUp" s (red sight lines), fires "count" shots over "spread" degrees, looking like "move";
+  // - rockfall: "count" red circles of "radius" px, the first under the player; rocks land "delay" s later.
+  // "damage" multiplies its contact damage for shots and rocks.
+  "boss": {
+    "pokemon": "pinsir",
+    "titleIt": "Signore del Bosco",
+    "hp": 90,
+    "speed": 0.9,
+    "phases": [
+      { "below": 1, "rest": 1.6, "attacks": [
+        { "kind": "charge", "windUp": 0.9, "dashSpeed": 4.5, "dashTime": 0.8, "recover": 0.9 },
+        { "kind": "volley", "move": "x-scissor", "windUp": 0.7, "count": 5, "spread": 60, "shotSpeed": 110 }
+      ] },
+      { "below": 0.6, "rest": 1.3, "attacks": [
+        { "kind": "charge", "windUp": 0.8, "dashSpeed": 4.5, "dashTime": 0.8, "recover": 0.8 },
+        { "kind": "rockfall", "windUp": 0.5, "count": 3, "radius": 28, "delay": 1.1, "damage": 2 },
+        { "kind": "volley", "move": "x-scissor", "windUp": 0.6, "count": 7, "spread": 90, "shotSpeed": 120 }
+      ] },
+      { "below": 0.3, "speed": 1.3, "rest": 0.9, "attacks": [
+        { "kind": "charge", "windUp": 0.7, "dashSpeed": 5, "dashTime": 0.8, "recover": 0.6 },
+        { "kind": "rockfall", "windUp": 0.4, "count": 5, "radius": 28, "delay": 1, "damage": 2 },
+        { "kind": "volley", "move": "x-scissor", "windUp": 0.5, "count": 9, "spread": 120, "shotSpeed": 130 }
+      ] }
+    ]
+  }
+}

@@ -8,7 +8,8 @@ namespace PokeRogue.Core.Tests.Run;
 
 public class EvolutionTests
 {
-    private static RunState NewRun(int seed = 1)
+    /// <summary>With the gold level-up card of phase 2.6 switched on, unless <paramref name="levelUpCard"/> is false.</summary>
+    private static RunState NewRun(int seed = 1, bool levelUpCard = true)
     {
         var moves = TestContent.Moves.Value;
         var run = new RunState(TestContent.Pokedex.Value.Species, TestContent.TypeChart.Value, 25, [new SpawnEntry(19, 1)], new Vector2(640, 360), seed)
@@ -16,6 +17,7 @@ public class EvolutionTests
             MovePool = moves.Enabled,
             ItemPool = TestContent.Items.Value.Enabled,
             Evolutions = moves.Evolutions,
+            EvolutionsAtLevelUp = levelUpCard,
         };
         run.Spawner.Enabled = false;
         run.Player.Invincible = true;
@@ -23,6 +25,18 @@ public class EvolutionTests
     }
 
     private static MoveInstance Maxed(string id) => new(TestContent.Move(id), MoveLibrary.MaxLevels);
+
+    [Fact]
+    public void Since_the_chests_level_ups_never_offer_evolutions()
+    {
+        var run = NewRun(levelUpCard: false);
+        run.Player.Moves.Add(Maxed("thundershock"));
+        run.Player.Items.Add(new ItemInstance(TestContent.Item("magnet")));
+
+        for (var i = 0; i < 20; i++)
+            Assert.DoesNotContain(LevelUp.Generate(run, 3), o => o.Kind == LevelUpKind.Evolution);
+        Assert.Equal(LevelUpKind.Evolution, run.OpenChest(ChestTier.Poke, Vector2.Zero).Rewards[0].Kind);
+    }
 
     [Fact]
     public void A_maxed_move_with_its_item_offers_the_evolution_first()

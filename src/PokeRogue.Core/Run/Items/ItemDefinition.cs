@@ -69,6 +69,9 @@ public sealed record ItemDefinition(string Id, string NameIt, string IconKey, st
 {
     /// <summary>Offered at level-up. Items stay out until their effect works and their look is approved.</summary>
     public bool Enabled { get; init; } = true;
+
+    /// <summary>How often its cards come up compared to other items (phase 3.6): 1 is normal, 0.35 rare (Metronomo).</summary>
+    public float Rarity { get; init; } = 1f;
 }
 
 public sealed class ItemInstance(ItemDefinition definition, int level = 1)

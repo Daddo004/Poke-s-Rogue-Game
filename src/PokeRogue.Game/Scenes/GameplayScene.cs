@@ -1,7 +1,9 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using PokeRogue.Core.Run;
+using PokeRogue.Core.Run.Enemies;
 using PokeRogue.Core.Run.Moves;
+using PokeRogue.Core.Run.Waves;
 using PokeRogue.Game.Graphics;
 using PokeRogue.Game.Graphics.Floor;
 using PokeRogue.Game.Rendering;
@@ -12,17 +14,11 @@ namespace PokeRogue.Game.Scenes;
 /// <summary>A run in progress: the Core simulation, renderer, HUD, pause, level-ups, end of run and results.</summary>
 public sealed class GameplayScene : Scene
 {
-    /// <summary>Milestone A: survive 10 minutes. Real levels end with a boss (phase 3.4).</summary>
-    public const int PrototypeMinutes = 10;
+    /// <summary>The only level until worlds arrive in Block 7: its waves are content/data/waves/bosco-smeraldo.json.</summary>
+    public const string LevelId = "bosco-smeraldo";
 
     /// <summary>Pikachu's main move until characters arrive in Block 4.</summary>
     public const string StartingMoveId = "thundershock";
-
-    /// <summary>Prototype spawn table (Bosco Smeraldo-like), until worlds and waves arrive in Blocks 3 and 7.</summary>
-    private static readonly SpawnEntry[] PrototypeSpawns =
-    [
-        new(10, 3), new(13, 3), new(16, 4), new(19, 5), new(21, 2), new(23, 2),
-    ];
 
     private readonly RunRenderer _renderer;
     private readonly Hud _hud;
@@ -54,7 +50,19 @@ public sealed class GameplayScene : Scene
         _pause = new PauseMenu(services, _hud);
         _banner = new RunEndBanner(services);
         _results = new ResultsScreen(services, _hud);
+        _chestWindow = new ChestWindow(services);
+        _bossIntro = new BossIntro(services);
     }
+
+    private readonly BossIntro _bossIntro;
+
+    /// <summary>The ground walked this run, for the map in the pause (phase 3.6).</summary>
+    private readonly ExploredMap _explored = new();
+
+    private readonly ChestWindow _chestWindow;
+
+    /// <summary>Previews: the chest window, e.g. to open one by hand.</summary>
+    public ChestWindow ChestWindow => _chestWindow;
 
     private enum Phase
     {
@@ -78,6 +86,15 @@ public sealed class GameplayScene : Scene
     /// <summary>Playtests (--evoluzioni): level-ups also offer the evolved moves still waiting for approval.</summary>
     public bool PendingEvolutions { get; init; }
 
+    /// <summary>Playtests (--nemici): enemies also use the fighting profiles still waiting for approval.</summary>
+    public bool PendingEnemies { get; init; }
+
+    /// <summary>Playtests and previews (--oggetti): breakables, items and shinies even before they are approved.</summary>
+    public bool PendingLoot { get; init; }
+
+    /// <summary>Playtests (--da m:ss): the run starts this far into the level, skipping the special events already past.</summary>
+    public int StartTicks { get; init; }
+
     public override bool HandlesEscape => true;
 
     public bool IsPauseOpen => _phase == Phase.Paused;
@@ -88,10 +105,11 @@ public sealed class GameplayScene : Scene
     [
         $"tempo {_run.Elapsed:mm\\:ss}   nemici {_run.Enemies.AliveCount} (slot {_run.Enemies.HighWater})   proiettili {_run.MoveSystem.Projectiles.ActiveCount}   particelle {_renderer.ParticleCount}   chunk {_renderer.Floor.CachedChunks}",
         $"PS {_run.Player.Hp:0}/{_run.Player.MaxHp:0}   pos {_run.Player.Position.X:0},{_run.Player.Position.Y:0}   vel {_run.Player.MoveSpeed:0} px/s" +
-            $"{(_run.Player.Invincible ? "   [INVINCIBILE]" : "")}{(_run.Spawner.Enabled ? "" : "   [SPAWN OFF]")}",
+            $"{(_run.Player.Invincible ? "   [INVINCIBILE]" : "")}{(_run.Spawner.Enabled ? "" : "   [SPAWN OFF]")}" +
+            (_run.Spawner.Timeline.WaveAt(_run.Ticks) is { } wave ? $"   ondata {wave.FromTick / (RunClock.TicksPerSecond * 60)}' min {wave.MinAlive} max {wave.MaxAlive}" : ""),
         $"Lv {_run.Player.Level}   Esp {_run.Player.Xp:0}/{_run.Player.XpToNext}   gemme {_run.Pickups.Gems.ActiveCount}   raggio {_run.Player.PickupRadius:0}   " +
             string.Join(" ", _run.Player.Moves.Select(m => $"{m.Definition.NameIt} {m.Level}").Concat(_run.Player.Items.Select(i => $"{i.Definition.NameIt} {i.Level}"))),
-        $"F1 invincibile  F2 +1 livello  F4 +100  F9 +500  F6 +1 min  F7 KO  F8 spawn  F10 fine  F11 velocita x{Speed}  F12 hitbox  F3 overlay",
+        $"F1 invincibile  F2 +1 livello  F4 +100  F9 +500  F5 dominante (Maiusc: forziere)  F6 +1 min (Maiusc: boss)  F7 KO  F8 spawn  F10 fine  F11 velocita x{Speed}  F12 hitbox  F3 overlay",
     ];
 
     public override void Update()
@@ -149,6 +167,24 @@ public sealed class GameplayScene : Scene
             return;
         }
 
+        // The boss' entrance: the game freezes while it lands and its name is shown.
+        if (_bossIntro.IsPlaying)
+        {
+            _bossIntro.Update();
+            _renderer.Update(_run, paused: true);
+            _hud.Update(_run);
+            return;
+        }
+
+        // A chest is being opened: the game freezes until its rewards have been shown.
+        if (_chestWindow.IsOpen)
+        {
+            _chestWindow.Update(Autopilot ? null : input);
+            _renderer.Update(_run, paused: true);
+            _hud.Update(_run);
+            return;
+        }
+
         // Level-up: the game freezes (effects keep playing) until a card is chosen.
         if (_levelUp.Active)
         {
@@ -164,12 +200,25 @@ public sealed class GameplayScene : Scene
         {
             var move = Autopilot ? AutoPilot.Input(_run) : input.Move.ToNumerics();
             _run.Tick(new PlayerInput(move));
+            _explored.Visit(_run.Player.Position);
             _renderer.Update(_run);
             _hud.Update(_run);
 
             if (_run.IsOver)
             {
                 BeginEnding();
+                break;
+            }
+
+            if (_run.Boss is { } fight && _run.Events.Any(e => e.Type == RunEventType.BossAppeared))
+            {
+                _bossIntro.Start(Services.Species(fight.Definition.SpeciesId)?.NameIt ?? "", fight.Definition.Spec.TitleIt);
+                break;
+            }
+
+            if (_run.LastChest is { } chest && _run.Events.Any(e => e.Type == RunEventType.ChestOpened))
+            {
+                _chestWindow.Open(chest);
                 break;
             }
 
@@ -184,8 +233,11 @@ public sealed class GameplayScene : Scene
         if (_phase is Phase.Playing or Phase.Paused)
             _hud.Draw(batch, _run);
 
+        _bossIntro.Draw(batch);
+
         _levelUpWindow.Draw(batch);
-        _pause.Draw(batch, _run);
+        _chestWindow.Draw(batch);
+        _pause.Draw(batch, _run, _explored);
         _banner.Draw(batch);
         _results.Draw(batch);
     }
@@ -213,10 +265,12 @@ public sealed class GameplayScene : Scene
             return;
 
         // No digits here: the body font's 5 reads as an S; the time is on the results screen.
-        var subtitle = _run.Outcome == RunOutcome.Victory
-            ? "Hai resistito fino alla fine!"
-            : $"{_run.Player.Species.NameIt} non può più lottare!";
-        _banner.Start(_run.Outcome, subtitle);
+        var subtitle = _run.Outcome != RunOutcome.Victory
+            ? $"{_run.Player.Species.NameIt} non può più lottare!"
+            : _run.Boss is { DefeatedTick: not null } fight && Services.Species(fight.Definition.SpeciesId) is { } boss
+                ? $"Hai sconfitto {boss.NameIt}!"
+                : "Hai resistito fino alla fine!";
+        _banner.Start(_run.Outcome, subtitle, bossBeaten: _run.Boss?.DefeatedTick is not null);
         _phase = Phase.Ending;
     }
 
@@ -224,9 +278,14 @@ public sealed class GameplayScene : Scene
     {
         var pokedex = Services.Pokedex.Value.Species;
         var view = new System.Numerics.Vector2(Services.Screen.Width, Services.Screen.Height);
-        _run = new RunState(pokedex, Services.TypeChart.Value, _playerSpeciesId, PrototypeSpawns, view, seed: Environment.TickCount)
+
+        // Read again at every restart, so waves and enemies can be retuned while the game is open.
+        var waves = WaveTimeline.Load(Services.ContentRoot, LevelId, pokedex, Services.Moves.Value);
+        var enemies = EnemyLibrary.Load(Services.ContentRoot, pokedex, Services.Moves.Value);
+        var loot = Core.Run.Pickups.LootRules.Load(Services.ContentRoot);
+        _run = new RunState(pokedex, Services.TypeChart.Value, _playerSpeciesId, waves, view, seed: Environment.TickCount)
         {
-            TimeLimitTicks = RunClock.TicksPerSecond * 60 * PrototypeMinutes,
+            TimeLimitTicks = waves.DurationTicks,
             MovePool = Services.Moves.Value.Enabled,
             Evolutions = PendingEvolutions
                 ? Services.Moves.Value.All.Where(m => m.IsEvolution).Select(m => m with { Enabled = true }).ToList()
@@ -234,8 +293,16 @@ public sealed class GameplayScene : Scene
             ItemPool = Services.Items.Value.Enabled,
             LevelUpRules = Services.LevelUpRules.Value,
             StatusRules = Services.Statuses.Value,
+            EnemyRules = PendingEnemies ? enemies.WithDisabled() : enemies,
+            LootRules = loot.File.Enabled || PendingLoot ? loot : null,
         };
         _run.Player.Moves.Add(new MoveInstance(Services.Moves.Value[StartingMoveId]));
+        if (StartTicks > 0)
+        {
+            _run.AdvanceTime(StartTicks);
+            _run.Spawner.SkipEventsBefore(StartTicks);
+        }
+
         _setup?.Invoke(_run);
 
         _renderer.Reset(_run);
@@ -243,18 +310,21 @@ public sealed class GameplayScene : Scene
         _pause.Close();
         _banner.Stop();
         _results.Close();
+        _chestWindow.Close();
+        _bossIntro.Stop();
+        _explored.Clear();
         _phase = Phase.Playing;
 
         // Load sprites up front so the first spawn of a species does not hitch.
         Services.Sprites.Get(_playerSpeciesId);
-        foreach (var entry in PrototypeSpawns)
-            Services.Sprites.Get(entry.SpeciesId);
+        foreach (var speciesId in waves.SpeciesIds)
+            Services.Sprites.Get(speciesId);
 
         if (Autopilot)
             _run.Player.Invincible = true;
         if (_initialSpawn > 0)
         {
-            _run.Spawner.MaxAlive = System.Math.Max(_run.Spawner.MaxAlive, _initialSpawn);
+            _run.Spawner.StressMinAlive = _initialSpawn;
             SpawnBurst(_initialSpawn);
         }
     }
@@ -270,7 +340,11 @@ public sealed class GameplayScene : Scene
             SpawnBurst(100);
         if (input.Pressed(Keys.F9))
             SpawnBurst(500);
-        if (input.Pressed(Keys.F6))
+        if (input.Pressed(Keys.F5))
+            SpawnDominant(input.IsDown(Keys.LeftShift));
+        if (input.Pressed(Keys.F6) && input.IsDown(Keys.LeftShift))
+            _run.SummonBoss();
+        else if (input.Pressed(Keys.F6))
             _run.AdvanceTime(RunClock.TicksPerSecond * 60);
         if (input.Pressed(Keys.F7))
             KillVisible();
@@ -282,6 +356,31 @@ public sealed class GameplayScene : Scene
             Speed = Speed == 1 ? 4 : 1;
         if (input.Pressed(Keys.F12))
             _renderer.ShowHitboxes = !_renderer.ShowHitboxes;
+    }
+
+    /// <summary>
+    /// Cheat F5: a Dominante of the current wave walks in, with a Poké, Mega or Ultra Ball by the minute.
+    /// Shift+F5 opens an Ultra Ball at once.
+    /// </summary>
+    private void SpawnDominant(bool openChest)
+    {
+        if (openChest)
+        {
+            _run.OpenChest(ChestTier.Ultra, _run.Player.Position);
+            _chestWindow.Open(_run.LastChest!);
+            return;
+        }
+
+        var minute = _run.Ticks / (RunClock.TicksPerSecond * 60);
+        var tier = minute < 5 ? ChestTier.Poke : minute < 10 ? ChestTier.Great : ChestTier.Ultra;
+        var index = _run.Spawner.SpawnOne(_run);
+        if (index < 0)
+            return;
+
+        ref var e = ref _run.Enemies[index];
+        e.MaxHp *= 40f;
+        e.Hp = e.MaxHp;
+        Spawner.MakeDominant(_run, index, tier);
     }
 
     private void SpawnBurst(int count)

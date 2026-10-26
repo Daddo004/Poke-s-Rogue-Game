@@ -43,19 +43,87 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
         IsMouseVisible = true;
         Window.AllowUserResizing = true;
         Window.Title = "PokeRogue";
+        Window.ClientSizeChanged += (_, _) => FollowWindowSize();
+    }
+
+    /// <summary>
+    /// Alt+Invio (or --schermo-intero at launch): borderless full screen at the monitor's own resolution. The game is
+    /// drawn at 640×360 and scaled by a whole number, so a 1080p screen shows it pixel-perfect at 3×, 1440p at 4×, 4K at 6×.
+    /// </summary>
+    public void ToggleFullScreen()
+    {
+        _graphics.HardwareModeSwitch = false;
+        if (_graphics.IsFullScreen)
+        {
+            _graphics.IsFullScreen = false;
+            _graphics.PreferredBackBufferWidth = VirtualScreen.DefaultWidth * 2;
+            _graphics.PreferredBackBufferHeight = VirtualScreen.DefaultHeight * 2;
+        }
+        else
+        {
+            var display = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode;
+            _graphics.IsFullScreen = true;
+            _graphics.PreferredBackBufferWidth = display.Width;
+            _graphics.PreferredBackBufferHeight = display.Height;
+        }
+
+        _graphics.ApplyChanges();
+        if (_services is not null)
+        {
+            _services.Settings.FullScreen = _graphics.IsFullScreen;
+            _services.Settings.Save();
+        }
+    }
+
+    /// <summary>A resized window gets a back buffer of its new size, so the scaling can grow with it.</summary>
+    private void FollowWindowSize()
+    {
+        if (_graphics.IsFullScreen || Window.ClientBounds.Width <= 0 || Window.ClientBounds.Height <= 0)
+            return;
+        if (_graphics.PreferredBackBufferWidth == Window.ClientBounds.Width && _graphics.PreferredBackBufferHeight == Window.ClientBounds.Height)
+            return;
+
+        _graphics.PreferredBackBufferWidth = Window.ClientBounds.Width;
+        _graphics.PreferredBackBufferHeight = Window.ClientBounds.Height;
+        _graphics.ApplyChanges();
+    }
+
+    protected override void Initialize()
+    {
+        base.Initialize();
+        if (_options.Values.ContainsKey("schermo-intero") && !_capture.Active && !_graphics.IsFullScreen)
+            ToggleFullScreen();
     }
 
     protected override void LoadContent()
     {
         _batch = new SpriteBatch(GraphicsDevice);
         var screen = new VirtualScreen(GraphicsDevice, VirtualScreen.DefaultWidth, VirtualScreen.DefaultHeight);
-        _services = new GameServices(GraphicsDevice, ContentPaths.FindContentRoot(), screen) { Exit = Exit };
+        _services = new GameServices(GraphicsDevice, ContentPaths.FindContentRoot(), screen)
+        {
+            Exit = Exit,
+            Settings = _options.Preview is null && !_capture.Active ? Settings.Load() : new Settings(),
+            SetFullScreen = on =>
+            {
+                if (on != _graphics.IsFullScreen)
+                    ToggleFullScreen();
+            },
+        };
+        if (_services.Settings.FullScreen && !_graphics.IsFullScreen && !_capture.Active)
+            ToggleFullScreen();
+        _services.Cries.Muted = _options.CapturePng is not null || _options.CaptureGif is not null || _options.Values.ContainsKey("muto");
         _overlay = new DebugOverlay(_services) { Visible = _options.Preview is null || _options.Values.ContainsKey("debug") };
 
         Scene scene = _options.Preview is { } preview
             ? PreviewRegistry.Create(preview, _services, _options)
                 ?? throw new ArgumentException($"Unknown preview '{preview}'. Available: {string.Join(", ", PreviewRegistry.List.Select(p => p.Id))}")
-            : new GameplayScene(_services, _options.Int("species", 25)) { PendingEvolutions = _options.Values.ContainsKey("evoluzioni") };
+            : new GameplayScene(_services, _options.Int("species", 25))
+            {
+                PendingEvolutions = _options.Values.ContainsKey("evoluzioni"),
+                PendingEnemies = _options.Values.ContainsKey("nemici"),
+                PendingLoot = _options.Values.ContainsKey("oggetti"),
+                StartTicks = _options.Str("da") is { } start ? Core.Run.Waves.WaveTimeline.ParseTime(start) : 0,
+            };
         _scenes.Switch(scene);
     }
 
@@ -67,6 +135,8 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
             Exit();
         if (_services.Input.Pressed(Keys.F3))
             _overlay.Visible = !_overlay.Visible;
+        if (_services.Input.Pressed(Keys.Enter) && (_services.Input.IsDown(Keys.LeftAlt) || _services.Input.IsDown(Keys.RightAlt)))
+            ToggleFullScreen();
 
         _scenes.Update();
         _stats.EndUpdate();

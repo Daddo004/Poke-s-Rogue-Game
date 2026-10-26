@@ -52,11 +52,79 @@ public sealed class Hud
                 _evolveFlash[i]--;
         }
 
+        if (_bannerAge >= 0 && ++_bannerAge >= BannerTicks)
+            _bannerAge = -1;
+
         foreach (var e in run.Events)
         {
             if (e.Type == RunEventType.MoveEvolved && (int)e.Value is >= 0 and < Slots)
                 _evolveFlash[(int)e.Value] = EvolveFlashTicks;
+            if (e.Type == RunEventType.DominantAppeared && _services.Species(e.SpeciesId) is { } species)
+            {
+                _banner = $"{species.NameIt.ToUpperInvariant()} DOMINANTE IN ARRIVO!";
+                _bannerColor = Vfx.EnemyVfx.AuraRed;
+                _bannerAge = 0;
+            }
+
+            if (e.Type == RunEventType.ShinyAppeared && _services.Species(e.SpeciesId) is { } shiny && _bannerAge < 0)
+            {
+                _banner = $"UN {shiny.NameIt.ToUpperInvariant()} CROMATICO!";
+                _bannerColor = Vfx.EnemyVfx.ShinyGold;
+                _bannerAge = 0;
+            }
         }
+    }
+
+    /// <summary>How long the arrival of a Dominante is announced under the timer.</summary>
+    private const int BannerTicks = 180;
+
+    private string _banner = "";
+    private Color _bannerColor = Vfx.EnemyVfx.AuraRed;
+    private int _bannerAge = -1;
+
+    /// <summary>What the boss bar shows: it drains slowly after each hit, behind the real PS.</summary>
+    private float _bossTrail = 1f;
+
+    /// <summary>
+    /// The boss' PS (phase 3.4): a wide red bar under the timer with its name, notches where the next phases begin,
+    /// and a pale stretch that drains after each hit, so big hits read.
+    /// </summary>
+    private void DrawBossBar(SpriteBatch batch, RunState run)
+    {
+        if (run.Boss is not { } fight)
+            return;
+
+        var boss = run.Enemies[fight.Index];
+        var ratio = boss.State == EnemyState.Alive ? MathHelper.Clamp(boss.Hp / boss.MaxHp, 0f, 1f) : 0f;
+        _bossTrail = _bossTrail > ratio ? MathF.Max(ratio, _bossTrail - 0.004f) : ratio;
+
+        var p = _services.Primitives;
+        var bar = new Rectangle(170, 30, 300, 9);
+        p.Rect(batch, new Rectangle(bar.X - 1, bar.Y - 1, bar.Width + 2, bar.Height + 2), Ink);
+        p.Rect(batch, bar, new Color(40, 24, 32));
+        p.Rect(batch, new Rectangle(bar.X, bar.Y, (int)(bar.Width * _bossTrail), bar.Height), new Color(255, 236, 200));
+        p.Rect(batch, new Rectangle(bar.X, bar.Y, (int)(bar.Width * ratio), bar.Height), Vfx.EnemyVfx.AuraRed);
+        p.Rect(batch, new Rectangle(bar.X, bar.Y, (int)(bar.Width * ratio), 2), new Color(255, 160, 120));
+
+        foreach (var phase in fight.Definition.Phases.Skip(1))
+            p.Rect(batch, new Rectangle(bar.X + (int)(bar.Width * phase.Below), bar.Y - 2, 1, bar.Height + 4), Paper);
+
+        var name = _services.Species(fight.Definition.SpeciesId)?.NameIt.ToUpperInvariant() ?? "";
+        UiDraw.TextOutlined(batch, _services.Fonts.Small(_services.Style), name, new Vector2(bar.X, bar.Bottom + 3), Paper, Ink);
+    }
+
+    /// <summary>The announcement of a Dominante, sliding in under the timer, blinking twice, then fading out.</summary>
+    private void DrawBanner(SpriteBatch batch)
+    {
+        if (_bannerAge < 0)
+            return;
+
+        var font = _services.Fonts.Body(_services.Style);
+        var slide = MathF.Max(0f, 1f - _bannerAge / 10f);
+        var fade = MathHelper.Clamp((BannerTicks - _bannerAge) / 30f, 0f, 1f);
+        var blink = _bannerAge < 40 && _bannerAge / 10 % 2 == 1 ? 0.6f : 1f;
+        var y = 26 - slide * 8f;
+        UiDraw.TextCentered(batch, font, _banner, _services.Screen.Width / 2f, y, _bannerColor * (fade * blink), Ink * fade);
     }
 
     public void Draw(SpriteBatch batch, RunState run)
@@ -72,7 +140,10 @@ public sealed class Hud
         for (var i = 0; i < Slots; i++)
         {
             var moveSlot = new Rectangle(3 + i * 26, 13, 24, 24);
-            DrawMoveSlot(batch, moveSlot, i < player.Moves.Count ? player.Moves[i] : null);
+            if (i < Core.Run.Progression.LevelUp.MaxMoves)
+                DrawMoveSlot(batch, moveSlot, i < player.Moves.Count ? player.Moves[i] : null);
+            else
+                DrawLockedSlot(batch, moveSlot);
             if (_evolveFlash[i] > 0)
                 p.Rect(batch, moveSlot, Color.White * (0.8f * _evolveFlash[i] / EvolveFlashTicks));
 
@@ -102,6 +173,8 @@ public sealed class Hud
         UiDraw.TextOutlined(batch, numbers, coins, new Vector2(coinsRight - coinsWidth, 26), Gold, Ink);
         batch.Draw(_services.Pickups.Coin, new Vector2(coinsRight - coinsWidth - 10, 33), Color.White);
 
+        DrawBanner(batch);
+        DrawBossBar(batch, run);
         batch.End();
     }
 
@@ -119,6 +192,29 @@ public sealed class Hud
             batch.Draw(_star, new Vector2(slot.X + 1, slot.Bottom - _star.Height - 1), Color.White);
         else
             Pips(batch, slot, move.Level, move.Definition.MaxLevel);
+    }
+
+    private Texture2D? _lock;
+
+    /// <summary>
+    /// The sixth move slot (phase 3.6): a run holds five moves; the sixth will be bought with the meta-progression, so its
+    /// slot shows darkened with a small padlock.
+    /// </summary>
+    public void DrawLockedSlot(SpriteBatch batch, Rectangle slot)
+    {
+        var p = _services.Primitives;
+        UiDraw.Frame(batch, p, slot, _services.Style.Theme);
+        p.Rect(batch, new Rectangle(slot.X + 2, slot.Y + 2, slot.Width - 4, slot.Height - 4), Ink * 0.55f);
+        _lock ??= PixelArt.FromPatternOutlined(_services.Device,
+        [
+            ".ggg.",
+            "g...g",
+            "g...g",
+            "ggggg",
+            "gg.gg",
+            "ggggg",
+        ], new Dictionary<char, Color> { ['g'] = new(150, 142, 176) }, Ink);
+        batch.Draw(_lock, new Vector2(slot.Center.X - _lock.Width / 2, slot.Center.Y - _lock.Height / 2), Color.White);
     }
 
     /// <summary>Frame of an evolved move's slot: the usual panel with a gold rim.</summary>

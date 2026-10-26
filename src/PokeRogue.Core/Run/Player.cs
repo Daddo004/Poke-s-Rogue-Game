@@ -25,6 +25,15 @@ public sealed class Player
     /// <summary>Invulnerability after Focalnastro brings the player back, in ticks.</summary>
     public const int ReviveInvulnerabilityTicks = 120;
 
+    /// <summary>
+    /// Healing from damage dealt (Sanguisuga, Conchinella) is capped at this share of the max PS per second (phase 3.6):
+    /// against a big horde it used to outheal every hit and the player could stand still and win.
+    /// </summary>
+    public const float DamageHealCapPerSecond = 0.025f;
+
+    /// <summary>PS that damage dealt may still heal; refills with time up to one second's worth.</summary>
+    private float _damageHealBudget;
+
     private readonly float _baseMaxHp;
     private readonly float _baseMoveSpeed;
     private float _physicalPower = 1f;
@@ -40,6 +49,7 @@ public sealed class Player
         _baseMaxHp = StatFormulas.PlayerMaxHp(species.BaseStats);
         _baseMoveSpeed = StatFormulas.PlayerMoveSpeed(species.BaseStats);
         MaxHp = Hp = _baseMaxHp;
+        _damageHealBudget = MaxHp * DamageHealCapPerSecond;
         MoveSpeed = _baseMoveSpeed;
         PickupRadius = PickupSystem.BasePickupRadius;
     }
@@ -154,6 +164,17 @@ public sealed class Player
             InvulnerableTicks--;
         if (Regen > 0f)
             Heal(Regen * RunClock.Dt);
+
+        var cap = MaxHp * DamageHealCapPerSecond;
+        _damageHealBudget = MathF.Min(cap, _damageHealBudget + cap * RunClock.Dt);
+    }
+
+    /// <summary>Healing from damage dealt (drain, lifesteal), within <see cref="DamageHealCapPerSecond"/>.</summary>
+    public float HealFromDamage(float amount)
+    {
+        var healed = Heal(MathF.Min(amount, _damageHealBudget));
+        _damageHealBudget -= healed;
+        return healed;
     }
 
     /// <summary>Restores PS up to the maximum (never revives) and returns how much was actually recovered.</summary>
