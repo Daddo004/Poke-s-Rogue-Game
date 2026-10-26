@@ -15,7 +15,7 @@ public enum CharacterGroup
     Other,
 }
 
-/// <summary>How a character is unlocked (the shop, missions and levels that grant it come in Blocks 6 and 7).</summary>
+/// <summary>How a character is unlocked (the shop and the missions since Block 6; fossils, eggs and defeats on the levels of Block 7).</summary>
 public enum UnlockKind
 {
     /// <summary>Playable from the first run.</summary>

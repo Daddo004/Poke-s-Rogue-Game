@@ -43,6 +43,27 @@ public sealed record ItemBonus(
         a.Revives + b.Revives,
         a.LifestealPercent + b.LifestealPercent);
 
+    /// <summary>Every fraction scaled by <paramref name="factor"/> (a trainer's grades, Block 6); whole numbers (extra hits, revivals) stay as they are.</summary>
+    public ItemBonus Scaled(float factor) => this with
+    {
+        MaxHpPercent = MaxHpPercent * factor,
+        MoveSpeedPercent = MoveSpeedPercent * factor,
+        RegenPerSecond = RegenPerSecond * factor,
+        PickupRadiusPercent = PickupRadiusPercent * factor,
+        PhysicalPowerPercent = PhysicalPowerPercent * factor,
+        SpecialPowerPercent = SpecialPowerPercent * factor,
+        CooldownReductionPercent = CooldownReductionPercent * factor,
+        GrowthPercent = GrowthPercent * factor,
+        AreaPercent = AreaPercent * factor,
+        DurationPercent = DurationPercent * factor,
+        ProjectileSpeedPercent = ProjectileSpeedPercent * factor,
+        PhysicalResistPercent = PhysicalResistPercent * factor,
+        SpecialResistPercent = SpecialResistPercent * factor,
+        CoinPercent = CoinPercent * factor,
+        CritChance = CritChance * factor,
+        LifestealPercent = LifestealPercent * factor,
+    };
+
     public static ItemBonus operator *(ItemBonus a, int levels) => new(
         a.MaxHpPercent * levels,
         a.MoveSpeedPercent * levels,

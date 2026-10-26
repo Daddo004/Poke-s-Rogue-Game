@@ -84,6 +84,30 @@ public sealed class GameplayScene : Scene
     /// <summary>A challenge run (phase 5.3, --sfida id): this trainer replaces the level's boss when the time runs out.</summary>
     public string? ChallengeId { get; init; }
 
+    /// <summary>
+    /// The meta-progression (Block 6): the run gets the character's loadout and the trainer's grades from it, the missions
+    /// it completes are announced, and its end is recorded (coins to the bank, Pokédex, rewards). Null for previews.
+    /// </summary>
+    public Core.Meta.MetaProgress? Meta { get; init; }
+
+    /// <summary>Previews: the loadout to play with, instead of the meta-progression's (or the default one).</summary>
+    public RunLoadout? Loadout { get; init; }
+
+    /// <summary>Where "Esci" leads: the menu it came from; null closes the game (previews, launches with --pokemon).</summary>
+    public Func<Scene>? BackToMenu { get; init; }
+
+    /// <summary>What the end of the run brought, once recorded.</summary>
+    public Core.Meta.RunReport? Report => _report;
+
+    private Core.Meta.RunReport? _report;
+    private bool _recorded;
+
+    /// <summary>Missions already announced during this run.</summary>
+    private readonly HashSet<string> _noticed = new(StringComparer.Ordinal);
+
+    /// <summary>A run left from the pause before this many ticks is not recorded (an immediate restart is not a run).</summary>
+    private const int MinRecordedTicks = RunClock.TicksPerSecond * 10;
+
     /// <summary>The ground walked this run, for the map in the pause (phase 3.6).</summary>
     private readonly ExploredMap _explored = new();
 
@@ -111,6 +135,9 @@ public sealed class GameplayScene : Scene
     }
 
     public RunState Run => _run;
+
+    /// <summary>Previews: e.g. a mission's notice.</summary>
+    public Hud Hud => _hud;
 
     /// <summary>Previews: e.g. the status icon style.</summary>
     public RunRenderer Renderer => _renderer;
@@ -171,10 +198,12 @@ public sealed class GameplayScene : Scene
                         _phase = Phase.Playing;
                         break;
                     case PauseChoice.Restart:
+                        RecordRun(abandoned: true);
                         Restart();
                         break;
                     case PauseChoice.Quit:
-                        Services.Exit();
+                        RecordRun(abandoned: true);
+                        Leave();
                         break;
                 }
 
@@ -186,7 +215,7 @@ public sealed class GameplayScene : Scene
                 if (_banner.Update(input, autoContinue: Autopilot))
                 {
                     _banner.Stop();
-                    _results.Open(_run);
+                    _results.Open(_run, _report);
                     _phase = Phase.Results;
                 }
 
@@ -199,7 +228,7 @@ public sealed class GameplayScene : Scene
                         Restart();
                         break;
                     case ResultsChoice.Quit:
-                        Services.Exit();
+                        Leave();
                         break;
                 }
 
@@ -297,6 +326,8 @@ public sealed class GameplayScene : Scene
             _pressTrainer = false;
             _run.Tick(new PlayerInput(move, useAbility, useSpecial, useTrainer));
             _explored.Visit(_run.Player.Position);
+            if (_run.Ticks % 30 == 0)
+                NoticeMissions();
             _renderer.Update(_run);
             _hud.Update(_run);
 
@@ -391,6 +422,42 @@ public sealed class GameplayScene : Scene
                 : "Hai resistito fino alla fine!";
         _banner.Start(_run.Outcome, subtitle, bossBeaten: _run.Boss?.DefeatedTick is not null);
         _phase = Phase.Ending;
+        RecordRun(abandoned: false);
+    }
+
+    /// <summary>
+    /// The end of the run goes into the save (Block 6): coins, Pokédex, records, missions and their rewards. A run left
+    /// from the pause counts too, as in Vampire Survivors, unless it had barely begun.
+    /// </summary>
+    private void RecordRun(bool abandoned)
+    {
+        if (Meta is null || _recorded || abandoned && _run.Ticks < MinRecordedTicks)
+            return;
+
+        _recorded = true;
+        _report = Meta.RecordRun(Core.Meta.RunRecord.From(_run, LevelId));
+    }
+
+    /// <summary>Missions the run has just completed are announced in the HUD; their rewards come at the end.</summary>
+    private void NoticeMissions()
+    {
+        if (Meta is null)
+            return;
+
+        foreach (var mission in Meta.ReachedDuring(Core.Meta.RunRecord.From(_run, LevelId)))
+        {
+            if (_noticed.Add(mission.Id))
+                _hud.ShowMission(mission);
+        }
+    }
+
+    /// <summary>"Esci": back to the menu, or out of the game when there is none.</summary>
+    private void Leave()
+    {
+        if (BackToMenu is { } menu)
+            Services.Switch(menu());
+        else
+            Services.Exit();
     }
 
     private void Restart()
@@ -416,8 +483,8 @@ public sealed class GameplayScene : Scene
             LootRules = loot.File.Enabled || PendingLoot ? loot : null,
             SpecialRules = Services.Specials.Value,
         };
-        _run.UseCharacter(_character);
-        _run.UseTrainer(_trainer);
+        _run.UseCharacter(_character, Loadout ?? Meta?.Loadout(_character));
+        _run.UseTrainer(Meta?.Upgraded(_trainer) ?? _trainer);
         if (ChallengeId is { } challengeId)
         {
             var challenged = Services.Trainers.Value.Find(challengeId)
@@ -447,6 +514,12 @@ public sealed class GameplayScene : Scene
         _trainerIntro.Stop();
         _sendOutFreeze = 0;
         _explored.Clear();
+        _recorded = false;
+        _report = null;
+        _noticed.Clear();
+        _hud.ClearMissions();
+        _pause.QuitLabel = BackToMenu is null ? "Esci dal gioco" : "Torna al menu";
+        _results.QuitLabel = BackToMenu is null ? "ESCI" : "MENU";
         _phase = Phase.Playing;
 
         // Load sprites up front so the first spawn of a species does not hitch.

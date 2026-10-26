@@ -52,6 +52,9 @@ public sealed class PauseMenu(GameServices services, Hud hud)
 
     public bool IsOpen { get; private set; }
 
+    /// <summary>The last row: back to the menu (Block 6), or out of the game when the run was started without one.</summary>
+    public string QuitLabel { get; set; } = "Esci dal gioco";
+
     public int Cursor { get; private set; }
 
     public void Open()
@@ -156,18 +159,18 @@ public sealed class PauseMenu(GameServices services, Hud hud)
                     DrawSetting(batch, row, "Schermo intero", settings.FullScreen, color);
                     break;
                 default:
-                    var label = Rows[i] switch { Row.Resume => "Riprendi", Row.Restart => "Ricomincia", _ => "Esci dal gioco" };
+                    var label = Rows[i] switch { Row.Resume => "Riprendi", Row.Restart => "Ricomincia", _ => QuitLabel };
                     UiDraw.TextCentered(batch, body, label, row.Center.X, row.Y + 2, color);
                     break;
             }
         }
 
-        // Current build: five moves (the sixth slot is locked until the meta-progression), six held items.
+        // Current build: five moves (the sixth slot is locked until bought in the shop), six held items.
         UiDraw.Text(batch, small, "SQUADRA", new Vector2(panel.X + 14, panel.Y + 186), Dim);
         for (var i = 0; i < Hud.Slots; i++)
         {
             var moveSlot = new Rectangle(panel.X + 14 + i * 35, panel.Y + 198, 24, 24);
-            if (i < LevelUp.MaxMoves)
+            if (i < run.MaxMoves)
                 hud.DrawMoveSlot(batch, moveSlot, i < run.Player.Moves.Count ? run.Player.Moves[i] : null);
             else
                 hud.DrawLockedSlot(batch, moveSlot);

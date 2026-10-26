@@ -31,13 +31,22 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
     private static readonly Color Dim = new(160, 152, 190);
 
     private RunState? _run;
+    private Core.Meta.RunReport? _report;
     private int _age;
+
+    /// <summary>The "NOVITÀ" panel over the results (Block 6): missions completed and characters or trainers unlocked.</summary>
+    private bool _newsOpen;
 
     public bool IsOpen => _run is not null;
 
-    public void Open(RunState run)
+    public bool NewsOpen => _newsOpen;
+
+    /// <param name="report">What the end of the run brought to the save (Block 6); null for runs not recorded (previews).</param>
+    public void Open(RunState run, Core.Meta.RunReport? report = null)
     {
         _run = run;
+        _report = report;
+        _newsOpen = report is { HasNews: true };
         _age = 0;
     }
 
@@ -52,7 +61,19 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
         if (input is null || _age < 20)
             return null;
 
-        if (input.Pressed(Keys.Enter) || input.Pressed(Keys.Space) || input.Pressed(Buttons.A) || input.Pressed(Buttons.Start))
+        var confirm = input.Pressed(Keys.Enter) || input.Pressed(Keys.Space) || input.Pressed(Buttons.A) || input.Pressed(Buttons.Start);
+        if (_newsOpen)
+        {
+            if (confirm || input.Pressed(Keys.Escape) || input.Pressed(Buttons.B))
+            {
+                _newsOpen = false;
+                _age = 10;
+            }
+
+            return null;
+        }
+
+        if (confirm)
             return ResultsChoice.Restart;
         if (input.Pressed(Keys.Escape) || input.Pressed(Buttons.B))
             return ResultsChoice.Quit;
@@ -72,7 +93,7 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
         p.Rect(batch, new Rectangle(0, 0, services.Screen.Width, services.Screen.Height), Color.Black * 0.78f);
 
         UiDraw.TextCentered(batch, services.Fonts.Title(services.Style), victory ? "VITTORIA" : "SCONFITTA", services.Screen.Width / 2f, 6, victory ? Gold : Red, Ink);
-        UiDraw.TextCentered(batch, services.Fonts.Small(services.Style), "PROTOTIPO  -  PRATO", services.Screen.Width / 2f, 42, Dim);
+        DrawBank(batch, run);
 
         var left = new Rectangle(16, 56, 208, 280);
         UiDraw.Frame(batch, p, left, theme);
@@ -86,8 +107,85 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
         UiDraw.Frame(batch, p, defeated, theme);
         DrawDefeated(batch, run, defeated);
 
-        UiDraw.TextCentered(batch, services.Fonts.Small(services.Style), "[INVIO] RICOMINCIA          [ESC] ESCI", services.Screen.Width / 2f, 344, Dim, Ink);
+        UiDraw.TextCentered(batch, services.Fonts.Small(services.Style), $"[INVIO] RICOMINCIA          [ESC] {QuitLabel}", services.Screen.Width / 2f, 344, Dim, Ink);
+        if (_newsOpen && _report is { } report)
+            DrawNews(batch, report);
         batch.End();
+    }
+
+    /// <summary>What [ESC] does: "MENU" when the run came from the menu (Block 6), "ESCI" otherwise.</summary>
+    public string QuitLabel { get; set; } = "ESCI";
+
+    /// <summary>Under the title: the level, and the coins this run put in the bank (Block 6).</summary>
+    private void DrawBank(SpriteBatch batch, RunState run)
+    {
+        var small = services.Fonts.Small(services.Style);
+        var numbers = services.Fonts.Get(services.Style.NumberFont, services.Style.NumberFontSize / 2f);
+        var text = run.Spawner.Timeline.NameIt.ToUpperInvariant();
+        if (_report is { } report)
+            text += $"     +{UiFormat.Number(report.CoinsBanked + report.MissionCoins)} MONETE IN BANCA, ORA {UiFormat.Number(report.Bank)}";
+        var width = UiDraw.Measure(small, text).X;
+        UiDraw.TextWithNumbers(batch, small, numbers, text, new Vector2(services.Screen.Width / 2f - width / 2f, 42), _report is null ? Dim : Gold);
+    }
+
+    /// <summary>
+    /// The news of the run (Block 6), over the results until a key is pressed: each mission completed with its reward, then
+    /// the characters and trainers unlocked, with their portraits.
+    /// </summary>
+    private void DrawNews(SpriteBatch batch, Core.Meta.RunReport report)
+    {
+        var p = services.Primitives;
+        var small = services.Fonts.Small(services.Style);
+        var body = services.Fonts.Body(services.Style);
+        var numbers = services.Fonts.Get(services.Style.NumberFont, services.Style.NumberFontSize / 2f);
+        p.Rect(batch, new Rectangle(0, 0, services.Screen.Width, services.Screen.Height), Color.Black * 0.6f);
+
+        var unlocks = report.NewCharacters.Count + report.NewTrainers.Count;
+        var rows = Math.Min(report.Missions.Count, 6);
+        var height = 52 + rows * 26 + (unlocks > 0 ? 70 : 0);
+        var panel = new Rectangle(140, Math.Max(16, 180 - height / 2), 360, height);
+        UiDraw.Frame(batch, p, panel, hud.EvolvedTheme);
+        UiDraw.TextCentered(batch, services.Fonts.Title(services.Style), "NOVITÀ!", panel.Center.X, panel.Y + 4, Gold, Ink);
+
+        var y = panel.Y + 42;
+        for (var i = 0; i < rows; i++)
+        {
+            var mission = report.Missions[i];
+            p.Rect(batch, new Rectangle(panel.X + 10, y, panel.Width - 20, 23), Color.White * 0.05f);
+            UiDraw.Text(batch, small, "MISSIONE", new Vector2(panel.X + 16, y + 3), Dim);
+            UiDraw.Text(batch, body, mission.NameIt, new Vector2(panel.X + 16, y + 9), Paper);
+            var reward = Hud.RewardText(mission, services);
+            UiDraw.TextWithNumbers(batch, small, numbers, reward, new Vector2(panel.Right - 16 - UiDraw.Measure(small, reward).X, y + 9), Gold);
+            y += 26;
+        }
+
+        if (report.Missions.Count > rows)
+            UiDraw.TextWithNumbers(batch, small, numbers, $"E ALTRE {report.Missions.Count - rows}", new Vector2(panel.X + 16, y - 4), Dim);
+
+        if (unlocks > 0)
+        {
+            UiDraw.Text(batch, small, "SBLOCCATI", new Vector2(panel.X + 16, y + 4), Gold);
+            var x = panel.X + 16;
+            foreach (var character in report.NewCharacters.Take(7))
+            {
+                var frame = new Rectangle(x, y + 16, 44, 44);
+                UiDraw.Frame(batch, p, frame, services.Style.Theme);
+                if (services.Sprites.Portrait(character.First.Id) is { } portrait)
+                    batch.Draw(portrait, new Rectangle(frame.X + 2, frame.Y + 2, 40, 40), Color.White);
+                x += 48;
+            }
+
+            foreach (var trainer in report.NewTrainers.Take(7))
+            {
+                var frame = new Rectangle(x, y + 16, 44, 44);
+                UiDraw.Frame(batch, p, frame, services.Style.Theme);
+                if (services.TrainerPortraits.Sprite(trainer) is { } sprite)
+                    batch.Draw(sprite, new Rectangle(frame.X + 4, frame.Y + 4, 36, 36), services.TrainerPortraits.Head(trainer), Color.White);
+                x += 48;
+            }
+        }
+
+        UiDraw.TextCentered(batch, small, "[INVIO] CONTINUA", panel.Center.X, panel.Bottom + 6, Dim, Ink);
     }
 
     private void DrawPokemon(SpriteBatch batch, RunState run, Rectangle panel)

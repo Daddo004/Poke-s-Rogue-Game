@@ -66,6 +66,9 @@ public sealed class Player
     /// <summary>The trainer's passive bonuses (trainers.json, phase 5.1), added like <see cref="CharacterBonus"/>.</summary>
     public ItemBonus TrainerBonus { get; set; } = ItemBonus.None;
 
+    /// <summary>The meta-progression's stat grades and upgrades (Block 6, <see cref="RunLoadout.Bonus"/>), added like <see cref="CharacterBonus"/>.</summary>
+    public ItemBonus MetaBonus { get; set; } = ItemBonus.None;
+
     /// <summary>Speed from the trainer's active ability (Scatto), on top of everything else.</summary>
     public float TrainerSpeedMultiplier { get; set; } = 1f;
 
@@ -299,7 +302,7 @@ public sealed class Player
     /// <summary>Re-derives every item-dependent stat. Gaining max PS also heals by the same amount.</summary>
     public void RecalculateStats()
     {
-        var bonus = Items.Aggregate(CharacterBonus + TrainerBonus, (sum, item) => sum + item.Bonus);
+        var bonus = Items.Aggregate(CharacterBonus + TrainerBonus + MetaBonus, (sum, item) => sum + item.Bonus);
 
         var newMaxHp = MathF.Round(_baseMaxHp * (1f + bonus.MaxHpPercent));
         if (newMaxHp > MaxHp)

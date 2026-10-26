@@ -266,7 +266,10 @@ public sealed class LevelUpWindow(GameServices services)
         else
             UiDraw.TextCentered(batch, Small, "SCEGLI UN POTENZIAMENTO", centerX, 50, Dim, Ink);
 
-        const int width = 156, height = 200, gap = 14;
+        // Fortuna's fourth card (Block 6) makes them a little narrower, so four still fit.
+        const int height = 200;
+        var width = _options.Count > 3 ? 142 : 156;
+        var gap = _options.Count > 3 ? 10 : 14;
         var left = centerX - (_options.Count * width + (_options.Count - 1) * gap) / 2;
         for (var i = 0; i < _options.Count; i++)
         {

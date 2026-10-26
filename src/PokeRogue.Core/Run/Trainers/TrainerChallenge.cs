@@ -21,7 +21,7 @@ public sealed class TrainerChallenge(TrainerDefinition trainer, ChallengeRules r
     /// <summary>How many have fainted.</summary>
     public int Fainted { get; internal set; }
 
-    /// <summary>The whole team fainted: the trainer is beaten (saved as unlocked with the meta-progression, Block 6).</summary>
+    /// <summary>The whole team fainted: the trainer is beaten (the meta-progression then unlocks them and, for a gym leader, gives a medal).</summary>
     public bool Won { get; internal set; }
 
     /// <summary>The tick the next Pokémon comes out, once the previous one has fainted.</summary>

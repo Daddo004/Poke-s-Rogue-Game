@@ -40,6 +40,9 @@ switch (command)
     case "sfide":
         SimulateChallenges();
         break;
+    case "meta":
+        SimulateMeta();
+        break;
     default:
         Console.WriteLine("""
             Usage: dotnet run --project tools/PokeRogue.DataTool -- <command> [options]
@@ -55,6 +58,8 @@ switch (command)
                           with every trainer and with none (previews/5.2/simulazione-allenatori.md)
               sfide     Play every trainer's challenge with four characters (phase 5.3): --runs N (default 2),
                         writes previews/5.3/simulazione-sfide.md
+              meta      Careers from an empty save (Block 6): --carriere N (default 8) --partite N (default 20),
+                        writes previews/6.2/simulazione-meta.md
 
             Options:
               --force       Re-download files that are already cached
@@ -113,6 +118,15 @@ void SimulateChallenges()
     var report = Path.Combine(Path.GetDirectoryName(contentRoot)!, "previews", "5.3", "simulazione-sfide.md");
     Directory.CreateDirectory(Path.GetDirectoryName(report)!);
     File.WriteAllText(report, new PokeRogue.DataTool.Balance.TrainerSimulation(contentRoot).ChallengeReport(runs, Console.WriteLine));
+    Console.WriteLine($"Wrote {report}");
+}
+
+void SimulateMeta()
+{
+    var report = Path.Combine(Path.GetDirectoryName(contentRoot)!, "previews", "6.2", "simulazione-meta.md");
+    Directory.CreateDirectory(Path.GetDirectoryName(report)!);
+    File.WriteAllText(report, new PokeRogue.DataTool.Balance.MetaSimulation(contentRoot)
+        .Report(ReadIntOption("--carriere") ?? 8, ReadIntOption("--partite") ?? 20, Console.WriteLine));
     Console.WriteLine($"Wrote {report}");
 }
 

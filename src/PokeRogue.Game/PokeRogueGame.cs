@@ -103,6 +103,9 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
         {
             Exit = Exit,
             Settings = _options.Preview is null && !_capture.Active ? Settings.Load() : new Settings(),
+            // Previews and captures play on an empty save in memory; "--salvataggio path" uses another file (playtests).
+            SaveStore = _options.Preview is null && !_capture.Active ? new Core.Meta.SaveStore(_options.Str("salvataggio") ?? Core.Meta.SaveStore.DefaultPath) : null,
+            Switch = _scenes.Switch,
             SetFullScreen = on =>
             {
                 if (on != _graphics.IsFullScreen)
@@ -114,17 +117,24 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
         _services.Cries.Muted = _options.CapturePng is not null || _options.CaptureGif is not null || _options.Values.ContainsKey("muto");
         _overlay = new DebugOverlay(_services) { Visible = _options.Preview is null || _options.Values.ContainsKey("debug") };
 
+        // The menu (Block 6), unless a run is asked for straight away (playtests: --pokemon, --allenatore, --sfida, --da):
+        // that run still goes into the save and ends back in the menu.
+        var direct = new[] { "pokemon", "allenatore", "sfida", "da", "evoluzioni", "nemici", "oggetti" }.Any(_options.Values.ContainsKey);
         Scene scene = _options.Preview is { } preview
             ? PreviewRegistry.Create(preview, _services, _options)
                 ?? throw new ArgumentException($"Unknown preview '{preview}'. Available: {string.Join(", ", PreviewRegistry.List.Select(p => p.Id))}")
-            : new GameplayScene(_services, _options.Str("pokemon"), trainerId: _options.Str("allenatore"))
-            {
-                PendingEvolutions = _options.Values.ContainsKey("evoluzioni"),
-                PendingEnemies = _options.Values.ContainsKey("nemici"),
-                PendingLoot = _options.Values.ContainsKey("oggetti"),
-                ChallengeId = _options.Str("sfida"),
-                StartTicks = _options.Str("da") is { } start ? Core.Run.Waves.WaveTimeline.ParseTime(start) : 0,
-            };
+            : !direct
+                ? new Scenes.Menus.MainMenuScene(_services)
+                : new GameplayScene(_services, _options.Str("pokemon"), trainerId: _options.Str("allenatore"))
+                {
+                    PendingEvolutions = _options.Values.ContainsKey("evoluzioni"),
+                    PendingEnemies = _options.Values.ContainsKey("nemici"),
+                    PendingLoot = _options.Values.ContainsKey("oggetti"),
+                    ChallengeId = _options.Str("sfida"),
+                    StartTicks = _options.Str("da") is { } start ? Core.Run.Waves.WaveTimeline.ParseTime(start) : 0,
+                    Meta = _services.Meta,
+                    BackToMenu = () => new Scenes.Menus.MainMenuScene(_services),
+                };
         _scenes.Switch(scene);
     }
 

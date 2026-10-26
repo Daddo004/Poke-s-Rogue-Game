@@ -22,10 +22,10 @@ public sealed class RunState
     /// <summary>How hard overlapping enemies push each other apart (fraction of overlap per tick).</summary>
     private const float SeparationStrength = 0.35f;
 
-    /// <summary>Options shown per level-up (Fortuna adds a fourth in Block 6).</summary>
+    /// <summary>Options shown per level-up; the shop's Fortuna adds a fourth (<see cref="ChoiceCount"/>).</summary>
     public const int LevelUpChoiceCount = 3;
 
-    /// <summary>Rilancio, Salta and Bandisci charges per run, until the medals of Block 6 unlock and raise them.</summary>
+    /// <summary>Rilancio, Salta and Bandisci charges per run; the shop's upgrades add more (they need medals).</summary>
     public const int StartingLevelUpCharges = 2;
 
     private readonly List<RunEvent> _events = [];
@@ -177,7 +177,7 @@ public sealed class RunState
     public SpecialState Special { get; } = new();
 
     /// <summary>The character's special move; null without a character or special rules.</summary>
-    public SpecialMove? SpecialMove => Character is { } character && SpecialRules is { } rules ? rules[character.Special] : null;
+    public SpecialMove? SpecialMove => Character is { } character && SpecialRules is { } rules && Loadout.SpecialMove ? rules[character.Special] : null;
 
     /// <summary>The key was pressed with a full gauge: the run waits until <see cref="UnleashSpecial"/>.</summary>
     public bool SpecialPending { get; private set; }
@@ -196,10 +196,11 @@ public sealed class RunState
     }
 
     /// <summary>
-    /// Plays <paramref name="character"/>, whose first species the run was created with: its modifiers and its main move.
-    /// The secondary move waits for the shop (Block 6).
+    /// Plays <paramref name="character"/>, whose first species the run was created with: its modifiers and its main move,
+    /// plus what the meta-progression bought for it (Block 6): the secondary move, the special, stat grades and the shop's
+    /// upgrades. Without a loadout the run is as before Block 6 (<see cref="RunLoadout.Default"/>).
     /// </summary>
-    public void UseCharacter(CharacterDefinition character)
+    public void UseCharacter(CharacterDefinition character, RunLoadout? loadout = null)
     {
         if (Player.Species.Id != character.First.Id)
             throw new ArgumentException($"The run was created as {Player.Species.Key}, not as {character.First.Key}.", nameof(character));
@@ -207,8 +208,31 @@ public sealed class RunState
         Character = character;
         Stage = character.Stages[0];
         Player.CharacterBonus = character.Modifiers;
-        Player.RecalculateStats();
         Player.Moves.Add(new MoveInstance(character.MainMove) { AcquiredTick = Ticks });
+        UseLoadout(loadout ?? RunLoadout.Default);
+        if (Loadout.SecondaryMove)
+            Player.Moves.Add(new MoveInstance(character.SecondaryMove) { AcquiredTick = Ticks });
+    }
+
+    /// <summary>What the meta-progression brings into the run (Block 6); <see cref="RunLoadout.Default"/> until set.</summary>
+    public RunLoadout Loadout { get; private set; } = RunLoadout.Default;
+
+    /// <summary>Move slots of this run: five, six with the shop's upgrade.</summary>
+    public int MaxMoves => Loadout.MaxMoves;
+
+    /// <summary>Cards per level-up: three, four with Fortuna.</summary>
+    public int ChoiceCount => Loadout.Choices;
+
+    /// <summary>Sets the run's loadout: its bonus on the player and the level-up charges it adds. Call before the run starts.</summary>
+    public void UseLoadout(RunLoadout loadout)
+    {
+        Loadout = loadout;
+        Player.MetaBonus = loadout.Bonus;
+        Player.RecalculateStats();
+        Player.Hp = Player.MaxHp;
+        RerollsLeft = StartingLevelUpCharges + loadout.ExtraRerolls;
+        SkipsLeft = StartingLevelUpCharges + loadout.ExtraSkips;
+        BanishesLeft = StartingLevelUpCharges + loadout.ExtraBanishes;
     }
 
     public EnemyPool Enemies { get; }
@@ -272,6 +296,8 @@ public sealed class RunState
     public int SpawnEnemy(int speciesId, Vector2 position, float hpMultiplier = 1f, float xpMultiplier = 1f)
     {
         var index = Enemies.Spawn(Pokedex[speciesId - 1], position, hpMultiplier, xpMultiplier);
+        if (index >= 0)
+            Stats.RecordSeen(speciesId);
         if (index >= 0 && EnemyRules?.For(speciesId) is { } profile)
             EnemyAi.Apply(this, ref Enemies[index], profile);
         return index;
@@ -381,7 +407,7 @@ public sealed class RunState
         PendingLevelUps += levels;
         _events.Add(new RunEvent(RunEventType.LevelUp, Player.Position, Player.Level));
         AbilitySystem.OnLevelUp(this, levels);
-        LevelUpChoices ??= LevelUp.Generate(this, LevelUpChoiceCount);
+        LevelUpChoices ??= LevelUp.Generate(this, ChoiceCount);
     }
 
     /// <summary>Applies one of <see cref="LevelUpChoices"/>; offers the next set if more level-ups are pending.</summary>
@@ -392,7 +418,7 @@ public sealed class RunState
 
         LevelUp.Apply(this, choices[Math.Clamp(index, 0, choices.Count - 1)]);
         PendingLevelUps--;
-        LevelUpChoices = PendingLevelUps > 0 ? LevelUp.Generate(this, LevelUpChoiceCount) : null;
+        LevelUpChoices = PendingLevelUps > 0 ? LevelUp.Generate(this, ChoiceCount) : null;
     }
 
     /// <summary>Rilancio: replaces the options on offer with a fresh draw. False when there is nothing to reroll or no charge left.</summary>
@@ -402,7 +428,7 @@ public sealed class RunState
             return false;
 
         RerollsLeft--;
-        LevelUpChoices = LevelUp.Generate(this, LevelUpChoiceCount);
+        LevelUpChoices = LevelUp.Generate(this, ChoiceCount);
         return true;
     }
 
@@ -414,7 +440,7 @@ public sealed class RunState
 
         SkipsLeft--;
         PendingLevelUps--;
-        LevelUpChoices = PendingLevelUps > 0 ? LevelUp.Generate(this, LevelUpChoiceCount) : null;
+        LevelUpChoices = PendingLevelUps > 0 ? LevelUp.Generate(this, ChoiceCount) : null;
         return true;
     }
 
@@ -438,7 +464,7 @@ public sealed class RunState
         if (replacement is not null)
             remaining.Insert(index, replacement);
 
-        LevelUpChoices = remaining.Count > 0 ? remaining : LevelUp.Generate(this, LevelUpChoiceCount);
+        LevelUpChoices = remaining.Count > 0 ? remaining : LevelUp.Generate(this, ChoiceCount);
         return true;
     }
 
@@ -558,6 +584,7 @@ public sealed class RunState
             // A shiny leaves a big nugget and a held item; now and then a regular Pokémon drops a coin or a Baccarancia.
             if (e.Shiny)
             {
+                Stats.RecordShiny();
                 Loot.Drop(e.Position + new Vector2(6, 0), LootKind.BigNugget);
                 if (LootSystem.ShinyItem(this) is { } item)
                     Loot.Drop(e.Position + new Vector2(-6, 2), LootKind.HeldItem, item);
@@ -580,6 +607,7 @@ public sealed class RunState
 
             if (e.Rank == EnemyRank.Dominant)
             {
+                Stats.RecordDominant();
                 Pickups.Chests.Add(new Chest(++_chestSerial, e.Position, e.Chest));
                 _events.Add(new RunEvent(RunEventType.ChestDropped, e.Position, (int)e.Chest, e.SpeciesId));
             }

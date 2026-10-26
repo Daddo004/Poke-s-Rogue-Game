@@ -55,6 +55,7 @@ public sealed class Hud
 
         if (_bannerAge >= 0 && ++_bannerAge >= BannerTicks)
             _bannerAge = -1;
+        UpdateMissions();
 
         if (_trainerCutIn >= 0 && ++_trainerCutIn >= CutInTicks)
             _trainerCutIn = -1;
@@ -167,6 +168,73 @@ public sealed class Hud
         }
     }
 
+    /// <summary>How long a completed mission's notice stays (Block 6), sliding in and out included.</summary>
+    private const int MissionTicks = 240;
+
+    private readonly Queue<Core.Meta.MissionSpec> _missions = new();
+    private Core.Meta.MissionSpec? _mission;
+    private int _missionAge;
+
+    /// <summary>A mission was completed during the run: its notice comes in at the right edge, one after another.</summary>
+    public void ShowMission(Core.Meta.MissionSpec mission) => _missions.Enqueue(mission);
+
+    public void ClearMissions()
+    {
+        _missions.Clear();
+        _mission = null;
+    }
+
+    private void UpdateMissions()
+    {
+        if (_mission is not null && ++_missionAge >= MissionTicks)
+            _mission = null;
+        if (_mission is null && _missions.TryDequeue(out var next))
+        {
+            _mission = next;
+            _missionAge = 0;
+        }
+    }
+
+    /// <summary>
+    /// The notice of a completed mission (Block 6), under the coins and KO: "MISSIONE COMPIUTA!" in gold, its name, and what
+    /// it gives at the end of the run. It slides in from the right edge and back out.
+    /// </summary>
+    private void DrawMission(SpriteBatch batch)
+    {
+        if (_mission is not { } mission)
+            return;
+
+        var p = _services.Primitives;
+        var small = _services.Fonts.Small(_services.Style);
+        var numbers = _services.Fonts.Get(_services.Style.NumberFont, _services.Style.NumberFontSize / 2f);
+        var body = _services.Fonts.Body(_services.Style);
+        const int width = 184, height = 42;
+        var slide = MathF.Min(1f, MathF.Min(_missionAge / 12f, (MissionTicks - _missionAge) / 12f));
+        var eased = 1f - (1f - slide) * (1f - slide);
+        var x = (int)MathF.Round(_services.Screen.Width - 4 - width * eased);
+        var box = new Rectangle(x, 46, width, height);
+        UiDraw.Frame(batch, p, box, EvolvedTheme);
+        if (_missionAge < 20)
+            p.Rect(batch, box, Color.White * (0.5f * (1f - _missionAge / 20f)));
+
+        UiDraw.Text(batch, small, "MISSIONE COMPIUTA!", new Vector2(box.X + 8, box.Y + 5), Gold);
+        UiDraw.Text(batch, body, mission.NameIt, new Vector2(box.X + 8, box.Y + 13), Paper);
+        UiDraw.TextWithNumbers(batch, small, numbers, RewardText(mission, _services), new Vector2(box.X + 8, box.Y + 31), new Color(160, 152, 190));
+    }
+
+    /// <summary>What a mission gives, in a few words: "+500 MONETE", "SBLOCCA DITTO".</summary>
+    public static string RewardText(Core.Meta.MissionSpec mission, GameServices services)
+    {
+        var parts = new List<string>();
+        if (mission.Reward.Coins > 0)
+            parts.Add($"+{UiFormat.Number(mission.Reward.Coins)} MONETE");
+        if (mission.Reward.Character is { } c && services.Characters.Find(c) is { } character)
+            parts.Add($"SBLOCCA {character.NameIt.ToUpperInvariant()}");
+        if (mission.Reward.Trainer is { } t && services.Trainers.Value.Find(t) is { } trainer)
+            parts.Add($"SBLOCCA {trainer.NameIt.ToUpperInvariant()}");
+        return string.Join("  ", parts);
+    }
+
     /// <summary>The announcement of a Dominante, sliding in under the timer, blinking twice, then fading out.</summary>
     private void DrawBanner(SpriteBatch batch)
     {
@@ -194,7 +262,7 @@ public sealed class Hud
         for (var i = 0; i < Slots; i++)
         {
             var moveSlot = new Rectangle(3 + i * 26, 13, 24, 24);
-            if (i < Core.Run.Progression.LevelUp.MaxMoves)
+            if (i < run.MaxMoves)
                 DrawMoveSlot(batch, moveSlot, i < player.Moves.Count ? player.Moves[i] : null);
             else
                 DrawLockedSlot(batch, moveSlot);
@@ -234,6 +302,7 @@ public sealed class Hud
 
         DrawBanner(batch);
         DrawBossBar(batch, run);
+        DrawMission(batch);
         batch.End();
     }
 

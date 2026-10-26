@@ -1,0 +1,56 @@
+{
+  // Missions (phase 6.3). "kind" says what is asked (MissionKind in Core/Meta/MissionLibrary.cs), "count" how much;
+  // "oneRun": true counts within a single run, otherwise across every run. "level" + "difficulty" make it a mission of
+  // that level at that difficulty (difficulties arrive with Block 7: until then every run is Normal). "reward": coins,
+  // a character ("character") or a trainer ("trainer"). Each character unlocked by a mission has exactly one here.
+  "version": 1,
+  "missions": [
+    // --- First steps ---
+    { "id": "prima-partita", "nameIt": "Si comincia!", "descriptionIt": "Gioca la tua prima partita.", "kind": "Runs", "count": 1, "reward": { "coins": 100 } },
+    { "id": "dieci-partite", "nameIt": "Allenamento costante", "descriptionIt": "Gioca 10 partite.", "kind": "Runs", "count": 10, "reward": { "coins": 500 } },
+    { "id": "cinque-minuti", "nameIt": "Resistenza", "descriptionIt": "Resisti 5 minuti in una partita.", "kind": "Survive", "count": 5, "reward": { "coins": 150 } },
+    { "id": "dieci-minuti", "nameIt": "Tenacia", "descriptionIt": "Resisti 10 minuti in una partita.", "kind": "Survive", "count": 10, "reward": { "coins": 300 } },
+    { "id": "livello-30", "nameIt": "Esperto", "descriptionIt": "Raggiungi il livello 30 in una partita.", "kind": "ReachLevel", "count": 30, "reward": { "coins": 150 } },
+    { "id": "livello-60", "nameIt": "Veterano", "descriptionIt": "Raggiungi il livello 60 in una partita.", "kind": "ReachLevel", "count": 60, "reward": { "coins": 400 } },
+
+    // --- Fighting ---
+    { "id": "mille-ko", "nameIt": "Orda sbaragliata", "descriptionIt": "Sconfiggi 1.000 Pokémon in una partita.", "kind": "Defeat", "count": 1000, "oneRun": true, "reward": { "coins": 200 } },
+    { "id": "diecimila-ko", "nameIt": "Diecimila", "descriptionIt": "Sconfiggi 10.000 Pokémon in tutto.", "kind": "Defeat", "count": 10000, "reward": { "coins": 800 } },
+    { "id": "spettri", "nameIt": "Le 108 anime", "descriptionIt": "Sconfiggi 108 Pokémon di tipo Spettro in una sola partita.", "kind": "Defeat", "type": "Ghost", "count": 108, "oneRun": true, "reward": { "character": "spiritomb" } },
+    { "id": "dominanti", "nameIt": "Caccia ai Dominanti", "descriptionIt": "Sconfiggi 5 Dominanti in una partita.", "kind": "DefeatDominant", "count": 5, "oneRun": true, "reward": { "coins": 400 } },
+    { "id": "cromatico", "nameIt": "Che colori!", "descriptionIt": "Sconfiggi un Pokémon cromatico.", "kind": "DefeatShiny", "count": 1, "reward": { "character": "ditto" } },
+    { "id": "cromatici", "nameIt": "Collezionista di colori", "descriptionIt": "Sconfiggi 50 Pokémon cromatici in tutto.", "kind": "DefeatShiny", "count": 50, "reward": { "coins": 1000 } },
+    { "id": "digiuno", "nameIt": "Stomaco di ferro", "descriptionIt": "Resisti 10 minuti senza raccogliere cibo né pozioni.", "kind": "Survive", "count": 10, "noHealing": true, "reward": { "character": "snorlax" } },
+
+    // --- Growing ---
+    { "id": "prima-evoluzione", "nameIt": "Mossa evoluta", "descriptionIt": "Fai evolvere una mossa.", "kind": "EvolveMove", "count": 1, "reward": { "coins": 200 } },
+    { "id": "tre-evoluzioni", "nameIt": "Arsenale", "descriptionIt": "Fai evolvere 3 mosse nella stessa partita.", "kind": "EvolveMove", "count": 3, "oneRun": true, "reward": { "coins": 600 } },
+    { "id": "terzo-stadio", "nameIt": "Forma finale", "descriptionIt": "Porta un Pokémon al terzo stadio della sua linea.", "kind": "EvolvePokemon", "count": 2, "reward": { "coins": 300 } },
+    { "id": "forzieri", "nameIt": "Cercatore di tesori", "descriptionIt": "Apri 25 forzieri in tutto.", "kind": "OpenChests", "count": 25, "reward": { "coins": 300 } },
+    { "id": "monete", "nameIt": "Gruzzolo", "descriptionIt": "Raccogli 1.500 monete in una partita.", "kind": "CollectCoins", "count": 1500, "oneRun": true, "reward": { "coins": 300 } },
+    { "id": "speciali", "nameIt": "Colpo di grazia", "descriptionIt": "Usa la mossa speciale 10 volte in tutto.", "kind": "UseSpecial", "count": 10, "reward": { "coins": 250 } },
+    { "id": "allenatore", "nameIt": "Gioco di squadra", "descriptionIt": "Usa l'abilità dell'allenatore 25 volte in tutto.", "kind": "UseTrainer", "count": 25, "reward": { "coins": 250 } },
+
+    // --- Characters ---
+    { "id": "magikarp", "nameIt": "Il riscatto di Magikarp", "descriptionIt": "Vinci una partita con Magikarp.", "kind": "WinWith", "character": "magikarp", "reward": { "character": "feebas" } },
+    { "id": "manaphy", "nameIt": "Principe del mare", "descriptionIt": "Vinci una partita con Manaphy.", "kind": "WinWith", "character": "manaphy", "reward": { "character": "phione" } },
+    { "id": "pokedex-kanto", "nameIt": "Pokédex di Kanto", "descriptionIt": "Incontra tutti i 151 Pokémon di Kanto.", "kind": "PokedexSeen", "region": "Kanto", "count": 0, "reward": { "character": "mew" } },
+    { "id": "pokedex-50", "nameIt": "Ricercatore", "descriptionIt": "Sconfiggi 50 specie diverse.", "kind": "PokedexDefeated", "count": 50, "reward": { "coins": 500 } },
+    { "id": "johto", "nameIt": "Viaggio nel tempo", "descriptionIt": "Completa tutti i livelli di Johto.", "kind": "CompleteRegion", "region": "Johto", "reward": { "character": "celebi" } },
+    { "id": "hoenn", "nameIt": "Il desiderio", "descriptionIt": "Completa tutti i livelli di Hoenn.", "kind": "CompleteRegion", "region": "Hoenn", "reward": { "character": "jirachi" } },
+    { "id": "leggende", "nameIt": "Il Creatore", "descriptionIt": "Sblocca tutti gli altri Pokémon leggendari e misteriosi.", "kind": "UnlockCharacters", "groups": [ "Legendary", "Mythical" ], "reward": { "character": "arceus" } },
+
+    // --- Trainers ---
+    { "id": "prima-medaglia", "nameIt": "Prima medaglia", "descriptionIt": "Sconfiggi un capopalestra in una sfida.", "kind": "DefeatTrainer", "role": "GymLeader", "count": 1, "reward": { "coins": 500 } },
+    { "id": "medaglie-kanto", "nameIt": "Otto medaglie", "descriptionIt": "Sconfiggi gli 8 capipalestra di Kanto.", "kind": "DefeatTrainer", "role": "GymLeader", "region": "Kanto", "count": 8, "reward": { "coins": 2000 } },
+    { "id": "superquattro-kanto", "nameIt": "Lega di Kanto", "descriptionIt": "Sconfiggi i Superquattro di Kanto.", "kind": "DefeatTrainer", "role": "EliteFour", "region": "Kanto", "count": 4, "reward": { "coins": 2500 } },
+    { "id": "campione-kanto", "nameIt": "Campione!", "descriptionIt": "Sconfiggi Blu, il Campione di Kanto.", "kind": "DefeatTrainer", "trainer": "blue", "reward": { "coins": 3000 } },
+    { "id": "rosso", "nameIt": "Monte Argento", "descriptionIt": "Sconfiggi Rosso.", "kind": "DefeatTrainer", "trainer": "red", "reward": { "coins": 5000 } },
+
+    // --- Levels ---
+    { "id": "bosco-normale", "nameIt": "Signore del Bosco", "descriptionIt": "Vinci Bosco Smeraldo.", "kind": "WinLevel", "level": "bosco-smeraldo", "difficulty": "Normal", "reward": { "coins": 500 } },
+    { "id": "bosco-difficile", "nameIt": "Bosco insidioso", "descriptionIt": "Vinci Bosco Smeraldo a difficoltà Difficile.", "kind": "WinLevel", "level": "bosco-smeraldo", "difficulty": "Hard", "reward": { "coins": 1000 } },
+    { "id": "bosco-ultra", "nameIt": "Bosco proibito", "descriptionIt": "Vinci Bosco Smeraldo a difficoltà Ultra.", "kind": "WinLevel", "level": "bosco-smeraldo", "difficulty": "Ultra", "reward": { "coins": 1500 } },
+    { "id": "bosco-cromatico", "nameIt": "Luccichio nel bosco", "descriptionIt": "In Bosco Smeraldo, sconfiggi 10 Pokémon cromatici in una partita.", "kind": "DefeatShiny", "level": "bosco-smeraldo", "count": 10, "oneRun": true, "reward": { "coins": 400 } }
+  ]
+}

@@ -82,5 +82,27 @@ public sealed class GameServices(GraphicsDevice device, string contentRoot, Virt
     /// <summary>The trainers' sprites and the head square of each for the HUD.</summary>
     public TrainerPortraits TrainerPortraits => _trainerPortraits ??= new TrainerPortraits(Sprites);
 
+    /// <summary>Shows another scene from the next update on (set by <see cref="PokeRogueGame"/>).</summary>
+    public Action<Scenes.Scene> Switch { get; set; } = _ => { };
+
+    /// <summary>The shop's prices and effects (Block 6).</summary>
+    public Lazy<Core.Meta.ShopRules> Shop { get; } = new(() => Core.Meta.ShopRules.Load(contentRoot));
+
+    private Core.Meta.MetaProgress? _meta;
+
+    /// <summary>Where the save lives; null keeps the progress in memory only (previews and captures never touch the real save).</summary>
+    public Core.Meta.SaveStore? SaveStore { get; set; }
+
+    /// <summary>
+    /// The meta-progression over the save (Block 6): coins, unlocks, the shop, missions, the Pokédex. Loaded on first use;
+    /// previews may replace it with one of their own.
+    /// </summary>
+    public Core.Meta.MetaProgress Meta
+    {
+        get => _meta ??= new Core.Meta.MetaProgress(SaveStore?.Load() ?? new Core.Meta.SaveData(), Shop.Value, Characters, Trainers.Value,
+            Core.Meta.MissionLibrary.Load(ContentRoot, Characters, Trainers.Value), Pokedex.Value.Species, SaveStore);
+        set => _meta = value;
+    }
+
     public SpeciesData? Species(int id) => id >= 1 && id <= Pokedex.Value.Species.Count ? Pokedex.Value.Species[id - 1] : null;
 }

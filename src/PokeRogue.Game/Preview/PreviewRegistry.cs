@@ -43,6 +43,8 @@ public static class PreviewRegistry
                     o.Values.ContainsKey("soloeffetto"))),
             ["allenatori"] = ("Trainers (5.1/5.2): --variant scheda|album|<archetype: scudo|cura|onda|tempo|intangibile|tipo|fortuna|frenesia|stato|scatto> [--allenatore id] [--pagina N]",
                 (s, o) => new TrainerPreviewScene(s, o.Str("variant") ?? "scheda", o.Str("allenatore"), o.Int("pagina", 1))),
+            ["negozio"] = ("Meta-progression (Block 6) on a demo save: --variant menu|pokemon|potenzia|conferma|allenatori|sfida|potenziamenti|pokedex|mosse|strumenti|missioni|missione|novita|carte [--pokemon id]",
+                (s, o) => new MetaPreviewScene(s, o.Str("variant") ?? "menu", o.Str("pokemon"))),
             ["personaggi"] =("Album of the playable characters (4.5): --pagina N, nine to a page", (s, o) => new CharacterAlbumScene(s, o.Int("pagina", 1))),
             ["rinascita"] = ("Focalnastro (2.5): Pikachu is knocked out and stands back up", (s, _) => new RevivePreviewScene(s)),
             ["stati"] = ("Status conditions (2.3): --variant vetrina|icone|orda [--icone simbolo|riquadro|nessuna] [--stress N] [--mosse a,b,c]",

@@ -67,8 +67,8 @@ public static class UiDraw
     /// </summary>
     public static void TextWithNumbers(SpriteBatch batch, SpriteFontBase font, SpriteFontBase numbers, string text, Vector2 position, Color color)
     {
-        // A decimal comma between two digits ("0,2") stays with the number.
-        bool Numeric(int i) => char.IsDigit(text[i]) || text[i] == ',' && i > 0 && i + 1 < text.Length && char.IsDigit(text[i - 1]) && char.IsDigit(text[i + 1]);
+        // A decimal comma or a thousands dot between two digits ("0,2", "1.500") stays with the number.
+        bool Numeric(int i) => char.IsDigit(text[i]) || text[i] is ',' or '.' && i > 0 && i + 1 < text.Length && char.IsDigit(text[i - 1]) && char.IsDigit(text[i + 1]);
 
         var x = position.X;
         var start = 0;
@@ -82,7 +82,9 @@ public static class UiDraw
             var run = text[start..end];
             var runFont = digits ? numbers : font;
             Text(batch, runFont, run, new Vector2(x, position.Y - (digits ? 2 : 0)), color);
-            x += Measure(runFont, run).X;
+            // Measured with a bar after it, so a space at the end of the run still counts; rounded up, so the next run
+            // never eats the 2 px of a space.
+            x = MathF.Ceiling(x + Measure(runFont, run + "|").X - Measure(runFont, "|").X);
             start = end;
         }
     }

@@ -59,7 +59,11 @@ public sealed class RosterSimulation
     }
 
     public sealed record RunResult(int Level, int Kills, RunOutcome Outcome, int Ticks, float? BossSeconds, string FinalForm,
-        IReadOnlyList<(string Name, int Minute)> Evolutions, int Specials, float SpecialShare, int TrainerUses = 0);
+        IReadOnlyList<(string Name, int Minute)> Evolutions, int Specials, float SpecialShare, int TrainerUses = 0)
+    {
+        /// <summary>What the run did, for the meta-progression (Block 6).</summary>
+        public PokeRogue.Core.Meta.RunRecord? Record { get; init; }
+    }
 
     /// <summary>The trainers (phase 5.1); a run plays with Ash, as the game does, unless another one or none is given.</summary>
     public TrainerLibrary Trainers { get; }
@@ -72,7 +76,7 @@ public sealed class RosterSimulation
     /// <param name="trainer">The run's trainer: Ash when omitted, none with <paramref name="noTrainer"/>.</param>
     /// <param name="challenge">A challenge run (phase 5.3): this trainer's team replaces the level's boss, and the boss time is the whole team's.</param>
     public RunResult Play(CharacterDefinition character, int seed, bool mortal, TrainerDefinition? trainer = null, bool noTrainer = false,
-        TrainerDefinition? challenge = null)
+        TrainerDefinition? challenge = null, RunLoadout? loadout = null)
     {
         var run = new RunState(_pokedex.Species, _typeChart, character.First.Id, _waves, new Vector2(640, 360), seed)
         {
@@ -86,7 +90,7 @@ public sealed class RosterSimulation
             LootRules = _loot.File.Enabled ? _loot : null,
             SpecialRules = _specials,
         };
-        run.UseCharacter(character);
+        run.UseCharacter(character, loadout);
         if (!noTrainer)
             run.UseTrainer(trainer ?? Trainers[TrainerLibrary.DefaultId]);
         if (challenge is not null)
@@ -129,7 +133,10 @@ public sealed class RosterSimulation
         var moves = run.Player.Moves.Sum(m => m.DamageDealt);
         var total = moves + run.Special.DamageDealt;
         return new RunResult(run.Player.Level, run.Stats.Kills, run.Outcome, run.Ticks, bossSeconds, run.Player.Species.NameIt, evolutions,
-            run.Special.Uses, total > 0f ? run.Special.DamageDealt / total : 0f, run.TrainerState.Uses);
+            run.Special.Uses, total > 0f ? run.Special.DamageDealt / total : 0f, run.TrainerState.Uses)
+        {
+            Record = PokeRogue.Core.Meta.RunRecord.From(run, LevelId),
+        };
     }
 
     public string Report(int runs, IReadOnlyCollection<string>? only, Action<string> progress)

@@ -30,9 +30,11 @@
   "enemyFoodChance": 0.003,
   "foodHeal": 30,
 
-  "coinValue": 2,
-  "nuggetValue": 10,
-  "bigNuggetValue": 25,
+  // Block 6: the coins go to the shop's bank, so they are worth 4× what they were (2, 10, 25): a run of five or six
+  // minutes brings a few hundred, a whole level over a thousand.
+  "coinValue": 8,
+  "nuggetValue": 40,
+  "bigNuggetValue": 100,
 
   // Share of the maximum PS a Pozione restores.
   "potionHeal": 0.3

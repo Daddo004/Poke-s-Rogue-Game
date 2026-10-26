@@ -358,6 +358,7 @@ public sealed class LootSystem
                 break;
         }
 
+        run.Stats.RecordLoot(loot.Kind);
         run.AddEvent(new RunEvent(RunEventType.LootCollected, loot.Position, (int)loot.Kind));
         Abilities.AbilitySystem.OnLootCollected(run, loot.Kind);
     }

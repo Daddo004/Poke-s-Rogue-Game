@@ -44,11 +44,11 @@ public sealed record LevelUpOption(
 /// <summary>Builds and applies level-up choices, Vampire Survivors style: upgrade or add moves and held items.</summary>
 public static class LevelUp
 {
-    /// <summary>Move slots in a run (phase 3.6: five; the sixth will be bought with the meta-progression of Block 6).</summary>
+    /// <summary>Move slots in a run (phase 3.6: five; the sixth is bought in the shop, <see cref="RunState.MaxMoves"/>).</summary>
     public const int MaxMoves = 5;
     public const int MaxItems = 6;
     public const int HealAmount = 30;
-    public const int CoinAmount = 25;
+    public const int CoinAmount = 100;
 
     private static readonly CultureInfo Italian = CultureInfo.InvariantCulture;
 
@@ -62,7 +62,7 @@ public static class LevelUp
         foreach (var move in player.Moves.Where(m => m.Level < m.Definition.MaxLevel))
             candidates.Add(MoveUpgrade(move));
 
-        if (player.Moves.Count < MaxMoves)
+        if (player.Moves.Count < run.MaxMoves)
         {
             // A move already evolved is gone for good, as in Vampire Survivors: its base is not offered again.
             foreach (var definition in run.MovePool.Where(d => player.Moves.All(m => m.Definition.Id != d.Id && m.Definition.EvolvesFrom != d.Id)))
