@@ -208,6 +208,9 @@ public struct Enemy
     /// <summary>Confusion: the direction it stumbles along (unit vector).</summary>
     public Vector2 Wander;
 
+    /// <summary>Ventose (phase 4.3): ticks left walking at half speed after touching the player.</summary>
+    public int SlowTicks;
+
     public readonly bool IsAlive => State == EnemyState.Alive;
 
     /// <summary>Frozen, asleep or locked up by paralysis: no walking and no animation.</summary>

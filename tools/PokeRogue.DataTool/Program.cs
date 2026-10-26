@@ -31,6 +31,9 @@ switch (command)
     case "banco":
         BenchMoves();
         break;
+    case "personaggi":
+        SimulateRoster();
+        break;
     default:
         Console.WriteLine("""
             Usage: dotnet run --project tools/PokeRogue.DataTool -- <command> [options]
@@ -40,6 +43,8 @@ switch (command)
               all       Run every step
               bilancio  Simulate autopilot runs and write a balance report (Milestone B)
               banco     Measure every move alone at levels 1, 4 and 8 against steady waves (phase 2.8)
+              personaggi  Play every character headless and compare them (phase 4.5): --runs N (default 6),
+                          --solo id,id to play only some, --out PATH (default previews/4.5/simulazione-personaggi.md)
 
             Options:
               --force       Re-download files that are already cached
@@ -57,6 +62,21 @@ void SimulateBalance()
     var runs = ReadIntOption("--runs") ?? 40;
     var report = new PokeRogue.DataTool.Balance.BalanceSimulation(contentRoot, weightedCards: !args.Contains("--senza-pesi")).Report(runs, Console.WriteLine);
     WriteReport(report, "simulazione-bilanciamento.md");
+}
+
+void SimulateRoster()
+{
+    var runs = ReadIntOption("--runs") ?? 6;
+    var onlyIndex = Array.IndexOf(args, "--solo");
+    var only = onlyIndex >= 0 && onlyIndex + 1 < args.Length ? args[onlyIndex + 1].Split(',') : null;
+    var report = new PokeRogue.DataTool.Balance.RosterSimulation(contentRoot).Report(runs, only, Console.WriteLine);
+    var outIndex = Array.IndexOf(args, "--out");
+    var output = outIndex >= 0 && outIndex + 1 < args.Length
+        ? args[outIndex + 1]
+        : Path.Combine(Path.GetDirectoryName(contentRoot)!, "previews", "4.5", "simulazione-personaggi.md");
+    Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output))!);
+    File.WriteAllText(output, report);
+    Console.WriteLine($"Wrote {output}");
 }
 
 void BenchMoves() => WriteReport(new PokeRogue.DataTool.Balance.MoveBench(contentRoot).Report(Console.WriteLine), "banco-di-prova.md");

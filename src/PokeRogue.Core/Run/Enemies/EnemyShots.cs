@@ -79,12 +79,7 @@ public sealed class EnemyShotPool(int capacity)
             var reach = shot.Radius + player.Radius;
             if (Vector2.DistanceSquared(shot.Position, player.Position) < reach * reach && !player.IsDown)
             {
-                var taken = player.TakeContactDamage(shot.Damage, shot.Special);
-                if (taken > 0f)
-                {
-                    run.Stats.RecordDamageTaken(taken);
-                    run.AddEvent(new RunEvent(RunEventType.PlayerHurt, player.Position, taken, shot.SpeciesId));
-                }
+                run.HurtPlayer(new Abilities.Hurt(Abilities.HurtKind.Shot, shot.Damage, shot.Special, shot.SpeciesId, shot.Move.Type));
 
                 End(run, ref shot, hit: true);
                 continue;

@@ -1,0 +1,686 @@
+{
+  // Playable characters (phase 4.1): one evolution line each, from the user's roster of 2026-10-26.
+  // "species" lists the line in order: the first is where the run starts; each later stage evolves from "from" (default:
+  // the species it evolves from in the games) at the run level "level", or with the drop "item" (4.2). Several stages from
+  // the same one are a choice (Eevee, Kirlia). Levels are the games' ones × 0.9; trades and friendship became levels or items.
+  // Babies the user did not name (Pichu, Elekid, Munchlax) are left out.
+  // "ability": its effect comes in phase 4.3 ("active": true = a key with a cooldown). "mainMove" starts the run;
+  // "secondaryMove" is unlocked in the shop (Block 6), then "special", the special move of that type (phase 4.4).
+  // "modifiers" use the same fields as an item's "perLevel" (fractions: 0.1 = +10%). "unlock": Start, Shop (price in
+  // coins), Fossil (found on a level, then revived for "price"), Egg (hidden on a level), Mission or Defeat (beat it at Ultra).
+  "version": 1,
+  // Items that make a stage evolve (phase 4.2): a Dominante's chest gives the one the current stage needs, from run level
+  // 14 for a second stage and 30 for a third. The icon is content/icons/items/<id>.png.
+  "evolutionItems": [
+    { "id": "thunder-stone", "nameIt": "Pietratuono" },
+    { "id": "leaf-stone", "nameIt": "Pietrafoglia" },
+    { "id": "shiny-stone", "nameIt": "Pietrabrillo" },
+    { "id": "dawn-stone", "nameIt": "Pietralbore" },
+    { "id": "metal-coat", "nameIt": "Metalcoperta" },
+    { "id": "electirizer", "nameIt": "Elettritore" },
+    { "id": "up-grade", "nameIt": "Upgrade" },
+    { "id": "dubious-disc", "nameIt": "Dubbiodisco" },
+    { "id": "reaper-cloth", "nameIt": "Terrorpanno" }
+  ],
+  "characters": [
+    // --- Starters, Gen 1–4 ---
+    {
+      "id": "bulbasaur", "group": "Starter",
+      "species": [ { "key": "bulbasaur" }, { "key": "ivysaur", "level": 14 }, { "key": "venusaur", "level": 29 } ],
+      "ability": { "id": "overgrow", "nameIt": "Erbaiuto", "descriptionIt": "Con meno di un terzo dei PS, le mosse Erba fanno il 50% di danni in più." },
+      "mainMove": "vine-whip", "secondaryMove": "smog", "special": "Grass",
+      "modifiers": { "regenPerSecond": 0.1 },
+      "unlock": { "kind": "Shop", "price": 400 }
+    },
+    {
+      "id": "charmander", "group": "Starter",
+      "species": [ { "key": "charmander" }, { "key": "charmeleon", "level": 14 }, { "key": "charizard", "level": 32 } ],
+      "ability": { "id": "blaze", "nameIt": "Aiutofuoco", "descriptionIt": "Con meno di un terzo dei PS, le mosse Fuoco fanno il 50% di danni in più." },
+      "mainMove": "ember", "secondaryMove": "aerial-ace", "special": "Fire",
+      "modifiers": { "specialPowerPercent": 0.1 },
+      "unlock": { "kind": "Shop", "price": 400 }
+    },
+    {
+      "id": "squirtle", "group": "Starter",
+      "species": [ { "key": "squirtle" }, { "key": "wartortle", "level": 14 }, { "key": "blastoise", "level": 32 } ],
+      "ability": { "id": "torrent", "nameIt": "Acquaiuto", "descriptionIt": "Con meno di un terzo dei PS, le mosse Acqua fanno il 50% di danni in più." },
+      "mainMove": "water-gun", "secondaryMove": "gyro-ball", "special": "Water",
+      "modifiers": { "physicalResistPercent": 0.1 },
+      "unlock": { "kind": "Shop", "price": 400 }
+    },
+    {
+      "id": "chikorita", "group": "Starter",
+      "species": [ { "key": "chikorita" }, { "key": "bayleef", "level": 14 }, { "key": "meganium", "level": 29 } ],
+      "ability": { "id": "leaf-guard", "nameIt": "Fogliamanto", "descriptionIt": "Con più dell'80% dei PS subisci il 25% di danni in meno." },
+      "mainMove": "razor-leaf", "secondaryMove": "vine-whip", "special": "Grass",
+      "modifiers": { "maxHpPercent": 0.1 },
+      "unlock": { "kind": "Shop", "price": 600 }
+    },
+    {
+      "id": "cyndaquil", "group": "Starter",
+      "species": [ { "key": "cyndaquil" }, { "key": "quilava", "level": 13 }, { "key": "typhlosion", "level": 32 } ],
+      "ability": { "id": "flash-fire", "nameIt": "Fuocardore", "descriptionIt": "Ogni KO con una mossa Fuoco aggiunge l'1% ai danni Fuoco, fino al 25%; un colpo subito lo azzera." },
+      "mainMove": "flame-wheel", "secondaryMove": "swift", "special": "Fire",
+      "modifiers": { "moveSpeedPercent": 0.1 },
+      "unlock": { "kind": "Shop", "price": 600 }
+    },
+    {
+      "id": "totodile", "group": "Starter",
+      "species": [ { "key": "totodile" }, { "key": "croconaw", "level": 16 }, { "key": "feraligatr", "level": 27 } ],
+      "ability": { "id": "torrent", "nameIt": "Acquaiuto", "descriptionIt": "Con meno di un terzo dei PS, le mosse Acqua fanno il 50% di danni in più." },
+      "mainMove": "bite", "secondaryMove": "water-gun", "special": "Water",
+      "modifiers": { "physicalPowerPercent": 0.1 },
+      "unlock": { "kind": "Shop", "price": 600 }
+    },
+    {
+      "id": "treecko", "group": "Starter",
+      "species": [ { "key": "treecko" }, { "key": "grovyle", "level": 14 }, { "key": "sceptile", "level": 32 } ],
+      "ability": { "id": "unburden", "nameIt": "Agiltecnica", "descriptionIt": "Dopo aver raccolto un oggetto a terra corri il 40% più veloce per 10 secondi." },
+      "mainMove": "vine-whip", "secondaryMove": "aerial-ace", "special": "Grass",
+      "modifiers": { "critChance": 0.05 },
+      "unlock": { "kind": "Shop", "price": 800 }
+    },
+    {
+      "id": "torchic", "group": "Starter",
+      "species": [ { "key": "torchic" }, { "key": "combusken", "level": 14 }, { "key": "blaziken", "level": 32 } ],
+      "ability": { "id": "speed-boost", "nameIt": "Acceleratore", "descriptionIt": "Ogni 30 secondi corri e ricarichi le mosse il 2% più in fretta, fino al 20%." },
+      "mainMove": "ember", "secondaryMove": "karate-chop", "special": "Fighting",
+      "modifiers": { "physicalPowerPercent": 0.05, "specialPowerPercent": 0.05 },
+      "unlock": { "kind": "Shop", "price": 800 }
+    },
+    {
+      "id": "mudkip", "group": "Starter",
+      "species": [ { "key": "mudkip" }, { "key": "marshtomp", "level": 14 }, { "key": "swampert", "level": 32 } ],
+      "ability": { "id": "damp", "nameIt": "Umidità", "descriptionIt": "Le esplosioni dei nemici kamikaze non ti fanno danni." },
+      "mainMove": "mud-bomb", "secondaryMove": "bubble", "special": "Ground",
+      "modifiers": { "maxHpPercent": 0.15 },
+      "unlock": { "kind": "Shop", "price": 800 }
+    },
+    {
+      "id": "turtwig", "group": "Starter",
+      "species": [ { "key": "turtwig" }, { "key": "grotle", "level": 16 }, { "key": "torterra", "level": 29 } ],
+      "ability": { "id": "overgrow", "nameIt": "Erbaiuto", "descriptionIt": "Con meno di un terzo dei PS, le mosse Erba fanno il 50% di danni in più." },
+      "mainMove": "razor-leaf", "secondaryMove": "earthquake", "special": "Ground",
+      "modifiers": { "physicalResistPercent": 0.1, "moveSpeedPercent": -0.05 },
+      "unlock": { "kind": "Shop", "price": 1000 }
+    },
+    {
+      "id": "chimchar", "group": "Starter",
+      "species": [ { "key": "chimchar" }, { "key": "monferno", "level": 13 }, { "key": "infernape", "level": 32 } ],
+      "ability": { "id": "iron-fist", "nameIt": "Ferropugno", "descriptionIt": "Le mosse Lotta fanno il 20% di danni in più." },
+      "mainMove": "flame-wheel", "secondaryMove": "aura-sphere", "special": "Fire",
+      "modifiers": { "cooldownReductionPercent": 0.05 },
+      "unlock": { "kind": "Shop", "price": 1000 }
+    },
+    {
+      "id": "piplup", "group": "Starter",
+      "species": [ { "key": "piplup" }, { "key": "prinplup", "level": 14 }, { "key": "empoleon", "level": 32 } ],
+      "ability": { "id": "torrent", "nameIt": "Acquaiuto", "descriptionIt": "Con meno di un terzo dei PS, le mosse Acqua fanno il 50% di danni in più." },
+      "mainMove": "bubble", "secondaryMove": "flash-cannon", "special": "Steel",
+      "modifiers": { "specialResistPercent": 0.1 },
+      "unlock": { "kind": "Shop", "price": 1000 }
+    },
+
+    // --- Fossils, Gen 1–4 (Johto has none) ---
+    {
+      "id": "omanyte", "group": "Fossil",
+      "species": [ { "key": "omanyte" }, { "key": "omastar", "level": 36 } ],
+      "ability": { "id": "shell-armor", "nameIt": "Guscioscudo", "descriptionIt": "I danni da contatto sono ridotti del 15%." },
+      "mainMove": "water-gun", "secondaryMove": "rock-tomb", "special": "Rock",
+      "modifiers": { "areaPercent": 0.1 },
+      "unlock": { "kind": "Fossil", "price": 1200, "hintIt": "Trova il Fossilelica in un livello di Kanto." }
+    },
+    {
+      "id": "kabuto", "group": "Fossil",
+      "species": [ { "key": "kabuto" }, { "key": "kabutops", "level": 36 } ],
+      "ability": { "id": "swift-swim", "nameIt": "Nuotovelox", "descriptionIt": "Con la pioggia corri il 30% più veloce (meteo del Blocco 7); fino ad allora il 5%." },
+      "mainMove": "x-scissor", "secondaryMove": "bubble", "special": "Rock",
+      "modifiers": { "critChance": 0.05 },
+      "unlock": { "kind": "Fossil", "price": 1200, "hintIt": "Trova il Fossildome in un livello di Kanto." }
+    },
+    {
+      "id": "aerodactyl", "group": "Fossil",
+      "species": [ { "key": "aerodactyl" } ],
+      "ability": { "id": "pressure", "nameIt": "Pressione", "descriptionIt": "I nemici vicini a te si muovono il 15% più lentamente." },
+      "mainMove": "rock-slide", "secondaryMove": "aerial-ace", "special": "Flying",
+      "modifiers": { "growthPercent": -0.15 },
+      "unlock": { "kind": "Fossil", "price": 2000, "hintIt": "Trova l'Ambra Antica in un livello di Kanto." }
+    },
+    {
+      "id": "lileep", "group": "Fossil",
+      "species": [ { "key": "lileep" }, { "key": "cradily", "level": 36 } ],
+      "ability": { "id": "suction-cups", "nameIt": "Ventose", "descriptionIt": "I nemici che ti toccano restano attaccati alle ventose: vanno a metà velocità per 2 secondi." },
+      "mainMove": "rock-tomb", "secondaryMove": "leech-life", "special": "Grass",
+      "modifiers": { "maxHpPercent": 0.25, "regenPerSecond": 0.1 },
+      "unlock": { "kind": "Fossil", "price": 1200, "hintIt": "Trova il Fossilradice in un livello di Hoenn." }
+    },
+    {
+      "id": "anorith", "group": "Fossil",
+      "species": [ { "key": "anorith" }, { "key": "armaldo", "level": 36 } ],
+      "ability": { "id": "battle-armor", "nameIt": "Lottascudo", "descriptionIt": "I danni da contatto sono ridotti del 15%." },
+      "mainMove": "rock-slide", "secondaryMove": "x-scissor", "special": "Bug",
+      "modifiers": { "physicalPowerPercent": 0.1 },
+      "unlock": { "kind": "Fossil", "price": 1200, "hintIt": "Trova il Fossilunghia in un livello di Hoenn." }
+    },
+    {
+      "id": "cranidos", "group": "Fossil",
+      "species": [ { "key": "cranidos" }, { "key": "rampardos", "level": 27 } ],
+      "ability": { "id": "mold-breaker", "nameIt": "Rompiforma", "descriptionIt": "Le tue mosse ignorano le resistenze di tipo: niente più danni ×0,5 o ×0,25." },
+      "mainMove": "rock-slide", "secondaryMove": "bite", "special": "Rock",
+      "modifiers": { "physicalPowerPercent": 0.05, "physicalResistPercent": -0.1 },
+      "unlock": { "kind": "Fossil", "price": 1200, "hintIt": "Trova il Fossilcranio in un livello di Sinnoh." }
+    },
+    {
+      "id": "shieldon", "group": "Fossil",
+      "species": [ { "key": "shieldon" }, { "key": "bastiodon", "level": 27 } ],
+      "ability": { "id": "sturdy", "nameIt": "Vigore", "descriptionIt": "Una volta per partita, un colpo che ti manderebbe KO ti lascia con 1 PS." },
+      "mainMove": "rock-tomb", "secondaryMove": "flash-cannon", "special": "Steel",
+      "modifiers": { "physicalResistPercent": 0.1, "specialResistPercent": 0.1 },
+      "unlock": { "kind": "Fossil", "price": 1200, "hintIt": "Trova il Fossilscudo in un livello di Sinnoh." }
+    },
+
+    // --- The user's list ---
+    {
+      "id": "pikachu", "group": "Other",
+      "species": [ { "key": "pikachu" }, { "key": "raichu", "item": "thunder-stone" } ],
+      "ability": { "id": "static", "nameIt": "Statico", "descriptionIt": "Chi ti tocca resta paralizzato il 30% delle volte." },
+      "mainMove": "thundershock", "secondaryMove": "thunder-wave", "special": "Electric",
+      "unlock": { "kind": "Start" }
+    },
+    {
+      "id": "abra", "group": "Other",
+      "species": [ { "key": "abra" }, { "key": "kadabra", "level": 14 }, { "key": "alakazam", "level": 32 } ],
+      "ability": { "id": "teleport", "nameIt": "Teletrasporto", "active": true, "descriptionIt": "Ti teletrasporti un tratto avanti nella direzione in cui vai. Ricarica di 8 secondi." },
+      "mainMove": "confusion", "secondaryMove": "hypnosis", "special": "Psychic",
+      "modifiers": { "specialPowerPercent": 0.15 },
+      "unlock": { "kind": "Shop", "price": 900 }
+    },
+    {
+      "id": "farfetchd", "group": "Other",
+      "species": [ { "key": "farfetchd" } ],
+      "ability": { "id": "keen-eye", "nameIt": "Sguardofermo", "descriptionIt": "Il Porro: +10% di probabilità di brutto colpo, e i brutti colpi fanno ×2 invece di ×1,5." },
+      "mainMove": "aerial-ace", "secondaryMove": "karate-chop", "special": "Flying",
+      "modifiers": { "critChance": 0.1, "growthPercent": 0.15 },
+      "unlock": { "kind": "Shop", "price": 500 }
+    },
+    {
+      "id": "gastly", "group": "Other",
+      "species": [ { "key": "gastly" }, { "key": "haunter", "level": 23 }, { "key": "gengar", "level": 36 } ],
+      "ability": { "id": "levitate", "nameIt": "Levitazione", "descriptionIt": "Le mosse Terra, le pozze e le rocce che cadono non ti colpiscono." },
+      "mainMove": "smog", "secondaryMove": "shadow-ball", "special": "Ghost",
+      "modifiers": { "specialPowerPercent": 0.1, "maxHpPercent": 0.2 },
+      "unlock": { "kind": "Shop", "price": 900 }
+    },
+    {
+      "id": "scyther", "group": "Other",
+      "species": [ { "key": "scyther" }, { "key": "scizor", "item": "metal-coat" } ],
+      "ability": { "id": "technician", "nameIt": "Tecnico", "descriptionIt": "Le mosse con potenza fino a 12 fanno il 50% di danni in più." },
+      "mainMove": "x-scissor", "secondaryMove": "aerial-ace", "special": "Bug",
+      "modifiers": { "growthPercent": -0.1 },
+      "unlock": { "kind": "Shop", "price": 1500 }
+    },
+    {
+      "id": "electabuzz", "group": "Other",
+      "species": [ { "key": "electabuzz" }, { "key": "electivire", "item": "electirizer" } ],
+      "ability": { "id": "motor-drive", "nameIt": "Elettrorapid", "descriptionIt": "Ogni colpo Elettro ti fa correre l'1% più veloce per 3 secondi, fino al 10%." },
+      "mainMove": "thundershock", "secondaryMove": "karate-chop", "special": "Electric",
+      "modifiers": { "growthPercent": -0.1 },
+      "unlock": { "kind": "Shop", "price": 1500 }
+    },
+    {
+      "id": "magikarp", "group": "Other",
+      "species": [
+        { "key": "magikarp" },
+        // Gyarados changes ability, as in the games.
+        { "key": "gyarados", "level": 18, "ability": { "id": "intimidate", "nameIt": "Prepotenza", "descriptionIt": "I nemici vicini fanno il 15% di danni in meno." } }
+      ],
+      "ability": { "id": "swift-swim", "nameIt": "Nuotovelox", "descriptionIt": "Con la pioggia corri il 30% più veloce (meteo del Blocco 7); fino ad allora il 5%." },
+      "mainMove": "bubble", "secondaryMove": "bite", "special": "Water",
+      "modifiers": { "growthPercent": 0.3 },
+      "unlock": { "kind": "Shop", "price": 500, "hintIt": "Il venditore di Magikarp del Monte Luna te lo cede per 500 monete." }
+    },
+    {
+      "id": "ditto", "group": "Other",
+      "species": [ { "key": "ditto" } ],
+      "ability": { "id": "transform", "nameIt": "Trasformazione", "active": true, "descriptionIt": "Copi il nemico più forte sullo schermo: per 15 secondi ne prendi tipi, statistiche e aspetto. Ricarica di 40 secondi." },
+      "mainMove": "swift", "secondaryMove": "hyper-voice", "special": "Normal",
+      "unlock": { "kind": "Mission", "hintIt": "Sconfiggi un Pokémon cromatico." }
+    },
+    {
+      "id": "eevee", "group": "Other",
+      "species": [
+        { "key": "eevee" },
+        { "key": "vaporeon", "level": 20 }, { "key": "jolteon", "level": 20 }, { "key": "flareon", "level": 20 },
+        { "key": "espeon", "level": 20 }, { "key": "umbreon", "level": 20 }, { "key": "leafeon", "level": 20 }, { "key": "glaceon", "level": 20 }
+      ],
+      "ability": { "id": "adaptability", "nameIt": "Adattabilità", "descriptionIt": "Le mosse del tuo tipo fanno ×2 invece di ×1,5. Al livello 20 scegli in cosa evolvere." },
+      "mainMove": "swift", "secondaryMove": "bite", "special": "Normal",
+      "unlock": { "kind": "Shop", "price": 1200 }
+    },
+    {
+      "id": "snorlax", "group": "Other",
+      "species": [ { "key": "snorlax" } ],
+      "ability": { "id": "gluttony", "nameIt": "Voracità", "descriptionIt": "Le bacche, il cibo e le pozioni curano il doppio." },
+      "mainMove": "hyper-voice", "secondaryMove": "earthquake", "special": "Normal",
+      "modifiers": { "maxHpPercent": 0.2, "moveSpeedPercent": -0.15, "growthPercent": -0.1 },
+      "unlock": { "kind": "Mission", "hintIt": "Sopravvivi 10 minuti senza raccogliere cibo né pozioni." }
+    },
+    {
+      "id": "dratini", "group": "Other",
+      "species": [ { "key": "dratini" }, { "key": "dragonair", "level": 27 }, { "key": "dragonite", "level": 50 } ],
+      "ability": { "id": "shed-skin", "nameIt": "Muta", "descriptionIt": "Ogni 15 secondi cambi pelle: il colpo successivo non ti fa danni." },
+      "mainMove": "twister", "secondaryMove": "aerial-ace", "special": "Dragon",
+      "modifiers": { "maxHpPercent": 0.15 },
+      "unlock": { "kind": "Shop", "price": 2500 }
+    },
+    {
+      "id": "togepi", "group": "Other",
+      "species": [ { "key": "togepi" }, { "key": "togetic", "level": 14 }, { "key": "togekiss", "item": "shiny-stone" } ],
+      "ability": { "id": "serene-grace", "nameIt": "Leggiadro", "descriptionIt": "Le probabilità di stato delle tue mosse raddoppiano." },
+      "mainMove": "swift", "secondaryMove": "aerial-ace", "special": "Flying",
+      "modifiers": { "coinPercent": 0.2 },
+      "unlock": { "kind": "Egg", "hintIt": "Trova l'Uovo di Togepi nascosto in un livello di Johto." }
+    },
+    {
+      "id": "porygon", "group": "Other",
+      "species": [ { "key": "porygon" }, { "key": "porygon2", "item": "up-grade" }, { "key": "porygon-z", "item": "dubious-disc" } ],
+      "ability": { "id": "download", "nameIt": "Download", "descriptionIt": "Ogni minuto legge i nemici in campo: +20% alle mosse fisiche o speciali, quelle contro cui difendono meno." },
+      "mainMove": "swift", "secondaryMove": "thundershock", "special": "Normal",
+      "modifiers": { "cooldownReductionPercent": 0.05 },
+      "unlock": { "kind": "Shop", "price": 1500, "hintIt": "Il premio più caro del Casinò di Azzurropoli." }
+    },
+    {
+      "id": "larvitar", "group": "Other",
+      "species": [ { "key": "larvitar" }, { "key": "pupitar", "level": 27 }, { "key": "tyranitar", "level": 50 } ],
+      "ability": { "id": "guts", "nameIt": "Dentistretti", "descriptionIt": "Con meno di metà dei PS le mosse fisiche fanno il 30% di danni in più." },
+      "mainMove": "rock-slide", "secondaryMove": "bite", "special": "Dark",
+      "unlock": { "kind": "Shop", "price": 2500 }
+    },
+    {
+      "id": "seedot", "group": "Other",
+      "species": [ { "key": "seedot" }, { "key": "nuzleaf", "level": 13 }, { "key": "shiftry", "item": "leaf-stone" } ],
+      "ability": { "id": "chlorophyll", "nameIt": "Clorofilla", "descriptionIt": "Col sole corri il 30% più veloce (meteo del Blocco 7); fino ad allora il 5%." },
+      "mainMove": "razor-leaf", "secondaryMove": "dark-pulse", "special": "Dark",
+      "modifiers": { "growthPercent": 0.1 },
+      "unlock": { "kind": "Shop", "price": 600 }
+    },
+    {
+      "id": "ralts", "group": "Other",
+      "species": [
+        { "key": "ralts" }, { "key": "kirlia", "level": 18 },
+        { "key": "gardevoir", "level": 27 }, { "key": "gallade", "from": "kirlia", "item": "dawn-stone" }
+      ],
+      "ability": { "id": "synchronize", "nameIt": "Sincronismo", "descriptionIt": "Quando infliggi uno stato, colpisce anche i due nemici più vicini." },
+      "mainMove": "confusion", "secondaryMove": "aura-sphere", "special": "Psychic",
+      "modifiers": { "specialPowerPercent": 0.1, "maxHpPercent": -0.1 },
+      "unlock": { "kind": "Shop", "price": 1200 }
+    },
+    {
+      "id": "meditite", "group": "Other",
+      "species": [ { "key": "meditite" }, { "key": "medicham", "level": 33 } ],
+      "ability": { "id": "pure-power", "nameIt": "Forzapura", "descriptionIt": "Le mosse fisiche fanno il 40% di danni in più." },
+      "mainMove": "karate-chop", "secondaryMove": "confusion", "special": "Fighting",
+      "modifiers": { "maxHpPercent": 0.2 },
+      "unlock": { "kind": "Shop", "price": 900 }
+    },
+    {
+      "id": "wailmer", "group": "Other",
+      "species": [ { "key": "wailmer" }, { "key": "wailord", "level": 36 } ],
+      "ability": { "id": "water-veil", "nameIt": "Idrovelo", "descriptionIt": "I nemici di tipo Fuoco ti fanno metà danni." },
+      "mainMove": "water-gun", "secondaryMove": "hyper-voice", "special": "Water",
+      "modifiers": { "maxHpPercent": 0.25, "moveSpeedPercent": -0.1 },
+      "unlock": { "kind": "Shop", "price": 700 }
+    },
+    {
+      "id": "swablu", "group": "Other",
+      "species": [ { "key": "swablu" }, { "key": "altaria", "level": 32 } ],
+      "ability": { "id": "natural-cure", "nameIt": "Alternacura", "descriptionIt": "A ogni livello guadagnato recuperi il 4% dei PS." },
+      "mainMove": "twister", "secondaryMove": "gust", "special": "Dragon",
+      "unlock": { "kind": "Shop", "price": 900 }
+    },
+    {
+      "id": "feebas", "group": "Other",
+      "species": [ { "key": "feebas" }, { "key": "milotic", "level": 25 } ],
+      "ability": { "id": "cute-charm", "nameIt": "Incantevole", "descriptionIt": "Chi ti tocca resta confuso il 30% delle volte." },
+      "mainMove": "bubble", "secondaryMove": "aurora-beam", "special": "Water",
+      "modifiers": { "growthPercent": 0.3 },
+      "unlock": { "kind": "Mission", "hintIt": "Vinci una partita con Magikarp." }
+    },
+    {
+      "id": "duskull", "group": "Other",
+      "species": [ { "key": "duskull" }, { "key": "dusclops", "level": 33 }, { "key": "dusknoir", "item": "reaper-cloth" } ],
+      "ability": { "id": "frisk", "nameIt": "Indagine", "descriptionIt": "I nemici lasciano monete e bacche il doppio delle volte." },
+      "mainMove": "shadow-ball", "secondaryMove": "night-shade", "special": "Ghost",
+      "modifiers": { "maxHpPercent": 0.4, "moveSpeedPercent": 0.1, "physicalResistPercent": 0.1, "specialResistPercent": 0.1 },
+      "unlock": { "kind": "Shop", "price": 900 }
+    },
+    {
+      "id": "bagon", "group": "Other",
+      "species": [ { "key": "bagon" }, { "key": "shelgon", "level": 27 }, { "key": "salamence", "level": 45 } ],
+      "ability": { "id": "intimidate", "nameIt": "Prepotenza", "descriptionIt": "I nemici vicini fanno il 15% di danni in meno." },
+      "mainMove": "bite", "secondaryMove": "draco-meteor", "special": "Dragon",
+      "unlock": { "kind": "Shop", "price": 2500 }
+    },
+    {
+      "id": "beldum", "group": "Other",
+      "species": [ { "key": "beldum" }, { "key": "metang", "level": 18 }, { "key": "metagross", "level": 41 } ],
+      "ability": { "id": "clear-body", "nameIt": "Corpochiaro", "descriptionIt": "I proiettili dei nemici ti fanno il 30% di danni in meno." },
+      "mainMove": "gyro-ball", "secondaryMove": "confusion", "special": "Steel",
+      "unlock": { "kind": "Shop", "price": 2500 }
+    },
+    {
+      "id": "spiritomb", "group": "Other",
+      "species": [ { "key": "spiritomb" } ],
+      "ability": { "id": "pressure", "nameIt": "Pressione", "descriptionIt": "I nemici vicini a te si muovono il 15% più lentamente." },
+      "mainMove": "dark-pulse", "secondaryMove": "shadow-ball", "special": "Ghost",
+      "modifiers": { "growthPercent": -0.1 },
+      "unlock": { "kind": "Mission", "hintIt": "Sconfiggi 108 Pokémon Spettro in una sola partita." }
+    },
+    {
+      "id": "gible", "group": "Other",
+      "species": [ { "key": "gible" }, { "key": "gabite", "level": 22 }, { "key": "garchomp", "level": 43 } ],
+      "ability": { "id": "rough-skin", "nameIt": "Cartavetro", "descriptionIt": "Chi ti tocca subisce un quarto del danno che ti fa." },
+      "mainMove": "bonemerang", "secondaryMove": "twister", "special": "Dragon",
+      "unlock": { "kind": "Shop", "price": 2500 }
+    },
+    {
+      "id": "riolu", "group": "Other",
+      "species": [ { "key": "riolu" }, { "key": "lucario", "level": 16 } ],
+      "ability": { "id": "steadfast", "nameIt": "Cuordeciso", "descriptionIt": "Ogni colpo subito ti fa correre il 5% più veloce per 5 secondi, fino al 25%." },
+      "mainMove": "aura-sphere", "secondaryMove": "karate-chop", "special": "Fighting",
+      "unlock": { "kind": "Egg", "hintIt": "Trova l'Uovo di Riolu nascosto in un livello di Sinnoh." }
+    },
+    {
+      "id": "snover", "group": "Other",
+      "species": [ { "key": "snover" }, { "key": "abomasnow", "level": 36 } ],
+      "ability": { "id": "snow-warning", "nameIt": "Scendineve", "descriptionIt": "Porta la grandine (meteo del Blocco 7); fino ad allora le mosse Ghiaccio congelano il doppio." },
+      "mainMove": "ice-shard", "secondaryMove": "razor-leaf", "special": "Ice",
+      "unlock": { "kind": "Shop", "price": 800 }
+    },
+
+    // --- Legendaries, Gen 1–4 ---
+    // They and the mythicals never evolve, so they start strong: they need more experience to level up ("growthPercent" below zero).
+    {
+      "id": "articuno", "group": "Legendary",
+      "species": [ { "key": "articuno" } ],
+      "ability": { "id": "snow-cloak", "nameIt": "Mantelneve", "descriptionIt": "Schivi il 15% dei colpi (il 30% con la grandine)." },
+      "mainMove": "aurora-beam", "secondaryMove": "gust", "special": "Ice",
+      "modifiers": { "growthPercent": -0.25 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo alle Isole Spumarine, a difficoltà Ultra." }
+    },
+    {
+      "id": "zapdos", "group": "Legendary",
+      "species": [ { "key": "zapdos" } ],
+      "ability": { "id": "static", "nameIt": "Statico", "descriptionIt": "Chi ti tocca resta paralizzato il 30% delle volte." },
+      "mainMove": "thundershock", "secondaryMove": "aerial-ace", "special": "Electric",
+      "modifiers": { "growthPercent": -0.25 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo alla Centrale Elettrica, a difficoltà Ultra." }
+    },
+    {
+      "id": "moltres", "group": "Legendary",
+      "species": [ { "key": "moltres" } ],
+      "ability": { "id": "flame-body", "nameIt": "Corpodifuoco", "descriptionIt": "Chi ti tocca resta scottato il 30% delle volte." },
+      "mainMove": "flame-wheel", "secondaryMove": "gust", "special": "Fire",
+      "modifiers": { "growthPercent": -0.25 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo alla Via Vittoria, a difficoltà Ultra." }
+    },
+    {
+      "id": "mewtwo", "group": "Legendary",
+      "species": [ { "key": "mewtwo" } ],
+      "ability": { "id": "pressure", "nameIt": "Pressione", "descriptionIt": "I nemici vicini a te si muovono il 15% più lentamente." },
+      "mainMove": "confusion", "secondaryMove": "aura-sphere", "special": "Psychic",
+      "modifiers": { "growthPercent": -0.3 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nella Grotta Ignota, a difficoltà Ultra." }
+    },
+    {
+      "id": "raikou", "group": "Legendary",
+      "species": [ { "key": "raikou" } ],
+      "ability": { "id": "pressure", "nameIt": "Pressione", "descriptionIt": "I nemici vicini a te si muovono il 15% più lentamente." },
+      "mainMove": "thundershock", "secondaryMove": "thunder-wave", "special": "Electric",
+      "modifiers": { "growthPercent": -0.25, "moveSpeedPercent": 0.1 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nella Torre Bruciata, a difficoltà Ultra." }
+    },
+    {
+      "id": "entei", "group": "Legendary",
+      "species": [ { "key": "entei" } ],
+      "ability": { "id": "pressure", "nameIt": "Pressione", "descriptionIt": "I nemici vicini a te si muovono il 15% più lentamente." },
+      "mainMove": "flame-wheel", "secondaryMove": "bite", "special": "Fire",
+      "modifiers": { "growthPercent": -0.25, "moveSpeedPercent": 0.1 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nella Torre Bruciata, a difficoltà Ultra." }
+    },
+    {
+      "id": "suicune", "group": "Legendary",
+      "species": [ { "key": "suicune" } ],
+      "ability": { "id": "pressure", "nameIt": "Pressione", "descriptionIt": "I nemici vicini a te si muovono il 15% più lentamente." },
+      "mainMove": "aurora-beam", "secondaryMove": "water-gun", "special": "Water",
+      "modifiers": { "growthPercent": -0.25, "moveSpeedPercent": 0.1 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nella Torre Bruciata, a difficoltà Ultra." }
+    },
+    {
+      "id": "lugia", "group": "Legendary",
+      "species": [ { "key": "lugia" } ],
+      "ability": { "id": "pressure", "nameIt": "Pressione", "descriptionIt": "I nemici vicini a te si muovono il 15% più lentamente." },
+      "mainMove": "gust", "secondaryMove": "confusion", "special": "Flying",
+      "modifiers": { "growthPercent": -0.3 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo alle Isole Vorticose, a difficoltà Ultra." }
+    },
+    {
+      "id": "ho-oh", "group": "Legendary",
+      "species": [ { "key": "ho-oh" } ],
+      "ability": { "id": "pressure", "nameIt": "Pressione", "descriptionIt": "I nemici vicini a te si muovono il 15% più lentamente." },
+      "mainMove": "ember", "secondaryMove": "aerial-ace", "special": "Fire",
+      "modifiers": { "growthPercent": -0.3 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo sulla Torre Campana, a difficoltà Ultra." }
+    },
+    {
+      "id": "regirock", "group": "Legendary",
+      "species": [ { "key": "regirock" } ],
+      "ability": { "id": "sturdy", "nameIt": "Vigore", "descriptionIt": "Una volta per partita, un colpo che ti manderebbe KO ti lascia con 1 PS." },
+      "mainMove": "rock-tomb", "secondaryMove": "rock-slide", "special": "Rock",
+      "modifiers": { "growthPercent": -0.25, "moveSpeedPercent": -0.1 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nella Grotta Desertica, a difficoltà Ultra." }
+    },
+    {
+      "id": "regice", "group": "Legendary",
+      "species": [ { "key": "regice" } ],
+      "ability": { "id": "ice-body", "nameIt": "Corpogelo", "descriptionIt": "Rigeneri 1 PS al secondo (il triplo con la grandine)." },
+      "mainMove": "ice-shard", "secondaryMove": "aurora-beam", "special": "Ice",
+      "modifiers": { "growthPercent": -0.25, "moveSpeedPercent": -0.1 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nell'Antro Insulare, a difficoltà Ultra." }
+    },
+    {
+      "id": "registeel", "group": "Legendary",
+      "species": [ { "key": "registeel" } ],
+      "ability": { "id": "clear-body", "nameIt": "Corpochiaro", "descriptionIt": "I proiettili dei nemici ti fanno il 30% di danni in meno." },
+      "mainMove": "gyro-ball", "secondaryMove": "flash-cannon", "special": "Steel",
+      "modifiers": { "growthPercent": -0.25, "moveSpeedPercent": -0.1 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nella Tomba Antica, a difficoltà Ultra." }
+    },
+    {
+      "id": "latias", "group": "Legendary",
+      "species": [ { "key": "latias" } ],
+      "ability": { "id": "levitate", "nameIt": "Levitazione", "descriptionIt": "Le mosse Terra, le pozze e le rocce che cadono non ti colpiscono." },
+      "mainMove": "twister", "secondaryMove": "confusion", "special": "Dragon",
+      "modifiers": { "growthPercent": -0.25, "specialResistPercent": 0.1 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggila sull'Isola Meridionale, a difficoltà Ultra." }
+    },
+    {
+      "id": "latios", "group": "Legendary",
+      "species": [ { "key": "latios" } ],
+      "ability": { "id": "levitate", "nameIt": "Levitazione", "descriptionIt": "Le mosse Terra, le pozze e le rocce che cadono non ti colpiscono." },
+      "mainMove": "draco-meteor", "secondaryMove": "confusion", "special": "Dragon",
+      "modifiers": { "growthPercent": -0.25, "specialPowerPercent": 0.1 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo sull'Isola Meridionale, a difficoltà Ultra." }
+    },
+    {
+      "id": "kyogre", "group": "Legendary",
+      "species": [ { "key": "kyogre" } ],
+      "ability": { "id": "drizzle", "nameIt": "Piovischio", "descriptionIt": "Porta la pioggia (meteo del Blocco 7); fino ad allora le mosse Acqua fanno il 20% di danni in più." },
+      "mainMove": "water-gun", "secondaryMove": "bubble", "special": "Water",
+      "modifiers": { "growthPercent": -0.3 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nella Grotta dei Tempi, a difficoltà Ultra." }
+    },
+    {
+      "id": "groudon", "group": "Legendary",
+      "species": [ { "key": "groudon" } ],
+      "ability": { "id": "drought", "nameIt": "Siccità", "descriptionIt": "Porta il sole (meteo del Blocco 7); fino ad allora le mosse Fuoco e Terra fanno il 10% di danni in più." },
+      "mainMove": "earthquake", "secondaryMove": "rock-slide", "special": "Ground",
+      "modifiers": { "growthPercent": -0.3 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nella Grotta dei Tempi, a difficoltà Ultra." }
+    },
+    {
+      "id": "rayquaza", "group": "Legendary",
+      "species": [ { "key": "rayquaza" } ],
+      "ability": { "id": "air-lock", "nameIt": "Riparo", "descriptionIt": "Annulla il meteo del livello; i nemici volanti ti fanno metà danni." },
+      "mainMove": "draco-meteor", "secondaryMove": "aerial-ace", "special": "Dragon",
+      "modifiers": { "growthPercent": -0.3 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo sulla Torre dei Cieli, a difficoltà Ultra." }
+    },
+    {
+      "id": "uxie", "group": "Legendary",
+      "species": [ { "key": "uxie" } ],
+      "ability": { "id": "levitate", "nameIt": "Levitazione", "descriptionIt": "Le mosse Terra, le pozze e le rocce che cadono non ti colpiscono." },
+      "mainMove": "hypnosis", "secondaryMove": "confusion", "special": "Psychic",
+      "modifiers": { "growthPercent": -0.2, "physicalResistPercent": 0.1, "specialResistPercent": 0.1 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo al Lago Arguzia, a difficoltà Ultra." }
+    },
+    {
+      "id": "mesprit", "group": "Legendary",
+      "species": [ { "key": "mesprit" } ],
+      "ability": { "id": "levitate", "nameIt": "Levitazione", "descriptionIt": "Le mosse Terra, le pozze e le rocce che cadono non ti colpiscono." },
+      "mainMove": "confusion", "secondaryMove": "swift", "special": "Psychic",
+      "modifiers": { "growthPercent": -0.2 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo al Lago Verità, a difficoltà Ultra." }
+    },
+    {
+      "id": "azelf", "group": "Legendary",
+      "species": [ { "key": "azelf" } ],
+      "ability": { "id": "levitate", "nameIt": "Levitazione", "descriptionIt": "Le mosse Terra, le pozze e le rocce che cadono non ti colpiscono." },
+      "mainMove": "confusion", "secondaryMove": "aura-sphere", "special": "Psychic",
+      "modifiers": { "growthPercent": -0.2, "physicalPowerPercent": 0.05, "specialPowerPercent": 0.05 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo al Lago Valore, a difficoltà Ultra." }
+    },
+    {
+      "id": "dialga", "group": "Legendary",
+      "species": [ { "key": "dialga" } ],
+      "ability": { "id": "pressure", "nameIt": "Pressione", "descriptionIt": "I nemici vicini a te si muovono il 15% più lentamente." },
+      "mainMove": "flash-cannon", "secondaryMove": "draco-meteor", "special": "Steel",
+      "modifiers": { "growthPercent": -0.3, "cooldownReductionPercent": 0.05 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo sulla Vetta Lancia, a difficoltà Ultra." }
+    },
+    {
+      "id": "palkia", "group": "Legendary",
+      "species": [ { "key": "palkia" } ],
+      "ability": { "id": "pressure", "nameIt": "Pressione", "descriptionIt": "I nemici vicini a te si muovono il 15% più lentamente." },
+      "mainMove": "water-gun", "secondaryMove": "draco-meteor", "special": "Dragon",
+      "modifiers": { "growthPercent": -0.3, "areaPercent": 0.1 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo sulla Vetta Lancia, a difficoltà Ultra." }
+    },
+    {
+      "id": "heatran", "group": "Legendary",
+      "species": [ { "key": "heatran" } ],
+      "ability": { "id": "flash-fire", "nameIt": "Fuocardore", "descriptionIt": "Ogni KO con una mossa Fuoco aggiunge l'1% ai danni Fuoco, fino al 25%; un colpo subito lo azzera." },
+      "mainMove": "ember", "secondaryMove": "flash-cannon", "special": "Fire",
+      "modifiers": { "growthPercent": -0.25 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo alla Grotta Ritorno del Monte Corona, a difficoltà Ultra." }
+    },
+    {
+      "id": "regigigas", "group": "Legendary",
+      "species": [ { "key": "regigigas" } ],
+      "ability": { "id": "slow-start", "nameIt": "Lentoinizio", "descriptionIt": "Nei primi 3 minuti fai metà danni e corri il 20% più piano; poi i danni crescono del 20%." },
+      "mainMove": "hyper-voice", "secondaryMove": "earthquake", "special": "Normal",
+      "modifiers": { "growthPercent": -0.2 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo al Tempio Nevoso dopo aver battuto Regirock, Regice e Registeel." }
+    },
+    {
+      "id": "giratina", "group": "Legendary",
+      "species": [ { "key": "giratina" } ],
+      "ability": { "id": "pressure", "nameIt": "Pressione", "descriptionIt": "I nemici vicini a te si muovono il 15% più lentamente." },
+      "mainMove": "shadow-ball", "secondaryMove": "draco-meteor", "special": "Ghost",
+      "modifiers": { "growthPercent": -0.3, "maxHpPercent": 0.1 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nel Mondo Distorto, a difficoltà Ultra." }
+    },
+    {
+      "id": "cresselia", "group": "Legendary",
+      "species": [ { "key": "cresselia" } ],
+      "ability": { "id": "levitate", "nameIt": "Levitazione", "descriptionIt": "Le mosse Terra, le pozze e le rocce che cadono non ti colpiscono." },
+      "mainMove": "confusion", "secondaryMove": "aurora-beam", "special": "Psychic",
+      "modifiers": { "growthPercent": -0.2, "regenPerSecond": 0.3 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggila sull'Isola Lunapiena, a difficoltà Ultra." }
+    },
+
+    // --- Mythicals, Gen 1–4 (added by the user on 2026-10-26). Darkrai is also the reaper of the endless mode. ---
+    {
+      "id": "mew", "group": "Mythical",
+      "species": [ { "key": "mew" } ],
+      "ability": { "id": "ancestor", "nameIt": "Antenato", "descriptionIt": "Conosce ogni mossa: quelle nuove prese ai level-up partono già dal livello 2." },
+      "mainMove": "swift", "secondaryMove": "confusion", "special": "Psychic",
+      "modifiers": { "growthPercent": -0.3 },
+      "unlock": { "kind": "Mission", "hintIt": "Completa il Pokédex di Kanto." }
+    },
+    {
+      "id": "celebi", "group": "Mythical",
+      "species": [ { "key": "celebi" } ],
+      "ability": { "id": "natural-cure", "nameIt": "Alternacura", "descriptionIt": "A ogni livello guadagnato recuperi il 4% dei PS." },
+      "mainMove": "razor-leaf", "secondaryMove": "confusion", "special": "Grass",
+      "modifiers": { "growthPercent": -0.3, "regenPerSecond": 0.2 },
+      "unlock": { "kind": "Mission", "hintIt": "Completa tutti i livelli di Johto." }
+    },
+    {
+      "id": "jirachi", "group": "Mythical",
+      "species": [ { "key": "jirachi" } ],
+      "ability": { "id": "serene-grace", "nameIt": "Leggiadro", "descriptionIt": "Le probabilità di stato delle tue mosse raddoppiano." },
+      "mainMove": "flash-cannon", "secondaryMove": "swift", "special": "Steel",
+      "modifiers": { "growthPercent": -0.3, "coinPercent": 0.2 },
+      "unlock": { "kind": "Mission", "hintIt": "Completa tutti i livelli di Hoenn." }
+    },
+    {
+      "id": "deoxys", "group": "Mythical",
+      "species": [ { "key": "deoxys" } ],
+      "ability": { "id": "pressure", "nameIt": "Pressione", "descriptionIt": "I nemici vicini a te si muovono il 15% più lentamente." },
+      "mainMove": "aura-sphere", "secondaryMove": "confusion", "special": "Psychic",
+      "modifiers": { "growthPercent": -0.3, "physicalPowerPercent": 0.1, "specialPowerPercent": 0.1, "maxHpPercent": -0.2 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo sull'Isola Cumulo, a difficoltà Ultra." }
+    },
+    {
+      "id": "phione", "group": "Mythical",
+      "species": [ { "key": "phione" } ],
+      "ability": { "id": "hydration", "nameIt": "Idratazione", "descriptionIt": "Con la pioggia rigeneri 1 PS al secondo (meteo del Blocco 7); fino ad allora 0,3." },
+      "mainMove": "bubble", "secondaryMove": "water-gun", "special": "Water",
+      "modifiers": { "growthPercent": -0.2 },
+      "unlock": { "kind": "Mission", "hintIt": "Vinci una partita con Manaphy." }
+    },
+    {
+      "id": "manaphy", "group": "Mythical",
+      "species": [ { "key": "manaphy" } ],
+      "ability": { "id": "hydration", "nameIt": "Idratazione", "descriptionIt": "Con la pioggia rigeneri 1 PS al secondo (meteo del Blocco 7); fino ad allora 0,3." },
+      "mainMove": "water-gun", "secondaryMove": "bubble", "special": "Water",
+      "modifiers": { "growthPercent": -0.3 },
+      "unlock": { "kind": "Egg", "hintIt": "Trova l'Uovo di Manaphy nascosto in un livello di Sinnoh." }
+    },
+    {
+      "id": "darkrai", "group": "Mythical",
+      "species": [ { "key": "darkrai" } ],
+      "ability": { "id": "bad-dreams", "nameIt": "Sogniamari", "descriptionIt": "I nemici addormentati perdono il 10% dei PS ogni secondo." },
+      "mainMove": "dark-pulse", "secondaryMove": "hypnosis", "special": "Dark",
+      "modifiers": { "growthPercent": -0.3 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggi il Mietitore della modalità infinita." }
+    },
+    {
+      "id": "shaymin", "group": "Mythical",
+      "species": [ { "key": "shaymin" } ],
+      "ability": { "id": "natural-cure", "nameIt": "Alternacura", "descriptionIt": "A ogni livello guadagnato recuperi il 4% dei PS." },
+      "mainMove": "razor-leaf", "secondaryMove": "swift", "special": "Grass",
+      "modifiers": { "growthPercent": -0.3, "moveSpeedPercent": 0.1 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo al Giardino Fiorito, a difficoltà Ultra." }
+    },
+    {
+      "id": "arceus", "group": "Mythical",
+      "species": [ { "key": "arceus" } ],
+      "ability": { "id": "multitype", "nameIt": "Multitipo", "descriptionIt": "Il tuo tipo diventa quello della mossa che ha fatto più danni finora." },
+      "mainMove": "hyper-voice", "secondaryMove": "swift", "special": "Normal",
+      "modifiers": { "growthPercent": -0.35 },
+      "unlock": { "kind": "Mission", "hintIt": "Sblocca tutti gli altri leggendari e misteriosi." }
+    }
+  ]
+}

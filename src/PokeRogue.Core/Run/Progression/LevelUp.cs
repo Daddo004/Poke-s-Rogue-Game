@@ -20,6 +20,9 @@ public enum LevelUpKind
 
     /// <summary>A maxed move plus its item: the move evolves (phase 2.6). Always offered first.</summary>
     Evolution,
+
+    /// <summary>Chests only (phase 4.2): the stone or item the player's own evolution needs.</summary>
+    EvolutionItem,
 }
 
 /// <summary>One card of the level-up window. Texts are ready to display (Italian).</summary>
@@ -61,7 +64,8 @@ public static class LevelUp
 
         if (player.Moves.Count < MaxMoves)
         {
-            foreach (var definition in run.MovePool.Where(d => player.Moves.All(m => m.Definition.Id != d.Id)))
+            // A move already evolved is gone for good, as in Vampire Survivors: its base is not offered again.
+            foreach (var definition in run.MovePool.Where(d => player.Moves.All(m => m.Definition.Id != d.Id && m.Definition.EvolvesFrom != d.Id)))
                 candidates.Add(new LevelUpOption(LevelUpKind.NewMove, definition.Id, definition.NameIt, 0, 1, definition.DescriptionIt, definition.Id, definition.Type));
         }
 
@@ -145,7 +149,8 @@ public static class LevelUp
         foreach (var move in player.Moves.Where(m => m.Level >= m.Definition.MaxLevel))
         {
             var evolution = run.Evolutions.FirstOrDefault(e => e.EvolvesFrom == move.Definition.Id);
-            if (evolution is null || run.Banished.Contains(evolution.Id) || player.Items.All(i => i.Definition.Id != evolution.EvolveItem))
+            if (evolution is null || run.Banished.Contains(evolution.Id) || player.Items.All(i => i.Definition.Id != evolution.EvolveItem)
+                || player.Moves.Any(m => m.Definition.Id == evolution.Id))
                 continue;
 
             options.Add(new LevelUpOption(LevelUpKind.Evolution, evolution.Id, evolution.NameIt, 0, 1,
@@ -161,18 +166,24 @@ public static class LevelUp
         var player = run.Player;
         switch (option.Kind)
         {
+            // The cards were drawn when the level was reached; in the same tick the player may have picked the same
+            // item up from the ground. A "new" card for something already held then raises it instead.
+            case LevelUpKind.NewMove when player.Moves.FirstOrDefault(m => m.Definition.Id == option.Id) is { } owned:
+                owned.Level = Math.Min(owned.Definition.MaxLevel, owned.Level + 1);
+                break;
             case LevelUpKind.NewMove:
-                player.Moves.Add(new MoveInstance(run.MovePool.Single(d => d.Id == option.Id)) { AcquiredTick = run.Ticks });
+                var definition = run.MovePool.Single(d => d.Id == option.Id);
+                player.Moves.Add(new MoveInstance(definition, Abilities.AbilitySystem.NewMoveLevel(run, definition)) { AcquiredTick = run.Ticks });
                 break;
-            case LevelUpKind.MoveUpgrade:
-                player.Moves.Single(m => m.Definition.Id == option.Id).Level++;
+            case LevelUpKind.MoveUpgrade when player.Moves.FirstOrDefault(m => m.Definition.Id == option.Id) is { } move:
+                move.Level = Math.Min(move.Definition.MaxLevel, move.Level + 1);
                 break;
-            case LevelUpKind.NewItem:
-                player.Items.Add(new ItemInstance(run.ItemPool.Single(d => d.Id == option.Id)) { AcquiredTick = run.Ticks });
+            case LevelUpKind.NewItem or LevelUpKind.ItemUpgrade when player.Items.FirstOrDefault(i => i.Definition.Id == option.Id) is { } held:
+                held.Level = Math.Min(held.Definition.MaxLevel, held.Level + 1);
                 player.RecalculateStats();
                 break;
-            case LevelUpKind.ItemUpgrade:
-                player.Items.Single(i => i.Definition.Id == option.Id).Level++;
+            case LevelUpKind.NewItem when player.Items.Count < MaxItems:
+                player.Items.Add(new ItemInstance(run.ItemPool.Single(d => d.Id == option.Id)) { AcquiredTick = run.Ticks });
                 player.RecalculateStats();
                 break;
             case LevelUpKind.Heal:
@@ -183,6 +194,9 @@ public static class LevelUp
                 break;
             case LevelUpKind.Evolution:
                 Evolve(run, run.Evolutions.Single(d => d.Id == option.Id));
+                break;
+            case LevelUpKind.EvolutionItem:
+                run.EvolutionItems.Add(option.Id);
                 break;
         }
     }

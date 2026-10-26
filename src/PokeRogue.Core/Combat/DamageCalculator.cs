@@ -2,8 +2,19 @@ using PokeRogue.Core.Data;
 
 namespace PokeRogue.Core.Combat;
 
-/// <summary>Who is hitting: types for STAB plus the offensive stats.</summary>
-public readonly record struct AttackerProfile(PokemonType Type1, PokemonType? Type2, float Attack, float SpAttack, float CritChance);
+/// <summary>
+/// Who is hitting: types for STAB plus the offensive stats. Abilities (phase 4.3) may raise the STAB (Adattabilità) or
+/// the critical damage (Sguardofermo), or ignore resistances (Rompiforma).
+/// </summary>
+public readonly record struct AttackerProfile(
+    PokemonType Type1,
+    PokemonType? Type2,
+    float Attack,
+    float SpAttack,
+    float CritChance,
+    float Stab = DamageCalculator.StabBonus,
+    float CritDamage = DamageCalculator.CritMultiplier,
+    bool IgnoresResistances = false);
 
 /// <summary>Who is being hit: types and defensive stats.</summary>
 public readonly record struct DefenderProfile(PokemonType Type1, PokemonType? Type2, float Defense, float SpDefense);
@@ -50,12 +61,14 @@ public static class DamageCalculator
         var special = category == MoveCategory.Special;
         var attack = AttackScaling(special ? attacker.SpAttack : attacker.Attack);
         var defense = DefenseScaling(special ? defender.SpDefense : defender.Defense);
-        var stab = moveType == attacker.Type1 || moveType == attacker.Type2 ? StabBonus : 1f;
+        var stab = moveType == attacker.Type1 || moveType == attacker.Type2 ? attacker.Stab : 1f;
         var effectiveness = Effectiveness(chart, moveType, defender.Type1, defender.Type2);
+        if (attacker.IgnoresResistances)
+            effectiveness = MathF.Max(1f, effectiveness);
         var critical = random.NextSingle() < attacker.CritChance;
         var spread = MinRandom + random.NextSingle() * (1f - MinRandom);
 
-        var amount = power * attack * defense * stab * effectiveness * (critical ? CritMultiplier : 1f) * spread;
+        var amount = power * attack * defense * stab * effectiveness * (critical ? attacker.CritDamage : 1f) * spread;
         return new DamageResult(MathF.Max(1f, MathF.Round(amount)), effectiveness, critical);
     }
 }

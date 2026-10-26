@@ -339,7 +339,7 @@ public sealed class LootSystem
                 run.AddCoins(file.BigNuggetValue);
                 break;
             case LootKind.Potion:
-                player.Heal(player.MaxHp * file.PotionHeal);
+                player.Heal(player.MaxHp * file.PotionHeal * Abilities.AbilitySystem.HealMultiplier(run));
                 break;
             case LootKind.RareCandy:
                 run.GrantLevel();
@@ -351,7 +351,7 @@ public sealed class LootSystem
                 Repel(run);
                 break;
             case LootKind.OranBerry:
-                player.Heal(file.FoodHeal);
+                player.Heal(file.FoodHeal * Abilities.AbilitySystem.HealMultiplier(run));
                 break;
             case LootKind.HeldItem when loot.ItemId is { } id:
                 GiveItem(run, rules, id);
@@ -359,6 +359,7 @@ public sealed class LootSystem
         }
 
         run.AddEvent(new RunEvent(RunEventType.LootCollected, loot.Position, (int)loot.Kind));
+        Abilities.AbilitySystem.OnLootCollected(run, loot.Kind);
     }
 
     /// <summary>

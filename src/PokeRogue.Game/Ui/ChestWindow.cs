@@ -172,7 +172,7 @@ public sealed class ChestWindow(GameServices services)
         var left = services.Screen.Width / 2 - (count * width + (count - 1) * gap) / 2;
         var tile = new Rectangle(left + index * (width + gap), 196, width, height);
         var iconBox = new Rectangle(tile.Center.X - 20, tile.Y + 8, 40, 40);
-        var evolution = reward.Kind == LevelUpKind.Evolution;
+        var evolution = reward.Kind is LevelUpKind.Evolution or LevelUpKind.EvolutionItem;
 
         var t = MathHelper.Clamp(age / (float)FlyTicks, 0f, 1f);
         if (t < 1f)
@@ -196,6 +196,7 @@ public sealed class ChestWindow(GameServices services)
         var (badge, color) = reward.Kind switch
         {
             LevelUpKind.Evolution => ("EVOLUZIONE!", Gold),
+            LevelUpKind.EvolutionItem => ("SI EVOLVE!", Gold),
             LevelUpKind.MoveUpgrade or LevelUpKind.ItemUpgrade => ($"LV {reward.ToLevel}", Gold),
             _ => ("MONETE", new Color(120, 220, 120)),
         };

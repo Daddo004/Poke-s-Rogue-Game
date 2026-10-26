@@ -157,6 +157,9 @@ public sealed class Hud
             }
         }
 
+        DrawAbility(batch, run, new Rectangle(3, 67, Slots * 26 - 2, 14));
+        DrawSpecial(batch, run, new Rectangle(3, 83, Slots * 26 - 2, 14));
+
         var clock = UiFormat.Clock(run.Ticks);
         UiDraw.TextCentered(batch, numbers, clock, _services.Screen.Width / 2f, 9, Paper, Ink);
 
@@ -176,6 +179,69 @@ public sealed class Hud
         DrawBanner(batch);
         DrawBossBar(batch, run);
         batch.End();
+    }
+
+    /// <summary>
+    /// The ability strip under the items (phase 4.3): its name, and for an active one the key, gold when it is ready. A thin
+    /// gauge along the bottom shows a recharge (active abilities, Muta), Vigore still unused, or the stacks of the ones that grow.
+    /// </summary>
+    public void DrawAbility(SpriteBatch batch, RunState run, Rectangle strip)
+    {
+        if (run.Stage?.Ability is not { } ability)
+            return;
+
+        var p = _services.Primitives;
+        var small = _services.Fonts.Small(_services.Style);
+        var gauge = Core.Run.Abilities.AbilitySystem.Gauge(run) is { } g ? MathHelper.Clamp(g, 0f, 1f) : (float?)null;
+        var ready = gauge >= 1f;
+        UiDraw.Frame(batch, p, strip, ability.Active && ready ? EvolvedTheme : _services.Style.Theme);
+
+        UiDraw.Text(batch, small, ability.NameIt.ToUpperInvariant(), new Vector2(strip.X + 4, strip.Y + 3), ability.Active && ready ? Gold : Paper);
+        if (ability.Active)
+        {
+            const string key = "SPAZIO";
+            var color = ready ? Gold : new Color(110, 104, 140);
+            UiDraw.Text(batch, small, key, new Vector2(strip.Right - 4 - UiDraw.Measure(small, key).X, strip.Y + 3), color);
+        }
+
+        if (gauge is { } fill)
+        {
+            var bar = new Rectangle(strip.X + 2, strip.Bottom - 3, strip.Width - 4, 1);
+            p.Rect(batch, bar, Ink * 0.8f);
+            p.Rect(batch, new Rectangle(bar.X, bar.Y, (int)(bar.Width * fill), 1), ready ? Gold : new Color(150, 200, 255));
+        }
+    }
+
+    /// <summary>
+    /// The special gauge under the ability (phase 4.4): it fills in the type's colour with the damage dealt; full, it
+    /// shines and shows the key. After a use it stays dark for a while.
+    /// </summary>
+    public void DrawSpecial(SpriteBatch batch, RunState run, Rectangle strip)
+    {
+        if (run.SpecialMove is not { } special)
+            return;
+
+        var p = _services.Primitives;
+        var small = _services.Fonts.Small(_services.Style);
+        var state = run.Special;
+        var pal = Vfx.TypeFx.For(special.Type);
+        var full = state.IsFull;
+        var shine = full ? 0.5f + 0.5f * MathF.Sin(run.Ticks * 0.15f) : 0f;
+        UiDraw.Frame(batch, p, strip, full ? EvolvedTheme : _services.Style.Theme);
+
+        var inner = new Rectangle(strip.X + 2, strip.Y + 2, strip.Width - 4, strip.Height - 4);
+        p.Rect(batch, new Rectangle(inner.X, inner.Y, (int)(inner.Width * state.Charge), inner.Height),
+            (full ? Color.Lerp(pal.Dark, pal.Main, shine) : pal.Dark) * (state.LockTicks > 0 ? 0.3f : 0.85f));
+        if (full)
+            p.Rect(batch, new Rectangle(inner.X, inner.Y, inner.Width, 1), Color.White * (0.6f * shine));
+
+        var name = state.LockTicks > 0 ? "IN RICARICA" : special.NameIt.ToUpperInvariant();
+        UiDraw.TextOutlined(batch, small, name, new Vector2(strip.X + 4, strip.Y + 3), state.LockTicks > 0 ? new Color(150, 142, 176) : Paper, Ink);
+        if (full)
+        {
+            const string key = "E";
+            UiDraw.TextOutlined(batch, small, key, new Vector2(strip.Right - 4 - UiDraw.Measure(small, key).X, strip.Y + 3), Gold, Ink);
+        }
     }
 
     /// <summary>A 24 px move slot with the icon and its level marks; an evolved move (phase 2.6) has a gold frame and a star instead.</summary>

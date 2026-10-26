@@ -165,12 +165,7 @@ public static class EnemyAi
         var reach = spec.BlastRadius + player.Radius;
         if (Vector2.DistanceSquared(e.Position, player.Position) <= reach * reach)
         {
-            var taken = player.TakeContactDamage(e.ContactDamage * spec.BlastDamage, e.HitsSpecially);
-            if (taken > 0f)
-            {
-                run.Stats.RecordDamageTaken(taken);
-                run.AddEvent(new RunEvent(RunEventType.PlayerHurt, player.Position, taken, e.SpeciesId));
-            }
+            run.HurtPlayer(new Abilities.Hurt(Abilities.HurtKind.Blast, e.ContactDamage * spec.BlastDamage, e.HitsSpecially, e.SpeciesId, e.Type1));
         }
 
         run.AddEvent(new RunEvent(RunEventType.EnemyExploded, e.Position, spec.BlastRadius, e.SpeciesId));

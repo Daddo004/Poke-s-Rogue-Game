@@ -97,6 +97,21 @@ public enum RunEventType
 
     /// <summary>A shiny Pokémon appeared: SpeciesId = who.</summary>
     ShinyAppeared,
+
+    /// <summary>The player evolved (phase 4.2): Value = the species it was, SpeciesId = the new one. Comes out when the game resumes.</summary>
+    PlayerEvolved,
+
+    /// <summary>
+    /// The player's ability did something worth showing (phase 4.3): MoveId = the ability id, Value = (int)AbilityEffect.
+    /// Teletrasporto: Position = from, Target = to. Trasformazione: SpeciesId = the copied species (0 when it turns back).
+    /// </summary>
+    AbilityTriggered,
+
+    /// <summary>The special key was pressed with a full gauge (phase 4.4): the run waits while the game plays the special. Value = (int)type.</summary>
+    SpecialStarted,
+
+    /// <summary>The special hit everything on screen. Value = (int)type, MoveId = its id. Comes out when the game resumes.</summary>
+    SpecialUnleashed,
 }
 
 /// <summary>Something the renderer or audio may react to; the list is cleared at the start of every tick.</summary>
@@ -112,4 +127,5 @@ public readonly record struct RunEvent(
     StatusKind Status = StatusKind.None,
     bool Ohko = false);
 
-public readonly record struct PlayerInput(Vector2 Move);
+/// <summary>What the player does this tick: where it walks, and whether it pressed the key of its active ability.</summary>
+public readonly record struct PlayerInput(Vector2 Move, bool UseAbility = false, bool UseSpecial = false);

@@ -56,8 +56,14 @@ public static class StatusSystem
         if (e.Status != StatusKind.None && rules[e.Status]?.CuredBy == definition.Type)
             End(run, index);
 
-        if (definition.Status != StatusKind.None && rules[definition.Status] is { Enabled: true } && run.Random.NextSingle() < definition.StatusChance)
-            Apply(run, index, definition.Status, damage, run.Player.Moves.IndexOf(move));
+        // Abilities (phase 4.3): Leggiadro and Scendineve raise the chance, Sincronismo spreads the status.
+        var chance = definition.StatusChance * Abilities.AbilitySystem.StatusChanceMultiplier(run, definition);
+        if (definition.Status != StatusKind.None && rules[definition.Status] is { Enabled: true } && run.Random.NextSingle() < chance)
+        {
+            var slot = run.Player.Moves.IndexOf(move);
+            if (Apply(run, index, definition.Status, damage, slot))
+                Abilities.AbilitySystem.OnStatusInflicted(run, index, definition.Status, damage, slot);
+        }
     }
 
     /// <summary>Timers, damage over time, paralysis lock-ups and confused wandering. Runs before enemies move.</summary>

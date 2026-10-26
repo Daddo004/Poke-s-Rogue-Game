@@ -117,7 +117,7 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
         Scene scene = _options.Preview is { } preview
             ? PreviewRegistry.Create(preview, _services, _options)
                 ?? throw new ArgumentException($"Unknown preview '{preview}'. Available: {string.Join(", ", PreviewRegistry.List.Select(p => p.Id))}")
-            : new GameplayScene(_services, _options.Int("species", 25))
+            : new GameplayScene(_services, _options.Str("pokemon"))
             {
                 PendingEvolutions = _options.Values.ContainsKey("evoluzioni"),
                 PendingEnemies = _options.Values.ContainsKey("nemici"),

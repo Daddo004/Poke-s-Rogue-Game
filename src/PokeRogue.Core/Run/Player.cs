@@ -34,8 +34,8 @@ public sealed class Player
     /// <summary>PS that damage dealt may still heal; refills with time up to one second's worth.</summary>
     private float _damageHealBudget;
 
-    private readonly float _baseMaxHp;
-    private readonly float _baseMoveSpeed;
+    private float _baseMaxHp;
+    private float _baseMoveSpeed;
     private float _physicalPower = 1f;
     private float _specialPower = 1f;
     private float _physicalResist;
@@ -60,12 +60,33 @@ public sealed class Player
 
     public List<ItemInstance> Items { get; } = [];
 
+    /// <summary>The character's own modifiers (characters.json), added to the items' bonuses by <see cref="RecalculateStats"/>.</summary>
+    public ItemBonus CharacterBonus { get; set; } = ItemBonus.None;
+
+    /// <summary>Trasformazione (Ditto, phase 4.3): the species it is copying for a while; null when it is itself.</summary>
+    public SpeciesData? Disguise { get; private set; }
+
+    /// <summary>What the player looks and fights like: its species, or the one Ditto copied.</summary>
+    public SpeciesData Form => Disguise ?? Species;
+
+    /// <summary>Multitipo (Arceus): the type it took from its strongest move; null keeps the species' types.</summary>
+    public PokemonType? TypeOverride { get; set; }
+
+    /// <summary>Speed from abilities of the moment (Acceleratore, Agiltecnica, Lentoinizio…), on top of <see cref="MoveSpeed"/>.</summary>
+    public float AbilitySpeedMultiplier { get; set; } = 1f;
+
+    /// <summary>Cooldowns from abilities of the moment (Acceleratore), on top of <see cref="CooldownMultiplier"/>.</summary>
+    public float AbilityCooldownMultiplier { get; set; } = 1f;
+
     public AttackerProfile Attacker => new(
-        Species.Types[0],
-        Species.Types.Count > 1 ? Species.Types[1] : null,
-        Species.BaseStats.Attack,
-        Species.BaseStats.SpAttack,
+        TypeOverride ?? Form.Types[0],
+        TypeOverride is not null ? null : Form.Types.Count > 1 ? Form.Types[1] : null,
+        Form.BaseStats.Attack,
+        Form.BaseStats.SpAttack,
         CritChance);
+
+    /// <summary>The player's types right now (Multitipo and Trasformazione change them).</summary>
+    public IReadOnlyList<PokemonType> Types => TypeOverride is { } type ? [type] : Form.Types;
 
     public Vector2 Position { get; set; }
 
@@ -83,9 +104,9 @@ public sealed class Player
 
     public float MoveSpeed { get; private set; }
 
-    public float Defense => Species.BaseStats.Defense;
+    public float Defense => Form.BaseStats.Defense;
 
-    public float SpDefense => Species.BaseStats.SpDefense;
+    public float SpDefense => Form.BaseStats.SpDefense;
 
     /// <summary>Chance of a critical hit (Mirino adds to it).</summary>
     public float CritChance { get; private set; } = BaseCritChance;
@@ -143,6 +164,15 @@ public sealed class Player
 
     public bool IsDown => Hp <= 0f;
 
+    /// <summary>A hit would land now: not invincible, not blinking after a hit, not knocked out.</summary>
+    public bool CanBeHurt => !Invincible && InvulnerableTicks <= 0 && !IsDown;
+
+    /// <summary>A hit was dodged or blocked (Mantelneve, Muta): the usual blink after a hit, without the damage.</summary>
+    public void Shrug() => InvulnerableTicks = HitInvulnerabilityTicks;
+
+    /// <summary>Teletrasporto: a moment of invulnerability on arrival.</summary>
+    public void Blink(int ticks) => InvulnerableTicks = Math.Max(InvulnerableTicks, ticks);
+
     public float PowerMultiplier(MoveCategory category) => category switch
     {
         MoveCategory.Physical => _physicalPower,
@@ -153,7 +183,7 @@ public sealed class Player
     /// <summary>Moves with the given input (length ≤ 1, screen space).</summary>
     public void Move(Vector2 input)
     {
-        Velocity = input.ClampLength(1f) * MoveSpeed;
+        Velocity = input.ClampLength(1f) * MoveSpeed * AbilitySpeedMultiplier;
         Position += Velocity * RunClock.Dt;
         Facing = Direction8Extensions.FromVector(input, Facing);
     }
@@ -233,10 +263,34 @@ public sealed class Player
         return levels;
     }
 
+    /// <summary>
+    /// Becomes <paramref name="species"/> (phase 4.2): size, types and stats follow it; items and moves stay. The extra
+    /// max PS come already healed, as in the games.
+    /// </summary>
+    public void Evolve(SpeciesData species)
+    {
+        Species = species;
+        Radius = StatFormulas.Radius(species);
+        _baseMaxHp = StatFormulas.PlayerMaxHp(species.BaseStats);
+        _baseMoveSpeed = StatFormulas.PlayerMoveSpeed(Form.BaseStats);
+        RecalculateStats();
+    }
+
+    /// <summary>
+    /// Trasformazione: takes <paramref name="species"/>' look, types, attack, defence and speed (null turns back). PS stay
+    /// the player's own, as in the games.
+    /// </summary>
+    public void SetDisguise(SpeciesData? species)
+    {
+        Disguise = species;
+        _baseMoveSpeed = StatFormulas.PlayerMoveSpeed(Form.BaseStats);
+        RecalculateStats();
+    }
+
     /// <summary>Re-derives every item-dependent stat. Gaining max PS also heals by the same amount.</summary>
     public void RecalculateStats()
     {
-        var bonus = Items.Aggregate(ItemBonus.None, (sum, item) => sum + item.Bonus);
+        var bonus = Items.Aggregate(CharacterBonus, (sum, item) => sum + item.Bonus);
 
         var newMaxHp = MathF.Round(_baseMaxHp * (1f + bonus.MaxHpPercent));
         if (newMaxHp > MaxHp)

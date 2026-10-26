@@ -62,5 +62,14 @@ public sealed class GameServices(GraphicsDevice device, string contentRoot, Virt
 
     public Lazy<Core.Run.Progression.LevelUpRules> LevelUpRules { get; } = new(() => Core.Run.Progression.LevelUpRules.Load(contentRoot));
 
+    /// <summary>The special moves, one per type (phase 4.4).</summary>
+    public Lazy<Core.Run.Specials.SpecialMoves> Specials { get; } = new(() => Core.Run.Specials.SpecialMoves.Load(contentRoot));
+
+    private Core.Run.Characters.CharacterLibrary? _characters;
+
+    /// <summary>The playable characters (phase 4.1).</summary>
+    public Core.Run.Characters.CharacterLibrary Characters =>
+        _characters ??= Core.Run.Characters.CharacterLibrary.Load(ContentRoot, Pokedex.Value.Species, Moves.Value);
+
     public SpeciesData? Species(int id) => id >= 1 && id <= Pokedex.Value.Species.Count ? Pokedex.Value.Species[id - 1] : null;
 }

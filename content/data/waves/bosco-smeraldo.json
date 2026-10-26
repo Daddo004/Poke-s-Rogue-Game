@@ -8,12 +8,15 @@
 
   // Every minute enemies gain this share of their HP, and their gems this share of their experience.
   // Later waves also bring sturdier species (evolved forms), which grow on top of this.
-  "hpPerMinute": 0.3,
+  // Phase 4.5: was 0.3; characters' abilities and special moves had made runs easier than before Block 4.
+  "hpPerMinute": 0.65,
   "xpPerMinute": 0,
 
-  // Phase 3.6: enemy contact damage (and their shots, blasts and rocks) grows by this share every minute: at 14:00 they hit twice as hard.
+  // Phase 3.6: enemy contact damage (and their shots, blasts and rocks) grows by this share every minute.
   // Before, damage never grew while the player's PS and healing did, and the late game was a walk.
-  "damagePerMinute": 0.07,
+  // Phase 4.5: was 0.07 (twice as hard at 14:00); now nearly three times, so a pilot that can be hurt falls around
+  // minute 6 again, as before the specials and abilities.
+  "damagePerMinute": 0.13,
 
   // Each wave covers a stretch of time ("m:ss"). Below minAlive enemies alive it refills at once (as in Vampire
   // Survivors); on top of that it adds spawnsPerSecond, until maxAlive. Weights are the species' share of the spawns.
@@ -120,7 +123,8 @@
   "boss": {
     "pokemon": "pinsir",
     "titleIt": "Signore del Bosco",
-    "hp": 90,
+    // Phase 4.5: was 90; the minute's growth went up (hpPerMinute), so the fight kept its length of about a minute and a half.
+    "hp": 60,
     "speed": 0.9,
     "phases": [
       { "below": 1, "rest": 1.6, "attacks": [

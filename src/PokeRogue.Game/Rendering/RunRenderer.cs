@@ -28,6 +28,7 @@ public sealed class RunRenderer
     private readonly MoveVfx _vfx;
     private readonly StatusVfx _statusVfx;
     private readonly EnemyVfx _enemyVfx;
+    private readonly AbilityVfx _abilityVfx;
     private readonly List<int> _levelBursts = [];
 
     /// <summary>Ages of Focalnastro revivals still showing (rings and the sash rising over Pikachu).</summary>
@@ -35,6 +36,12 @@ public sealed class RunRenderer
 
     /// <summary>Move evolutions still showing (gold rings and the new move's icon rising over Pikachu).</summary>
     private readonly List<(int Age, string MoveId)> _evolutions = [];
+
+    /// <summary>Ages of the player's own evolutions still showing their rings (phase 4.2).</summary>
+    private readonly List<int> _playerEvolutions = [];
+
+    /// <summary>The species the player animator plays; it changes when the player evolves.</summary>
+    private int _playerSpeciesId;
     private readonly List<DebugShape> _debugShapes = [];
     private readonly Particles _particles = new();
     private readonly DamageNumbers _numbers = new();
@@ -56,6 +63,7 @@ public sealed class RunRenderer
         _vfx = new MoveVfx(services);
         _statusVfx = new StatusVfx(services);
         _enemyVfx = new EnemyVfx(services, _vfx.Shake);
+        _abilityVfx = new AbilityVfx(services);
     }
 
     public FloorRenderer Floor { get; }
@@ -82,15 +90,18 @@ public sealed class RunRenderer
 
         // Ready before the first tick: a run can start paused (e.g. a level-up offered immediately).
         _playerAnimator = default;
-        _playerAnimator.Play(_services.Sprites.Get(run.Player.Species.Id)!.Resolve(PmdAnimations.Idle));
+        _playerSpeciesId = run.Player.Form.Id;
+        _playerAnimator.Play(_services.Sprites.Get(run.Player.Form.Id)!.Resolve(PmdAnimations.Idle));
         _hurtTicks = _attackTicks = 0;
         _vfx.Reset();
         _statusVfx.Reset();
         _enemyVfx.Reset();
+        _abilityVfx.Reset();
         _levelBursts.Clear();
         _bossEntrance = -1;
         _revivals.Clear();
         _evolutions.Clear();
+        _playerEvolutions.Clear();
         _debugShapes.Clear();
     }
 
@@ -101,6 +112,15 @@ public sealed class RunRenderer
     public void Update(RunState run, bool paused = false)
     {
         _tick++;
+
+        // The player evolved (phase 4.2, while the game is frozen): its animations come from the new sprite sheet.
+        if (run.Player.Form.Id != _playerSpeciesId)
+        {
+            _playerSpeciesId = run.Player.Form.Id;
+            _playerAnimator.Play(_services.Sprites.Get(_playerSpeciesId)!.Resolve(PmdAnimations.Idle), restart: true);
+            _attackTicks = 0;
+        }
+
         UpdateEffects(run);
         _vfx.Update(run, paused);
         _statusVfx.Update(run, paused, Cull());
@@ -108,13 +128,14 @@ public sealed class RunRenderer
         if (paused)
             return;
 
-        var playerSet = _services.Sprites.Get(run.Player.Species.Id)!;
+        var playerSet = _services.Sprites.Get(run.Player.Form.Id)!;
 
         foreach (var e in run.Events)
         {
             _vfx.OnEvent(e, run);
             _statusVfx.OnEvent(e);
             _enemyVfx.OnEvent(e);
+            _abilityVfx.OnEvent(e, run, _playerAnimator.Anim, _playerAnimator.Frame);
             switch (e.Type)
             {
                 case RunEventType.PlayerHurt:
@@ -170,6 +191,11 @@ public sealed class RunRenderer
                     _particles.Burst(run.Player.Position.ToXna() - new Vector2(0, 10), 40, 180f, Color.White, EvolveGold, 36, _random, size: 2f);
                     _vfx.Shake.Add(0.2f);
                     break;
+                case RunEventType.PlayerEvolved:
+                    // Back in the field after the evolution window: gold rings and sparks from the new Pokémon's feet.
+                    _playerEvolutions.Add(0);
+                    _particles.Burst(run.Player.Position.ToXna() - new Vector2(0, 10), 40, 180f, Color.White, EvolveGold, 36, _random, size: 2f);
+                    break;
                 case RunEventType.RunEnded when (RunOutcome)(int)e.Value == RunOutcome.Victory:
                     _levelBursts.Add(0);
                     _particles.Burst(run.Player.Position.ToXna() - new Vector2(0, 10), 48, 190f, Color.White, new Color(248, 208, 72), 40, _random, size: 2f);
@@ -213,6 +239,12 @@ public sealed class RunRenderer
                 _evolutions.RemoveAt(i);
         }
 
+        for (var i = _playerEvolutions.Count - 1; i >= 0; i--)
+        {
+            if (++_playerEvolutions[i] >= EvolveLife)
+                _playerEvolutions.RemoveAt(i);
+        }
+
         for (var i = _debugShapes.Count - 1; i >= 0; i--)
         {
             _debugShapes[i] = _debugShapes[i] with { Age = _debugShapes[i].Age + 1 };
@@ -222,6 +254,7 @@ public sealed class RunRenderer
 
         _particles.Update();
         _numbers.Update();
+        _abilityVfx.Update();
     }
 
     private const int LevelBurstLife = 30;
@@ -265,6 +298,7 @@ public sealed class RunRenderer
         _vfx.DrawObjects(batch, run);
         _enemyVfx.DrawObjects(batch, run);
         _statusVfx.DrawObjects(batch);
+        _abilityVfx.DrawObjects(batch);
 
         var player = run.Player;
         var hpRatio = player.Hp / player.MaxHp;
@@ -310,8 +344,8 @@ public sealed class RunRenderer
             }
         }
 
-        // Evolution: three white rings turning gold as they spread from Pikachu's feet.
-        foreach (var (age, _) in _evolutions)
+        // Evolution, of a move or of the player: three white rings turning gold as they spread from Pikachu's feet.
+        foreach (var age in _evolutions.Select(e => e.Age).Concat(_playerEvolutions))
         {
             for (var ring = 0; ring < 3; ring++)
             {
@@ -335,6 +369,7 @@ public sealed class RunRenderer
             DrawEdgeArrows(batch, run);
         DrawRevivals(batch, run);
         DrawEvolutions(batch, run);
+        _abilityVfx.DrawOverhead(batch, run);
         _numbers.Draw(batch, _services.Fonts.Numbers(_services.Style), _services.Fonts.Get(_services.Style.NumberFont, _services.Style.NumberFontSize / 2f));
         if (ShowHitboxes)
             DrawHitboxes(batch, run);
@@ -351,7 +386,7 @@ public sealed class RunRenderer
         var t = age / (float)ReviveLife;
         var pop = age < 6 ? 1.5f - age / 12f : 1f;
         var size = (int)(ItemIcons.Crop.Width * pop);
-        var head = _services.Sprites.Get(run.Player.Species.Id)?.HeadHeight ?? 20;
+        var head = _services.Sprites.Get(run.Player.Form.Id)?.HeadHeight ?? 20;
         var center = run.Player.Position.ToXna() - new Vector2(0, head + 14 + t * 14f);
         var alpha = t < 0.7f ? 1f : (1f - t) / 0.3f;
         _services.ItemIcons.Draw(batch, "focus-sash", new Rectangle((int)(center.X - size / 2f), (int)(center.Y - size / 2f), size, size), alpha: alpha);
@@ -374,7 +409,7 @@ public sealed class RunRenderer
 
         var t = age / (float)EvolveLife;
         var size = age < 6 ? 30 - age : 24;
-        var head = _services.Sprites.Get(run.Player.Species.Id)?.HeadHeight ?? 20;
+        var head = _services.Sprites.Get(run.Player.Form.Id)?.HeadHeight ?? 20;
         var center = run.Player.Position.ToXna() - new Vector2(0, head + 16 + t * 14f);
         var slot = new Rectangle((int)(center.X - size / 2f), (int)(center.Y - size / 2f), size, size);
         UiDraw.Frame(batch, _services.Primitives, slot, UiTheme.Dark with { Border = EvolveGold, Highlight = new Color(176, 136, 48) });
@@ -684,7 +719,7 @@ public sealed class RunRenderer
                         e.Rank switch { EnemyRank.Dominant => Spawner.DominantScale, EnemyRank.Boss => BossAi.DrawScale * (1f - BossDropHeight() / 300f), _ => 1f });
                     break;
                 default:
-                    DrawShadow(batch, run.Player.Species.Id, run.Player.Position.ToXna(), 1f);
+                    DrawShadow(batch, run.Player.Form.Id, run.Player.Position.ToXna(), 1f);
                     break;
             }
         }
@@ -789,11 +824,13 @@ public sealed class RunRenderer
                 if (!run.IsOver && player.InvulnerableTicks > 0 && player.InvulnerableTicks / 3 % 2 == 1)
                     break;
 
-                var set = _services.Sprites.Get(player.Species.Id)!;
+                var set = _services.Sprites.Get(player.Form.Id)!;
                 var tint = _hurtTicks > 0 ? new Color(255, 120, 120) : Color.White;
                 // While attacking on the spot, turn towards the target; walking keeps the movement facing.
                 var facing = _attackTicks > 0 && !player.IsMoving ? _attackFacing : player.Facing;
                 set.Draw(batch, _playerAnimator.Anim!, _playerAnimator.Frame, facing, player.Position.ToXna(), tint);
+                if (_abilityVfx.Flash > 0)
+                    set.Draw(batch, _playerAnimator.Anim!, _playerAnimator.Frame, facing, player.Position.ToXna(), Color.White * (_abilityVfx.Flash / 14f), silhouette: true);
                 break;
             }
         }

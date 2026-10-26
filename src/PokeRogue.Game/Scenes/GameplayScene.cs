@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using PokeRogue.Core.Run;
+using PokeRogue.Core.Run.Characters;
 using PokeRogue.Core.Run.Enemies;
 using PokeRogue.Core.Run.Moves;
 using PokeRogue.Core.Run.Waves;
@@ -17,7 +18,7 @@ public sealed class GameplayScene : Scene
     /// <summary>The only level until worlds arrive in Block 7: its waves are content/data/waves/bosco-smeraldo.json.</summary>
     public const string LevelId = "bosco-smeraldo";
 
-    /// <summary>Pikachu's main move until characters arrive in Block 4.</summary>
+    /// <summary>Pikachu's main move (characters.json): previews that build a run by hand give it more levels.</summary>
     public const string StartingMoveId = "thundershock";
 
     private readonly RunRenderer _renderer;
@@ -26,7 +27,14 @@ public sealed class GameplayScene : Scene
     private readonly PauseMenu _pause;
     private readonly RunEndBanner _banner;
     private readonly ResultsScreen _results;
-    private readonly int _playerSpeciesId;
+    private readonly CharacterDefinition _character;
+
+    /// <summary>Previews: play this character as given (e.g. with another special move) instead of the one named.</summary>
+    public CharacterDefinition Character
+    {
+        get => _character;
+        init => _character = value;
+    }
     private readonly int _initialSpawn;
     private readonly Action<RunState>? _setup;
 
@@ -34,13 +42,15 @@ public sealed class GameplayScene : Scene
     private LevelUpFlow _levelUp = null!;
     private Phase _phase;
 
+    /// <param name="characterId">The character played (characters.json); Pikachu when null.</param>
     /// <param name="initialSpawn">Enemies spawned immediately (stress tests).</param>
     /// <param name="autopilot">Player picks up gems and walks in circles, invincible (previews and benchmarks).</param>
     /// <param name="setup">Previews: prepares the run right after it is created.</param>
-    public GameplayScene(GameServices services, int playerSpeciesId = 25, int initialSpawn = 0, bool autopilot = false, Action<RunState>? setup = null)
+    public GameplayScene(GameServices services, string? characterId = null, int initialSpawn = 0, bool autopilot = false, Action<RunState>? setup = null)
         : base(services)
     {
-        _playerSpeciesId = playerSpeciesId;
+        _character = services.Characters.Find(characterId ?? CharacterLibrary.DefaultId)
+            ?? throw new ArgumentException($"Unknown character '{characterId}'. Available: {string.Join(", ", services.Characters.All.Select(c => c.Id))}");
         _initialSpawn = initialSpawn;
         _setup = setup;
         Autopilot = autopilot;
@@ -51,6 +61,8 @@ public sealed class GameplayScene : Scene
         _banner = new RunEndBanner(services);
         _results = new ResultsScreen(services, _hud);
         _chestWindow = new ChestWindow(services);
+        _evolution = new EvolutionWindow(services);
+        _special = new SpecialWindow(services);
         _bossIntro = new BossIntro(services);
     }
 
@@ -63,6 +75,16 @@ public sealed class GameplayScene : Scene
 
     /// <summary>Previews: the chest window, e.g. to open one by hand.</summary>
     public ChestWindow ChestWindow => _chestWindow;
+
+    private readonly EvolutionWindow _evolution;
+
+    /// <summary>Previews: the player's evolution, e.g. to script a choice.</summary>
+    public EvolutionWindow Evolution => _evolution;
+
+    private readonly SpecialWindow _special;
+
+    /// <summary>Previews: the special move's window.</summary>
+    public SpecialWindow Special => _special;
 
     private enum Phase
     {
@@ -160,6 +182,25 @@ public sealed class GameplayScene : Scene
                 return;
         }
 
+        // The player's evolution (phase 4.2): the game freezes until it is over, and Esc stops it instead of pausing.
+        if (_evolution.IsOpen)
+        {
+            _evolution.Update(Autopilot ? null : input);
+            _renderer.Update(_run, paused: true);
+            _hud.Update(_run);
+            return;
+        }
+
+        // The special move (phase 4.4): the game freezes while it plays; the run takes the damage at its impact.
+        if (_special.IsOpen)
+        {
+            if (_special.Update())
+                _renderer.Shake.Add(0.45f);
+            _renderer.Update(_run, paused: true);
+            _hud.Update(_run);
+            return;
+        }
+
         HandleCheats();
         if (input.Pressed(Keys.Escape) || input.Pressed(Buttons.Start))
         {
@@ -196,13 +237,32 @@ public sealed class GameplayScene : Scene
             return;
         }
 
+        // Every level-up chosen and no chest open: an evolution that is ready starts now.
+        if (CharacterEvolution.Ready(_run) is { Count: > 0 } evolutions)
+        {
+            _evolution.Open(_run, evolutions);
+            return;
+        }
+
         for (var step = 0; step < Speed; step++)
         {
             var move = Autopilot ? AutoPilot.Input(_run) : input.Move.ToNumerics();
-            _run.Tick(new PlayerInput(move));
+            // The active ability (phase 4.3): Space or X; the autopilot uses it as soon as it is ready.
+            var useAbility = Autopilot
+                ? Core.Run.Abilities.AbilitySystem.CanUse(_run)
+                : step == 0 && (input.Pressed(Keys.Space) || input.Pressed(Buttons.X));
+            // The special move (phase 4.4): E or Y with a full gauge; the autopilot unleashes it as soon as it is full.
+            var useSpecial = Autopilot ? _run.Special.IsFull : step == 0 && (input.Pressed(Keys.E) || input.Pressed(Buttons.Y));
+            _run.Tick(new PlayerInput(move, useAbility, useSpecial));
             _explored.Visit(_run.Player.Position);
             _renderer.Update(_run);
             _hud.Update(_run);
+
+            if (_run.SpecialPending)
+            {
+                _special.Open(_run);
+                break;
+            }
 
             if (_run.IsOver)
             {
@@ -237,6 +297,8 @@ public sealed class GameplayScene : Scene
 
         _levelUpWindow.Draw(batch);
         _chestWindow.Draw(batch);
+        _evolution.Draw(batch);
+        _special.Draw(batch);
         _pause.Draw(batch, _run, _explored);
         _banner.Draw(batch);
         _results.Draw(batch);
@@ -283,7 +345,7 @@ public sealed class GameplayScene : Scene
         var waves = WaveTimeline.Load(Services.ContentRoot, LevelId, pokedex, Services.Moves.Value);
         var enemies = EnemyLibrary.Load(Services.ContentRoot, pokedex, Services.Moves.Value);
         var loot = Core.Run.Pickups.LootRules.Load(Services.ContentRoot);
-        _run = new RunState(pokedex, Services.TypeChart.Value, _playerSpeciesId, waves, view, seed: Environment.TickCount)
+        _run = new RunState(pokedex, Services.TypeChart.Value, _character.First.Id, waves, view, seed: Environment.TickCount)
         {
             TimeLimitTicks = waves.DurationTicks,
             MovePool = Services.Moves.Value.Enabled,
@@ -295,8 +357,9 @@ public sealed class GameplayScene : Scene
             StatusRules = Services.Statuses.Value,
             EnemyRules = PendingEnemies ? enemies.WithDisabled() : enemies,
             LootRules = loot.File.Enabled || PendingLoot ? loot : null,
+            SpecialRules = Services.Specials.Value,
         };
-        _run.Player.Moves.Add(new MoveInstance(Services.Moves.Value[StartingMoveId]));
+        _run.UseCharacter(_character);
         if (StartTicks > 0)
         {
             _run.AdvanceTime(StartTicks);
@@ -311,12 +374,15 @@ public sealed class GameplayScene : Scene
         _banner.Stop();
         _results.Close();
         _chestWindow.Close();
+        _evolution.Close();
+        _special.Close();
         _bossIntro.Stop();
         _explored.Clear();
         _phase = Phase.Playing;
 
         // Load sprites up front so the first spawn of a species does not hitch.
-        Services.Sprites.Get(_playerSpeciesId);
+        foreach (var stage in _character.Stages)
+            Services.Sprites.Get(stage.Species.Id);
         foreach (var speciesId in waves.SpeciesIds)
             Services.Sprites.Get(speciesId);
 

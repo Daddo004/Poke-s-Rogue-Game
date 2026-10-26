@@ -2,11 +2,14 @@ using System.Numerics;
 using PokeRogue.Core.Combat;
 using PokeRogue.Core.Data;
 using PokeRogue.Core.Geometry;
+using PokeRogue.Core.Run.Abilities;
+using PokeRogue.Core.Run.Characters;
 using PokeRogue.Core.Run.Enemies;
 using PokeRogue.Core.Run.Items;
 using PokeRogue.Core.Run.Moves;
 using PokeRogue.Core.Run.Pickups;
 using PokeRogue.Core.Run.Progression;
+using PokeRogue.Core.Run.Specials;
 using PokeRogue.Core.Run.Statuses;
 using PokeRogue.Core.Run.Waves;
 
@@ -37,6 +40,7 @@ public sealed class RunState
         Enemies = new EnemyPool(4096);
         Grid = new SpatialGrid(32f, 64);
         Spawner = new Spawner(waves, viewSize);
+        ViewSize = viewSize;
     }
 
     /// <summary>Tests and previews: the same species forever (<see cref="WaveTimeline.Constant"/>).</summary>
@@ -110,7 +114,7 @@ public sealed class RunState
     /// <summary>Ids of the moves and items banished this run: level-ups never offer them again.</summary>
     public HashSet<string> Banished { get; } = new(StringComparer.Ordinal);
 
-    public bool IsPaused => LevelUpChoices is not null;
+    public bool IsPaused => LevelUpChoices is not null || SpecialPending;
 
     /// <summary>Survive this long to win (the Block 1 prototype uses 10 minutes); null for endless.</summary>
     public int? TimeLimitTicks { get; init; }
@@ -124,6 +128,62 @@ public sealed class RunState
     public Random Random { get; }
 
     public Player Player { get; }
+
+    /// <summary>The character being played (phase 4.1); null in tests and previews that use a bare species.</summary>
+    public CharacterDefinition? Character { get; private set; }
+
+    /// <summary>The stage of <see cref="Character"/>'s line the player is now (phase 4.2).</summary>
+    public CharacterStage? Stage { get; internal set; }
+
+    /// <summary>Evolution items found (stones, Metalcoperta, …) and not used yet.</summary>
+    public HashSet<string> EvolutionItems { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>The level at which the player last stopped an evolution: it is offered again from the next level.</summary>
+    public int EvolutionDeclinedAtLevel { get; internal set; }
+
+    /// <summary>Timers and stacks of the player's ability (phase 4.3).</summary>
+    public AbilityState Ability { get; } = new();
+
+    /// <summary>The special moves (content/data/specials.json, phase 4.4); null = no special gauge.</summary>
+    public SpecialMoves? SpecialRules { get; init; }
+
+    /// <summary>The special gauge.</summary>
+    public SpecialState Special { get; } = new();
+
+    /// <summary>The character's special move; null without a character or special rules.</summary>
+    public SpecialMove? SpecialMove => Character is { } character && SpecialRules is { } rules ? rules[character.Special] : null;
+
+    /// <summary>The key was pressed with a full gauge: the run waits until <see cref="UnleashSpecial"/>.</summary>
+    public bool SpecialPending { get; private set; }
+
+    /// <summary>The screen size around the player, for what the special reaches.</summary>
+    public Vector2 ViewSize { get; }
+
+    /// <summary>The special lands (called by the game at the impact of its animation, or straight away when scripted).</summary>
+    public void UnleashSpecial()
+    {
+        if (!SpecialPending || SpecialMove is not { } special)
+            return;
+
+        SpecialPending = false;
+        SpecialMoves.Unleash(this, special, ViewSize);
+    }
+
+    /// <summary>
+    /// Plays <paramref name="character"/>, whose first species the run was created with: its modifiers and its main move.
+    /// The secondary move waits for the shop (Block 6).
+    /// </summary>
+    public void UseCharacter(CharacterDefinition character)
+    {
+        if (Player.Species.Id != character.First.Id)
+            throw new ArgumentException($"The run was created as {Player.Species.Key}, not as {character.First.Key}.", nameof(character));
+
+        Character = character;
+        Stage = character.Stages[0];
+        Player.CharacterBonus = character.Modifiers;
+        Player.RecalculateStats();
+        Player.Moves.Add(new MoveInstance(character.MainMove) { AcquiredTick = Ticks });
+    }
 
     public EnemyPool Enemies { get; }
 
@@ -156,6 +216,16 @@ public sealed class RunState
 
         Player.Move(input.Move);
         Player.Tick();
+        AbilitySystem.Tick(this, input.UseAbility);
+
+        if (Special.LockTicks > 0)
+            Special.LockTicks--;
+        if (input.UseSpecial && Special.IsFull && SpecialMove is { } special)
+        {
+            SpecialPending = true;
+            _events.Add(new RunEvent(RunEventType.SpecialStarted, Player.Position, (int)special.Type, MoveId: special.Id));
+            return;
+        }
 
         Grid.Rebuild(Enemies, Player.Position);
         StatusSystem.Tick(this);
@@ -252,6 +322,7 @@ public sealed class RunState
 
         PendingLevelUps += levels;
         _events.Add(new RunEvent(RunEventType.LevelUp, Player.Position, Player.Level));
+        AbilitySystem.OnLevelUp(this, levels);
         LevelUpChoices ??= LevelUp.Generate(this, LevelUpChoiceCount);
     }
 
@@ -332,8 +403,8 @@ public sealed class RunState
 
         var definition = move.Definition;
         var defender = new DefenderProfile(e.Type1, e.Type2, e.Defense, e.SpDefense);
-        var power = move.Stats.Power * Player.PowerMultiplier(definition.Category);
-        var attacker = Player.Attacker;
+        var power = move.Stats.Power * Player.PowerMultiplier(definition.Category) * AbilitySystem.DamageMultiplier(this, move);
+        var attacker = AbilitySystem.Attacker(this, Player.Attacker);
         if (definition.CritBonus > 0f)
             attacker = attacker with { CritChance = attacker.CritChance + definition.CritBonus };
         var result = DamageCalculator.Compute(power, definition.Category, definition.Type, attacker, defender, TypeChart, Random);
@@ -345,6 +416,8 @@ public sealed class RunState
 
         var dealt = MathF.Min(result.Amount, e.Hp);
         move.DamageDealt += dealt;
+        if (e.Rank != EnemyRank.Prop)
+            SpecialMoves.Charge(this, dealt, e.MaxHp);
 
         // Sanguisuga's drain and Conchinella's lifesteal both give back part of the damage (not from grass and rocks).
         var heal = definition.Drain + Player.Lifesteal;
@@ -353,8 +426,33 @@ public sealed class RunState
 
         _events.Add(new RunEvent(RunEventType.EnemyHit, e.Position, result.Amount, e.SpeciesId,
             Effectiveness: result.Effectiveness, Critical: result.Critical, MoveId: definition.Id, Ohko: ohko));
+        var target = e.Rank;
         DamageEnemy(index, result.Amount, direction * move.Stats.Knockback);
+        AbilitySystem.OnMoveHit(this, move, knockedOut: target != EnemyRank.Prop && !Enemies[index].IsAlive);
         StatusSystem.OnHit(this, index, move, result.Amount);
+    }
+
+    /// <summary>
+    /// Every hit on the player goes through here (phase 4.3): its ability may stop or soften it, the defence stats, Ferro
+    /// and Zinco reduce it, and then the ability may strike back. Returns the damage taken.
+    /// </summary>
+    public float HurtPlayer(in Hurt hurt)
+    {
+        if (!Player.CanBeHurt)
+            return 0f;
+
+        var multiplier = AbilitySystem.HurtMultiplier(this, hurt);
+        if (multiplier <= 0f)
+            return 0f;
+
+        var taken = Player.TakeContactDamage(hurt.Damage * multiplier, hurt.Special);
+        if (taken <= 0f)
+            return 0f;
+
+        Stats.RecordDamageTaken(taken);
+        _events.Add(new RunEvent(RunEventType.PlayerHurt, Player.Position, taken, hurt.SpeciesId));
+        AbilitySystem.OnHurt(this, hurt, taken);
+        return taken;
     }
 
     /// <summary>Damage from a status condition: no flash or knockback, credited to the move that inflicted the status.</summary>
@@ -407,7 +505,7 @@ public sealed class RunState
             }
             else if (e.Rank == EnemyRank.Normal && LootRules is { } loot)
             {
-                var roll = Random.NextSingle();
+                var roll = Random.NextSingle() / AbilitySystem.DropMultiplier(this);
                 if (roll < loot.File.EnemyFoodChance)
                     Loot.Drop(e.Position + new Vector2(-4, 3), LootKind.OranBerry);
                 else if (roll < loot.File.EnemyFoodChance + loot.File.EnemyCoinChance)
@@ -497,6 +595,7 @@ public sealed class RunState
             }
 
             StatusSystem.Steer(this, e, ref desired, ref contactDamage);
+            AbilitySystem.Steer(this, ref e, ref desired);
             e.Velocity = desired;
             e.Position += (desired + e.Knockback) * RunClock.Dt;
             e.Knockback *= 0.82f;
@@ -511,14 +610,7 @@ public sealed class RunState
 
             var reach = e.Radius + Player.Radius;
             if (contactDamage > 0f && Vector2.DistanceSquared(e.Position, playerPosition) < reach * reach)
-            {
-                var taken = Player.TakeContactDamage(contactDamage, e.HitsSpecially);
-                if (taken > 0f)
-                {
-                    Stats.RecordDamageTaken(taken);
-                    _events.Add(new RunEvent(RunEventType.PlayerHurt, playerPosition, taken, e.SpeciesId));
-                }
-            }
+                HurtPlayer(new Hurt(HurtKind.Contact, contactDamage, e.HitsSpecially, e.SpeciesId, e.Type1, i));
         }
     }
 

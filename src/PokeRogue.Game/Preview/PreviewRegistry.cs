@@ -10,8 +10,8 @@ public static class PreviewRegistry
         new(StringComparer.OrdinalIgnoreCase)
         {
             ["sprites"] = ("Sprite Viewer: --species N --anim Walk", (s, o) => new SpriteViewerScene(s, o.Int("species", 25), o.Str("anim"))),
-            ["run"] = ("Gameplay on autopilot: --species N --stress N (enemies spawned at start, player invincible) --speed N --da m:ss (start later) [--evoluzioni] [--nemici]",
-                (s, o) => new GameplayScene(s, o.Int("species", 25), initialSpawn: o.Int("stress", 0), autopilot: true)
+            ["run"] = ("Gameplay on autopilot: --pokemon id (characters.json) --stress N (enemies spawned at start, player invincible) --speed N --da m:ss (start later) [--evoluzioni] [--nemici]",
+                (s, o) => new GameplayScene(s, o.Str("pokemon"), initialSpawn: o.Int("stress", 0), autopilot: true)
                 {
                     Speed = System.Math.Max(1, o.Int("speed", 1)),
                     PendingEvolutions = o.Values.ContainsKey("evoluzioni"),
@@ -31,6 +31,14 @@ public static class PreviewRegistry
                 (s, o) => new DominantsPreviewScene(s, o.Str("variant") ?? "campo", o.Str("ball"))),
             ["boss"] = ("Level boss (3.4): --variant arrivo|raffica|massi|fasi|finale", (s, o) => new BossPreviewScene(s, o.Str("variant") ?? "arrivo")),
             ["oggetti"] = ("Breakables, items and shinies (3.5): --variant campo|terra|raccolta|cromatico", (s, o) => new LootPreviewScene(s, o.Str("variant") ?? "campo")),
+            ["evoluzione"] = ("Player's evolution (4.2): --variant sequenza|fermata|scelta|forziere [--pokemon id] [--scelta N]",
+                (s, o) => new EvolutionPreviewScene(s, o.Str("variant") ?? "sequenza", o.Str("pokemon"), o.Int("scelta", 4))),
+            ["abilita"] = ("Abilities (4.3): --variant pannello|teletrasporto|trasformazione|muta",
+                (s, o) => new AbilityPreviewScene(s, o.Str("variant") ?? "pannello")),
+            ["speciale"] = ("Special move (4.4): --tipo Fire (any of the 17) [--soloeffetto]",
+                (s, o) => new SpecialPreviewScene(s, Enum.TryParse<Core.Data.PokemonType>(o.Str("tipo"), true, out var type) ? type : Core.Data.PokemonType.Fire,
+                    o.Values.ContainsKey("soloeffetto"))),
+            ["personaggi"] = ("Album of the playable characters (4.5): --pagina N, nine to a page", (s, o) => new CharacterAlbumScene(s, o.Int("pagina", 1))),
             ["rinascita"] = ("Focalnastro (2.5): Pikachu is knocked out and stands back up", (s, _) => new RevivePreviewScene(s)),
             ["stati"] = ("Status conditions (2.3): --variant vetrina|icone|orda [--icone simbolo|riquadro|nessuna] [--stress N] [--mosse a,b,c]",
                 (s, o) => new StatusPreviewScene(s, o.Str("variant"), o.Str("icone"), o.Int("stress", 150), o.Str("mosse"))),

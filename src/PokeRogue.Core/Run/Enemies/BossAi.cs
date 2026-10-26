@@ -173,12 +173,7 @@ public static class BossAi
             var reach = hazard.Radius + player.Radius * 0.5f;
             if (Vector2.DistanceSquared(hazard.Position, player.Position) <= reach * reach)
             {
-                var taken = player.TakeContactDamage(hazard.Damage, hazard.Special);
-                if (taken > 0f)
-                {
-                    run.Stats.RecordDamageTaken(taken);
-                    run.AddEvent(new RunEvent(RunEventType.PlayerHurt, player.Position, taken, hazard.SpeciesId));
-                }
+                run.HurtPlayer(new Abilities.Hurt(Abilities.HurtKind.Hazard, hazard.Damage, hazard.Special, hazard.SpeciesId, Data.PokemonType.Rock));
             }
 
             run.AddEvent(new RunEvent(RunEventType.HazardLanded, hazard.Position, hazard.Radius, hazard.SpeciesId));

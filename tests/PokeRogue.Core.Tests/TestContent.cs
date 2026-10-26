@@ -25,6 +25,8 @@ internal static class TestContent
 
     public static readonly Lazy<PokeRogue.Core.Run.Pickups.LootRules> Loot = new(() => PokeRogue.Core.Run.Pickups.LootRules.Load(Root));
 
+    public static readonly Lazy<PokeRogue.Core.Run.Characters.CharacterLibrary> Characters = new(() => PokeRogue.Core.Run.Characters.CharacterLibrary.Load(Root, Pokedex.Value.Species, Moves.Value));
+
     public static ItemDefinition Item(string id) => Items.Value[id];
 
     public static SpeciesData Species(int id) => Pokedex.Value.Species.Single(s => s.Id == id);

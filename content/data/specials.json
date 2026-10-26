@@ -1,0 +1,33 @@
+{
+  // Special moves (phase 4.4): one per type; a character uses its type's ("special" in characters.json). The gauge fills
+  // with the damage the moves deal, counted in enemies' worth of PS (a hit taking half an enemy's PS adds 0.5), and is
+  // full at "chargeEnemies". The key (E) unleashes it on everything on screen: regular enemies lose "regularDamage" of
+  // their max PS, Dominanti and bosses "eliteDamage", times the type matchup; grass and boulders break. Survivors may
+  // catch the special's status. After a use the gauge stays empty for "lockSeconds".
+  // Name and type come from the PokeAPI catalogue through "catalogKey".
+  "version": 1,
+  "chargeEnemies": 60,
+  "lockSeconds": 30,
+  "regularDamage": 0.75,
+  "eliteDamage": 0.06,
+  "knockback": 140,
+  "specials": [
+    { "type": "Normal", "catalogKey": "hyper-beam" },
+    { "type": "Fire", "catalogKey": "fire-blast", "status": "Burn", "statusChance": 0.5 },
+    { "type": "Water", "catalogKey": "hydro-pump" },
+    { "type": "Grass", "catalogKey": "solar-beam" },
+    { "type": "Electric", "catalogKey": "zap-cannon", "status": "Paralysis", "statusChance": 0.5 },
+    { "type": "Ice", "catalogKey": "blizzard", "status": "Freeze", "statusChance": 0.5 },
+    { "type": "Fighting", "catalogKey": "close-combat" },
+    { "type": "Poison", "catalogKey": "gunk-shot", "status": "Poison", "statusChance": 0.5 },
+    { "type": "Ground", "catalogKey": "magnitude" },
+    { "type": "Flying", "catalogKey": "brave-bird" },
+    { "type": "Psychic", "catalogKey": "psychic", "status": "Confusion", "statusChance": 0.5 },
+    { "type": "Bug", "catalogKey": "bug-buzz" },
+    { "type": "Rock", "catalogKey": "rock-wrecker" },
+    { "type": "Ghost", "catalogKey": "shadow-force" },
+    { "type": "Dragon", "catalogKey": "outrage" },
+    { "type": "Dark", "catalogKey": "night-slash" },
+    { "type": "Steel", "catalogKey": "meteor-mash" }
+  ]
+}

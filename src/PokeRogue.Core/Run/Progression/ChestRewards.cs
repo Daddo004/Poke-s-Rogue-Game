@@ -4,7 +4,8 @@ namespace PokeRogue.Core.Run.Progression;
 public sealed record ChestOpening(ChestTier Tier, IReadOnlyList<LevelUpOption> Rewards, int Tick);
 
 /// <summary>
-/// What a Dominante's chest gives (phase 3.3), as in Vampire Survivors: a ready evolution first, otherwise an upgrade
+/// What a Dominante's chest gives (phase 3.3), as in Vampire Survivors: the item the player's own evolution needs
+/// (phase 4.2), then a ready evolution, otherwise an upgrade
 /// of a move or item the player already has; once everything is maxed, coins. Each reward is applied before the next
 /// is drawn, so one chest can raise the same move twice.
 /// </summary>
@@ -32,6 +33,9 @@ public static class ChestRewards
 
     private static LevelUpOption Next(RunState run)
     {
+        // The item for the player's own evolution comes before anything else (phase 4.2).
+        if (Characters.CharacterEvolution.ItemDue(run) is { } stage)
+            return Characters.CharacterEvolution.ItemReward(run, stage);
         if (LevelUp.ReadyEvolutions(run) is [var evolution, ..])
             return evolution;
 

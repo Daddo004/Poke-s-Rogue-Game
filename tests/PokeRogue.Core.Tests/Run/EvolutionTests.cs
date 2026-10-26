@@ -54,6 +54,28 @@ public class EvolutionTests
     }
 
     [Fact]
+    public void An_evolved_move_never_comes_back_as_a_new_move()
+    {
+        var run = NewRun();
+        run.Player.Moves.Add(new MoveInstance(TestContent.Move("thunder")));
+
+        for (var i = 0; i < 50; i++)
+            Assert.DoesNotContain(LevelUp.Generate(run, 3), o => o.Id == "thundershock");
+    }
+
+    [Fact]
+    public void A_new_item_card_for_an_item_picked_up_meanwhile_raises_it()
+    {
+        var run = NewRun();
+        var card = new LevelUpOption(LevelUpKind.NewItem, "magnet", "Calamita", 0, 1, "", "magnet");
+        run.Player.Items.Add(new ItemInstance(TestContent.Item("magnet")));
+
+        LevelUp.Apply(run, card);
+
+        Assert.Equal(2, Assert.Single(run.Player.Items).Level);
+    }
+
+    [Fact]
     public void No_evolution_without_the_item_or_below_the_maximum_level()
     {
         var withoutItem = NewRun();
