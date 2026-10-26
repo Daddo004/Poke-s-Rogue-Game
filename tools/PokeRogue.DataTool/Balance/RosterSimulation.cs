@@ -13,6 +13,7 @@ using PokeRogue.Core.Run.Pickups;
 using PokeRogue.Core.Run.Progression;
 using PokeRogue.Core.Run.Specials;
 using PokeRogue.Core.Run.Statuses;
+using PokeRogue.Core.Run.Trainers;
 using PokeRogue.Core.Run.Waves;
 
 namespace PokeRogue.DataTool.Balance;
@@ -54,12 +55,24 @@ public sealed class RosterSimulation
         _enemies = EnemyLibrary.Load(contentRoot, _pokedex.Species, _moves);
         _specials = SpecialMoves.Load(contentRoot);
         _characters = CharacterLibrary.Load(contentRoot, _pokedex.Species, _moves);
+        Trainers = TrainerLibrary.Load(contentRoot, _pokedex.Species, _moves);
     }
 
     public sealed record RunResult(int Level, int Kills, RunOutcome Outcome, int Ticks, float? BossSeconds, string FinalForm,
-        IReadOnlyList<(string Name, int Minute)> Evolutions, int Specials, float SpecialShare);
+        IReadOnlyList<(string Name, int Minute)> Evolutions, int Specials, float SpecialShare, int TrainerUses = 0);
 
-    public RunResult Play(CharacterDefinition character, int seed, bool mortal)
+    /// <summary>The trainers (phase 5.1); a run plays with Ash, as the game does, unless another one or none is given.</summary>
+    public TrainerLibrary Trainers { get; }
+
+    public CharacterLibrary Characters => _characters;
+
+    /// <summary>A species' Italian name.</summary>
+    public string Species(int id) => _pokedex.Species[id - 1].NameIt;
+
+    /// <param name="trainer">The run's trainer: Ash when omitted, none with <paramref name="noTrainer"/>.</param>
+    /// <param name="challenge">A challenge run (phase 5.3): this trainer's team replaces the level's boss, and the boss time is the whole team's.</param>
+    public RunResult Play(CharacterDefinition character, int seed, bool mortal, TrainerDefinition? trainer = null, bool noTrainer = false,
+        TrainerDefinition? challenge = null)
     {
         var run = new RunState(_pokedex.Species, _typeChart, character.First.Id, _waves, new Vector2(640, 360), seed)
         {
@@ -74,6 +87,10 @@ public sealed class RosterSimulation
             SpecialRules = _specials,
         };
         run.UseCharacter(character);
+        if (!noTrainer)
+            run.UseTrainer(trainer ?? Trainers[TrainerLibrary.DefaultId]);
+        if (challenge is not null)
+            run.ChallengeTrainer(challenge, Trainers.Challenge!);
         run.Player.Invincible = !mortal;
 
         var evolutions = new List<(string, int)>();
@@ -99,12 +116,12 @@ public sealed class RosterSimulation
                 evolutions.Add((stage.Species.NameIt, run.Ticks / TicksPerMinute));
             }
 
-            run.Tick(new PlayerInput(AutoPilot.Input(run), AbilitySystem.CanUse(run), run.Special.IsFull));
+            run.Tick(new PlayerInput(AutoPilot.Input(run), AbilitySystem.CanUse(run), run.Special.IsFull, AutoPilot.UseTrainer(run)));
             foreach (var e in run.Events)
             {
-                if (e.Type == RunEventType.BossAppeared)
+                if (e.Type is RunEventType.BossAppeared or RunEventType.TrainerChallenged)
                     bossArrived = run.Ticks;
-                if (e.Type == RunEventType.BossDefeated && bossArrived is { } arrived)
+                if ((e.Type == RunEventType.BossDefeated && challenge is null || e.Type == RunEventType.TrainerDefeated) && bossArrived is { } arrived)
                     bossSeconds = (run.Ticks - arrived) / (float)RunClock.TicksPerSecond;
             }
         }
@@ -112,7 +129,7 @@ public sealed class RosterSimulation
         var moves = run.Player.Moves.Sum(m => m.DamageDealt);
         var total = moves + run.Special.DamageDealt;
         return new RunResult(run.Player.Level, run.Stats.Kills, run.Outcome, run.Ticks, bossSeconds, run.Player.Species.NameIt, evolutions,
-            run.Special.Uses, total > 0f ? run.Special.DamageDealt / total : 0f);
+            run.Special.Uses, total > 0f ? run.Special.DamageDealt / total : 0f, run.TrainerState.Uses);
     }
 
     public string Report(int runs, IReadOnlyCollection<string>? only, Action<string> progress)
@@ -175,7 +192,7 @@ public sealed class RosterSimulation
         return text.ToString();
     }
 
-    private static int Survival(RunResult r) => r.Ticks / TicksPerMinute;
+    public static int Survival(RunResult r) => r.Ticks / TicksPerMinute;
 
     private static string GroupName(CharacterGroup group) => group switch
     {
@@ -188,7 +205,7 @@ public sealed class RosterSimulation
 
     private static string Mode(IEnumerable<string> values) => values.GroupBy(v => v).MaxBy(g => g.Count())?.Key ?? "";
 
-    private static int Median(IEnumerable<int> values)
+    public static int Median(IEnumerable<int> values)
     {
         var sorted = values.Order().ToList();
         return sorted.Count == 0 ? 0 : sorted[sorted.Count / 2];

@@ -29,6 +29,7 @@ public sealed class RunRenderer
     private readonly StatusVfx _statusVfx;
     private readonly EnemyVfx _enemyVfx;
     private readonly AbilityVfx _abilityVfx;
+    private readonly TrainerVfx _trainerVfx;
     private readonly List<int> _levelBursts = [];
 
     /// <summary>Ages of Focalnastro revivals still showing (rings and the sash rising over Pikachu).</summary>
@@ -64,13 +65,14 @@ public sealed class RunRenderer
         _statusVfx = new StatusVfx(services);
         _enemyVfx = new EnemyVfx(services, _vfx.Shake);
         _abilityVfx = new AbilityVfx(services);
+        _trainerVfx = new TrainerVfx(services);
     }
 
     public FloorRenderer Floor { get; }
 
     public Camera2D Camera { get; }
 
-    public int ParticleCount => _particles.Active + _vfx.ParticleCount + _statusVfx.ParticleCount + _enemyVfx.ParticleCount;
+    public int ParticleCount => _particles.Active + _vfx.ParticleCount + _statusVfx.ParticleCount + _enemyVfx.ParticleCount + _trainerVfx.ParticleCount;
 
     public ScreenShake Shake => _vfx.Shake;
 
@@ -97,8 +99,10 @@ public sealed class RunRenderer
         _statusVfx.Reset();
         _enemyVfx.Reset();
         _abilityVfx.Reset();
+        _trainerVfx.Reset();
         _levelBursts.Clear();
         _bossEntrance = -1;
+        _sendOutAge = -1;
         _revivals.Clear();
         _evolutions.Clear();
         _playerEvolutions.Clear();
@@ -125,6 +129,7 @@ public sealed class RunRenderer
         _vfx.Update(run, paused);
         _statusVfx.Update(run, paused, Cull());
         _enemyVfx.Update(run, paused);
+        _trainerVfx.Update(run, _playerAnimator.Anim, _playerAnimator.Frame, run.Player.Facing, paused);
         if (paused)
             return;
 
@@ -136,13 +141,27 @@ public sealed class RunRenderer
             _statusVfx.OnEvent(e);
             _enemyVfx.OnEvent(e);
             _abilityVfx.OnEvent(e, run, _playerAnimator.Anim, _playerAnimator.Frame);
+            _trainerVfx.OnEvent(e, run);
             switch (e.Type)
             {
+                case RunEventType.TrainerAbility when (Core.Run.Trainers.TrainerEffect)(int)e.Value == Core.Run.Trainers.TrainerEffect.Used && run.Trainer is { } trainer:
+                    // The ability's name over the head, as for the Pokémon's own; a wave also shakes the screen a little.
+                    _abilityVfx.Announce(trainer.Active.NameIt, Color.Lerp(TrainerVfx.ColorOf(trainer), Color.White, 0.25f));
+                    if (trainer.Active.Kind == Core.Run.Trainers.TrainerActiveKind.Wave)
+                        _vfx.Shake.Add(0.18f);
+                    break;
                 case RunEventType.PlayerHurt:
                     _hurtTicks = 12;
                     break;
                 case RunEventType.BossAppeared:
                     _bossEntrance = 0;
+                    break;
+                case RunEventType.TrainerSentOut:
+                    // No drop from the sky for a trainer's Pokémon: it comes out of its Ball where it stands.
+                    _bossEntrance = Ui.BossIntro.Ticks;
+                    _sendOutAge = 0;
+                    _sendOutAt = e.Position.ToXna();
+                    _sendOutSpecies = e.SpeciesId;
                     break;
                 case RunEventType.BossPhaseChanged:
                     _services.Cries.Play(e.SpeciesId, pitch: 0.15f);
@@ -220,6 +239,20 @@ public sealed class RunRenderer
             _services.Cries.Play(boss.SpeciesId);
         }
 
+        // A trainer's Pokémon coming out of its Ball: the Ball opens with a white flash and the Pokémon's cry.
+        if (_sendOutAge >= 0)
+        {
+            if (++_sendOutAge == ThrowTicks)
+            {
+                _particles.Burst(_sendOutAt - new Vector2(0, BodyHeight), 30, 170f, Color.White, new Color(255, 120, 110), 28, _random, size: 2f);
+                _vfx.Shake.Add(0.15f);
+                _services.Cries.Play(_sendOutSpecies);
+            }
+
+            if (_sendOutAge >= SendOutTicks + 12)
+                _sendOutAge = -1;
+        }
+
         for (var i = _levelBursts.Count - 1; i >= 0; i--)
         {
             if (++_levelBursts[i] >= LevelBurstLife)
@@ -259,6 +292,31 @@ public sealed class RunRenderer
 
     private const int LevelBurstLife = 30;
 
+    /// <summary>A trainer's Pokémon being sent out (phase 5.3): the Ball flies in, opens, and the Pokémon grows out of the light.</summary>
+    public const int SendOutTicks = 44;
+
+    private const int ThrowTicks = 22;
+    private int _sendOutAge = -1;
+    private Vector2 _sendOutAt;
+    private int _sendOutSpecies;
+
+    /// <summary>How much of a sent-out Pokémon has grown out of its Ball: 0 while the Ball flies, 1 once it is out.</summary>
+    private float SendOutGrowth => _sendOutAge < 0 ? 1f : MathHelper.Clamp((_sendOutAge - ThrowTicks) / (float)(SendOutTicks - ThrowTicks), 0f, 1f);
+
+    /// <summary>The Poké Ball's flight, from the top-right of the screen (where the trainer stands) to where the Pokémon appears.</summary>
+    private void DrawThrownBall(SpriteBatch batch)
+    {
+        if (_sendOutAge is < 0 or >= ThrowTicks)
+            return;
+
+        var t = _sendOutAge / (float)ThrowTicks;
+        var from = _sendOutAt + new Vector2(240, -170);
+        var at = Vector2.Lerp(from, _sendOutAt - new Vector2(0, BodyHeight), t) - new Vector2(0, MathF.Sin(t * MathF.PI) * 50f);
+        var size = 16;
+        if (_services.ItemIcons.Get("poke-ball") is { } ball)
+            batch.Draw(ball, at, ItemIcons.Crop, Color.White, _sendOutAge * 0.5f, new Vector2(ItemIcons.Crop.X + 12, ItemIcons.Crop.Y + 12), size / 24f, SpriteEffects.None, 0f);
+    }
+
     /// <summary>How long a Focalnastro revival shows: rings in the first half, the rising sash throughout.</summary>
     private const int ReviveLife = 72;
 
@@ -288,6 +346,7 @@ public sealed class RunRenderer
         Floor.Draw(batch, view);
         _vfx.DrawGround(batch, run);
         _enemyVfx.DrawGround(batch, run, cull);
+        _trainerVfx.DrawGround(batch, run);
         DrawGems(batch, run, cull);
         DrawLoot(batch, run, cull);
         DrawChests(batch, run, cull);
@@ -299,6 +358,8 @@ public sealed class RunRenderer
         _enemyVfx.DrawObjects(batch, run);
         _statusVfx.DrawObjects(batch);
         _abilityVfx.DrawObjects(batch);
+        _trainerVfx.DrawObjects(batch, run);
+        DrawThrownBall(batch);
 
         var player = run.Player;
         var hpRatio = player.Hp / player.MaxHp;
@@ -359,6 +420,20 @@ public sealed class RunRenderer
             }
         }
 
+        // The Ball opening: two white rings turning red as they spread.
+        if (_sendOutAge >= ThrowTicks)
+        {
+            for (var ring = 0; ring < 2; ring++)
+            {
+                var a = _sendOutAge - ThrowTicks - ring * 5;
+                var t = a / 20f;
+                if (a < 0 || t > 1f)
+                    continue;
+                var radius = 6f + a * 3f;
+                p.Ring(batch, _sendOutAt, radius, radius * 0.5f, Color.Lerp(Color.White, new Color(255, 110, 100), t) * (1f - t), 2);
+            }
+        }
+
         _particles.Draw(batch, p);
         batch.End();
 
@@ -373,6 +448,10 @@ public sealed class RunRenderer
         _numbers.Draw(batch, _services.Fonts.Numbers(_services.Style), _services.Fonts.Get(_services.Style.NumberFont, _services.Style.NumberFontSize / 2f));
         if (ShowHitboxes)
             DrawHitboxes(batch, run);
+        batch.End();
+
+        batch.Begin(samplerState: SamplerState.PointClamp);
+        _trainerVfx.DrawScreen(batch, run, _services.Screen.Width, _services.Screen.Height);
         batch.End();
     }
 
@@ -716,7 +795,7 @@ public sealed class RunRenderer
                 case DrawKind.Enemy:
                     ref readonly var e = ref run.Enemies[item.Index];
                     DrawShadow(batch, e.SpeciesId, e.Position.ToXna(), e.State == EnemyState.Fainting ? FaintAlpha(e) : HopScale(e),
-                        e.Rank switch { EnemyRank.Dominant => Spawner.DominantScale, EnemyRank.Boss => BossAi.DrawScale * (1f - BossDropHeight() / 300f), _ => 1f });
+                        e.Rank switch { EnemyRank.Dominant => Spawner.DominantScale, EnemyRank.Boss => BossAi.DrawScale * (1f - BossDropHeight() / 300f) * SendOutGrowth, _ => 1f });
                     break;
                 default:
                     DrawShadow(batch, run.Player.Form.Id, run.Player.Position.ToXna(), 1f);
@@ -807,7 +886,17 @@ public sealed class RunRenderer
                     if (_bossEntrance < Ui.BossIntro.Ticks)
                         silhouette = false;
                     silhouette |= e.Action == EnemyAction.Roar && _tick / 3 % 2 == 0;
-                    if (e.IsAlive)
+
+                    // A trainer's Pokémon grows out of its Ball as a white figure (phase 5.3).
+                    var growth = SendOutGrowth;
+                    if (growth < 1f && run.Boss is { } sent && sent.Index == item.Index)
+                    {
+                        scale *= growth;
+                        silhouette = true;
+                        tint = Color.White;
+                    }
+
+                    if (e.IsAlive && growth >= 1f)
                         DrawAura(batch, set, animator, e, feet, scale, 3f);
                 }
 
@@ -828,6 +917,15 @@ public sealed class RunRenderer
                 var tint = _hurtTicks > 0 ? new Color(255, 120, 120) : Color.White;
                 // While attacking on the spot, turn towards the target; walking keeps the movement facing.
                 var facing = _attackTicks > 0 && !player.IsMoving ? _attackFacing : player.Facing;
+                if (TrainerVfx.Ghost(run) && run.Trainer is { } ghost)
+                {
+                    // Intangible (phase 5.2): see-through, with a pale outline of the trainer's colour one pixel out.
+                    var outline = Color.Lerp(TrainerVfx.ColorOf(ghost), Color.White, 0.4f) * 0.55f;
+                    foreach (var offset in (ReadOnlySpan<Vector2>)[new(1, 0), new(-1, 0), new(0, 1), new(0, -1)])
+                        set.Draw(batch, _playerAnimator.Anim!, _playerAnimator.Frame, facing, player.Position.ToXna() + offset, outline, silhouette: true);
+                    tint *= 0.4f;
+                }
+
                 set.Draw(batch, _playerAnimator.Anim!, _playerAnimator.Frame, facing, player.Position.ToXna(), tint);
                 if (_abilityVfx.Flash > 0)
                     set.Draw(batch, _playerAnimator.Anim!, _playerAnimator.Frame, facing, player.Position.ToXna(), Color.White * (_abilityVfx.Flash / 14f), silhouette: true);

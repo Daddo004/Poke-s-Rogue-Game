@@ -42,15 +42,21 @@ public sealed class GameplayScene : Scene
     private LevelUpFlow _levelUp = null!;
     private Phase _phase;
 
+    private readonly Core.Run.Trainers.TrainerDefinition _trainer;
+
     /// <param name="characterId">The character played (characters.json); Pikachu when null.</param>
     /// <param name="initialSpawn">Enemies spawned immediately (stress tests).</param>
     /// <param name="autopilot">Player picks up gems and walks in circles, invincible (previews and benchmarks).</param>
     /// <param name="setup">Previews: prepares the run right after it is created.</param>
-    public GameplayScene(GameServices services, string? characterId = null, int initialSpawn = 0, bool autopilot = false, Action<RunState>? setup = null)
+    /// <param name="trainerId">The trainer (trainers.json); Ash when null.</param>
+    public GameplayScene(GameServices services, string? characterId = null, int initialSpawn = 0, bool autopilot = false, Action<RunState>? setup = null,
+        string? trainerId = null)
         : base(services)
     {
         _character = services.Characters.Find(characterId ?? CharacterLibrary.DefaultId)
             ?? throw new ArgumentException($"Unknown character '{characterId}'. Available: {string.Join(", ", services.Characters.All.Select(c => c.Id))}");
+        _trainer = services.Trainers.Value.Find(trainerId ?? Core.Run.Trainers.TrainerLibrary.DefaultId)
+            ?? throw new ArgumentException($"Unknown trainer '{trainerId}'. Available: {string.Join(", ", services.Trainers.Value.All.Select(t => t.Id))}");
         _initialSpawn = initialSpawn;
         _setup = setup;
         Autopilot = autopilot;
@@ -64,9 +70,19 @@ public sealed class GameplayScene : Scene
         _evolution = new EvolutionWindow(services);
         _special = new SpecialWindow(services);
         _bossIntro = new BossIntro(services);
+        _trainerIntro = new TrainerIntro(services);
     }
 
     private readonly BossIntro _bossIntro;
+
+    /// <summary>The challenged trainer's entrance (phase 5.3).</summary>
+    private readonly TrainerIntro _trainerIntro;
+
+    /// <summary>Ticks the game stays frozen while a trainer's Pokémon comes out of its Ball.</summary>
+    private int _sendOutFreeze;
+
+    /// <summary>A challenge run (phase 5.3, --sfida id): this trainer replaces the level's boss when the time runs out.</summary>
+    public string? ChallengeId { get; init; }
 
     /// <summary>The ground walked this run, for the map in the pause (phase 3.6).</summary>
     private readonly ExploredMap _explored = new();
@@ -101,6 +117,14 @@ public sealed class GameplayScene : Scene
 
     /// <summary>Previews: drive the player automatically and auto-confirm level-ups.</summary>
     public bool Autopilot { get; set; }
+
+    /// <summary>Previews: the autopilot also presses the trainer's key; off when a preview presses it by hand.</summary>
+    public bool AutoPilotTrainer { get; set; } = true;
+
+    private bool _pressTrainer;
+
+    /// <summary>Previews: the trainer's key is pressed on the next tick.</summary>
+    public void PressTrainer() => _pressTrainer = true;
 
     /// <summary>Simulation ticks per frame (fast-forward for playtests: F11, or --speed N).</summary>
     public int Speed { get; set; } = 1;
@@ -217,6 +241,18 @@ public sealed class GameplayScene : Scene
             return;
         }
 
+        // A challenge (phase 5.3): the game freezes while the trainer steps in, and while each Pokémon comes out of its Ball.
+        if (_trainerIntro.IsPlaying || _sendOutFreeze > 0)
+        {
+            if (_trainerIntro.IsPlaying)
+                _trainerIntro.Update();
+            else
+                _sendOutFreeze--;
+            _renderer.Update(_run, paused: true);
+            _hud.Update(_run);
+            return;
+        }
+
         // A chest is being opened: the game freezes until its rewards have been shown.
         if (_chestWindow.IsOpen)
         {
@@ -253,7 +289,13 @@ public sealed class GameplayScene : Scene
                 : step == 0 && (input.Pressed(Keys.Space) || input.Pressed(Buttons.X));
             // The special move (phase 4.4): E or Y with a full gauge; the autopilot unleashes it as soon as it is full.
             var useSpecial = Autopilot ? _run.Special.IsFull : step == 0 && (input.Pressed(Keys.E) || input.Pressed(Buttons.Y));
-            _run.Tick(new PlayerInput(move, useAbility, useSpecial));
+            // The trainer's ability (phase 5.2): Q or a shoulder button; the autopilot uses it when it would help (AutoPilot.UseTrainer).
+            var useTrainer = Autopilot
+                ? AutoPilotTrainer && AutoPilot.UseTrainer(_run)
+                : step == 0 && (input.Pressed(Keys.Q) || input.Pressed(Buttons.LeftShoulder) || input.Pressed(Buttons.RightShoulder));
+            useTrainer |= _pressTrainer;
+            _pressTrainer = false;
+            _run.Tick(new PlayerInput(move, useAbility, useSpecial, useTrainer));
             _explored.Visit(_run.Player.Position);
             _renderer.Update(_run);
             _hud.Update(_run);
@@ -276,6 +318,18 @@ public sealed class GameplayScene : Scene
                 break;
             }
 
+            if (_run.Challenge is { } challenge && _run.Events.Any(e => e.Type == RunEventType.TrainerChallenged))
+            {
+                _trainerIntro.Start(challenge.Trainer);
+                break;
+            }
+
+            if (_run.Events.Any(e => e.Type == RunEventType.TrainerSentOut))
+            {
+                _sendOutFreeze = RunRenderer.SendOutTicks;
+                break;
+            }
+
             if (_run.LastChest is { } chest && _run.Events.Any(e => e.Type == RunEventType.ChestOpened))
             {
                 _chestWindow.Open(chest);
@@ -294,6 +348,7 @@ public sealed class GameplayScene : Scene
             _hud.Draw(batch, _run);
 
         _bossIntro.Draw(batch);
+        _trainerIntro.Draw(batch);
 
         _levelUpWindow.Draw(batch);
         _chestWindow.Draw(batch);
@@ -329,6 +384,8 @@ public sealed class GameplayScene : Scene
         // No digits here: the body font's 5 reads as an S; the time is on the results screen.
         var subtitle = _run.Outcome != RunOutcome.Victory
             ? $"{_run.Player.Species.NameIt} non può più lottare!"
+            : _run.Challenge is { Won: true } challenge
+                ? $"Hai sconfitto {challenge.Trainer.NameIt}! Ora può essere il tuo allenatore."
             : _run.Boss is { DefeatedTick: not null } fight && Services.Species(fight.Definition.SpeciesId) is { } boss
                 ? $"Hai sconfitto {boss.NameIt}!"
                 : "Hai resistito fino alla fine!";
@@ -360,6 +417,16 @@ public sealed class GameplayScene : Scene
             SpecialRules = Services.Specials.Value,
         };
         _run.UseCharacter(_character);
+        _run.UseTrainer(_trainer);
+        if (ChallengeId is { } challengeId)
+        {
+            var challenged = Services.Trainers.Value.Find(challengeId)
+                ?? throw new ArgumentException($"Unknown trainer '{challengeId}' to challenge.");
+            _run.ChallengeTrainer(challenged, Services.Trainers.Value.Challenge!);
+            foreach (var member in challenged.Team)
+                Services.Sprites.Get(member.SpeciesId);
+        }
+
         if (StartTicks > 0)
         {
             _run.AdvanceTime(StartTicks);
@@ -377,6 +444,8 @@ public sealed class GameplayScene : Scene
         _evolution.Close();
         _special.Close();
         _bossIntro.Stop();
+        _trainerIntro.Stop();
+        _sendOutFreeze = 0;
         _explored.Clear();
         _phase = Phase.Playing;
 

@@ -71,5 +71,16 @@ public sealed class GameServices(GraphicsDevice device, string contentRoot, Virt
     public Core.Run.Characters.CharacterLibrary Characters =>
         _characters ??= Core.Run.Characters.CharacterLibrary.Load(ContentRoot, Pokedex.Value.Species, Moves.Value);
 
+    /// <summary>The trainers (phase 5.1).</summary>
+    public Lazy<Core.Run.Trainers.TrainerLibrary> Trainers => _trainers ??= new(() =>
+        Core.Run.Trainers.TrainerLibrary.Load(ContentRoot, Pokedex.Value.Species, Moves.Value));
+
+    private Lazy<Core.Run.Trainers.TrainerLibrary>? _trainers;
+
+    private TrainerPortraits? _trainerPortraits;
+
+    /// <summary>The trainers' sprites and the head square of each for the HUD.</summary>
+    public TrainerPortraits TrainerPortraits => _trainerPortraits ??= new TrainerPortraits(Sprites);
+
     public SpeciesData? Species(int id) => id >= 1 && id <= Pokedex.Value.Species.Count ? Pokedex.Value.Species[id - 1] : null;
 }

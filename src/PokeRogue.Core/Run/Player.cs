@@ -63,6 +63,15 @@ public sealed class Player
     /// <summary>The character's own modifiers (characters.json), added to the items' bonuses by <see cref="RecalculateStats"/>.</summary>
     public ItemBonus CharacterBonus { get; set; } = ItemBonus.None;
 
+    /// <summary>The trainer's passive bonuses (trainers.json, phase 5.1), added like <see cref="CharacterBonus"/>.</summary>
+    public ItemBonus TrainerBonus { get; set; } = ItemBonus.None;
+
+    /// <summary>Speed from the trainer's active ability (Scatto), on top of everything else.</summary>
+    public float TrainerSpeedMultiplier { get; set; } = 1f;
+
+    /// <summary>Move cooldowns from the trainer's active ability (Frenesia), on top of everything else.</summary>
+    public float TrainerCooldownMultiplier { get; set; } = 1f;
+
     /// <summary>Trasformazione (Ditto, phase 4.3): the species it is copying for a while; null when it is itself.</summary>
     public SpeciesData? Disguise { get; private set; }
 
@@ -183,7 +192,7 @@ public sealed class Player
     /// <summary>Moves with the given input (length ≤ 1, screen space).</summary>
     public void Move(Vector2 input)
     {
-        Velocity = input.ClampLength(1f) * MoveSpeed * AbilitySpeedMultiplier;
+        Velocity = input.ClampLength(1f) * MoveSpeed * AbilitySpeedMultiplier * TrainerSpeedMultiplier;
         Position += Velocity * RunClock.Dt;
         Facing = Direction8Extensions.FromVector(input, Facing);
     }
@@ -290,7 +299,7 @@ public sealed class Player
     /// <summary>Re-derives every item-dependent stat. Gaining max PS also heals by the same amount.</summary>
     public void RecalculateStats()
     {
-        var bonus = Items.Aggregate(CharacterBonus, (sum, item) => sum + item.Bonus);
+        var bonus = Items.Aggregate(CharacterBonus + TrainerBonus, (sum, item) => sum + item.Bonus);
 
         var newMaxHp = MathF.Round(_baseMaxHp * (1f + bonus.MaxHpPercent));
         if (newMaxHp > MaxHp)

@@ -63,7 +63,7 @@ public sealed class MoveSystem
 
             if (used)
             {
-                move.Cooldown = RunClock.Seconds(stats.Level.Cooldown * run.Player.CooldownMultiplier * run.Player.AbilityCooldownMultiplier);
+                move.Cooldown = RunClock.Seconds(stats.Level.Cooldown * run.Player.CooldownMultiplier * run.Player.AbilityCooldownMultiplier * run.Player.TrainerCooldownMultiplier);
                 run.AddEvent(new RunEvent(RunEventType.MoveUsed, run.Player.Position, slot, Target: aim, MoveId: move.Definition.Id));
             }
         }

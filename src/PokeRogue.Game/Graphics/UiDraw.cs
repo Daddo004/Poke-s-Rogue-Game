@@ -61,6 +61,32 @@ public static class UiDraw
         return lines;
     }
 
+    /// <summary>
+    /// Small text whose numbers are drawn in the numbers font (phase 5.2): at 8 px the label font's 4 reads as a 9 and its
+    /// 8 as a 0. <paramref name="numbers"/> is the numbers font at half size, drawn two pixels higher to share the baseline.
+    /// </summary>
+    public static void TextWithNumbers(SpriteBatch batch, SpriteFontBase font, SpriteFontBase numbers, string text, Vector2 position, Color color)
+    {
+        // A decimal comma between two digits ("0,2") stays with the number.
+        bool Numeric(int i) => char.IsDigit(text[i]) || text[i] == ',' && i > 0 && i + 1 < text.Length && char.IsDigit(text[i - 1]) && char.IsDigit(text[i + 1]);
+
+        var x = position.X;
+        var start = 0;
+        while (start < text.Length)
+        {
+            var digits = Numeric(start);
+            var end = start + 1;
+            while (end < text.Length && Numeric(end) == digits)
+                end++;
+
+            var run = text[start..end];
+            var runFont = digits ? numbers : font;
+            Text(batch, runFont, run, new Vector2(x, position.Y - (digits ? 2 : 0)), color);
+            x += Measure(runFont, run).X;
+            start = end;
+        }
+    }
+
     /// <summary>Text centred horizontally on <paramref name="centerX"/>.</summary>
     public static void TextCentered(SpriteBatch batch, SpriteFontBase font, string text, float centerX, float y, Color color, Color? outline = null)
     {

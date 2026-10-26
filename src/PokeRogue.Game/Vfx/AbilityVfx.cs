@@ -78,6 +78,9 @@ public sealed class AbilityVfx(GameServices services)
             _popup = new Popup(ability.NameIt, color, 0);
     }
 
+    /// <summary>Shows <paramref name="text"/> over the head as an ability's name (the trainer's abilities, phase 5.2).</summary>
+    public void Announce(string text, Color color) => _popup = new Popup(text, color, 0);
+
     public void Update()
     {
         _particles.Update();

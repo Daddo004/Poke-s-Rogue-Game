@@ -1,0 +1,445 @@
+{
+  // Trainers (phase 5.1): the trainer of a run gives a passive and an active ability, and shows in the HUD's card.
+  // "passive": always-on "modifiers" (the same fields as an item's "perLevel"; fractions: 0.1 = +10%) and "typePower",
+  // extra damage of the moves of the trainer's "type".
+  // "active": one of ten archetypes (phase 5.2), on the Q key with "cooldown" seconds between uses:
+  //   Shield      blocks the next "charges" hits within "duration" s
+  //   Heal        heals "power" of the max PS at once
+  //   Wave        a ring within "radius" px: regular enemies lose "power" of their max PS (Dominanti and boss a tenth) and fly back
+  //   SlowTime    enemies and their shots move at "power" of their speed for "duration" s
+  //   Intangible  no hit lands for "duration" s
+  //   TypeBoost   moves of the trainer's type deal "power" more for "duration" s, the others a third of it (all of them without a type)
+  //   Fortune     every gem flies in; experience and coins grow by "power" for "duration" s
+  //   Frenzy      move cooldowns shrink by "power" for "duration" s
+  //   StatusStorm every enemy on screen catches "status" with chance "power" (immunities and resistances apply)
+  //   Haste       the player runs "power" faster for "duration" s
+  // "unlock": Start (Ash), Defeat (beat them at Ultra in their challenge, phase 5.3), Mission or Shop (with "price").
+  // The portrait is content/trainers/<sprite>.png ("sprite" defaults to the id).
+  // "team" (phase 5.3): the Pokémon of their challenge, in the order they come out; the last one is the ace.
+  "version": 1,
+
+  // Phase 5.3: a challenge run ends with the trainer instead of the level's boss. Their Pokémon come out one at a time,
+  // "nextDelay" seconds after the previous one faints, each a boss fighting like "member" (the ace like "ace"); "hp"
+  // multiplies its PS on top of the level's growth, as for the level's boss (Pinsir has 60). Phase 5.3: first 22 and 34; a gym team lasted about 165 s (Pinsir about 70), now about a third less. Volleys shoot the move of
+  // "shots" for the Pokémon's first type; Rock and Ground, with no move there, throw rocks instead.
+  "challenge": {
+    "nextDelay": 1.5,
+    "member": {
+      "pokemon": "", "hp": 14, "speed": 0.9,
+      "phases": [
+        { "below": 1, "rest": 1.6, "attacks": [
+          { "kind": "charge", "windUp": 0.9, "dashSpeed": 4.5, "dashTime": 0.8, "recover": 0.9 },
+          { "kind": "volley", "windUp": 0.7, "count": 5, "spread": 60, "shotSpeed": 110 }
+        ] },
+        { "below": 0.5, "rest": 1.3, "attacks": [
+          { "kind": "charge", "windUp": 0.8, "dashSpeed": 4.5, "dashTime": 0.8, "recover": 0.8 },
+          { "kind": "volley", "windUp": 0.6, "count": 7, "spread": 90, "shotSpeed": 120 }
+        ] }
+      ]
+    },
+    "ace": {
+      "pokemon": "", "hp": 22, "speed": 0.9,
+      "phases": [
+        { "below": 1, "rest": 1.6, "attacks": [
+          { "kind": "charge", "windUp": 0.9, "dashSpeed": 4.5, "dashTime": 0.8, "recover": 0.9 },
+          { "kind": "volley", "windUp": 0.7, "count": 5, "spread": 60, "shotSpeed": 110 }
+        ] },
+        { "below": 0.6, "rest": 1.3, "attacks": [
+          { "kind": "charge", "windUp": 0.8, "dashSpeed": 4.5, "dashTime": 0.8, "recover": 0.8 },
+          { "kind": "rockfall", "windUp": 0.5, "count": 3, "radius": 28, "delay": 1.1, "damage": 2 },
+          { "kind": "volley", "windUp": 0.6, "count": 7, "spread": 90, "shotSpeed": 120 }
+        ] },
+        { "below": 0.3, "speed": 1.3, "rest": 0.9, "attacks": [
+          { "kind": "charge", "windUp": 0.7, "dashSpeed": 5, "dashTime": 0.8, "recover": 0.6 },
+          { "kind": "rockfall", "windUp": 0.4, "count": 5, "radius": 28, "delay": 1, "damage": 2 },
+          { "kind": "volley", "windUp": 0.5, "count": 9, "spread": 120, "shotSpeed": 130 }
+        ] }
+      ]
+    },
+    "shots": {
+      "Normal": "swift", "Fire": "ember", "Water": "bubble", "Grass": "razor-leaf", "Electric": "aura-sphere", "Ice": "ice-shard",
+      "Fighting": "aura-sphere", "Poison": "poison-sting", "Flying": "air-slash", "Psychic": "swift", "Bug": "x-scissor",
+      "Ghost": "shadow-ball", "Dragon": "twister", "Dark": "shadow-ball", "Steel": "gyro-ball"
+    }
+  },
+  "trainers": [
+    {
+      "id": "ash", "nameIt": "Ash", "region": "Kanto", "role": "Base",
+      "passive": { "nameIt": "Mai Arrendersi", "descriptionIt": "Esperienza +10%, PS massimi +10%.", "modifiers": { "growthPercent": 0.1, "maxHpPercent": 0.1 } },
+      "active": { "kind": "Frenzy", "nameIt": "Determinazione", "descriptionIt": "Per 8 secondi le mosse si ricaricano il 35% più in fretta.", "cooldown": 40, "duration": 8, "power": 0.35 },
+      "unlock": { "kind": "Start" }
+    },
+
+    // --- Kanto ---
+    {
+      "id": "brock", "nameIt": "Brock", "region": "Kanto", "role": "GymLeader", "type": "Rock",
+      "passive": { "nameIt": "Tempra di Roccia", "descriptionIt": "Mosse Roccia +15%, danni fisici subiti -6%.", "modifiers": { "physicalResistPercent": 0.06 }, "typePower": 0.15 },
+      "active": { "kind": "Shield", "nameIt": "Corazza di Roccia", "descriptionIt": "Per 10 secondi blocca i prossimi 3 colpi.", "cooldown": 40, "duration": 10, "charges": 3 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Kanto" },
+      "team": [ "geodude", "rhyhorn", "onix" ]
+    },
+    {
+      "id": "misty", "nameIt": "Misty", "region": "Kanto", "role": "GymLeader", "type": "Water",
+      "passive": { "nameIt": "Spirito d'Acqua", "descriptionIt": "Mosse Acqua +15%, rigenera 0,2 PS al secondo.", "modifiers": { "regenPerSecond": 0.2 }, "typePower": 0.15 },
+      "active": { "kind": "Wave", "nameIt": "Surf", "descriptionIt": "Un'onda tutt'intorno toglie metà dei PS ai nemici vicini e li respinge.", "cooldown": 30, "power": 0.5, "radius": 130 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Kanto" },
+      "team": [ "staryu", "psyduck", "starmie" ]
+    },
+    {
+      "id": "ltsurge", "nameIt": "Lt. Surge", "region": "Kanto", "role": "GymLeader", "type": "Electric",
+      "passive": { "nameIt": "Veterano", "descriptionIt": "Mosse Elettro +15%, velocità +5%.", "modifiers": { "moveSpeedPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "StatusStorm", "nameIt": "Campo Elettrico", "descriptionIt": "Paralizza tutti i nemici sullo schermo.", "cooldown": 40, "power": 1, "status": "Paralysis" },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Kanto" },
+      "team": [ "voltorb", "pikachu", "raichu" ]
+    },
+    {
+      "id": "erika", "nameIt": "Erika", "region": "Kanto", "role": "GymLeader", "type": "Grass",
+      "passive": { "nameIt": "Profumo di Fiori", "descriptionIt": "Mosse Erba +15%, rigenera 0,2 PS al secondo.", "modifiers": { "regenPerSecond": 0.2 }, "typePower": 0.15 },
+      "active": { "kind": "StatusStorm", "nameIt": "Sonnifero", "descriptionIt": "Addormenta il 70% dei nemici sullo schermo.", "cooldown": 45, "power": 0.7, "status": "Sleep" },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Kanto" },
+      "team": [ "tangela", "weepinbell", "vileplume" ]
+    },
+    {
+      "id": "koga", "nameIt": "Koga", "region": "Kanto", "role": "GymLeader", "type": "Poison",
+      "passive": { "nameIt": "Arte Ninja", "descriptionIt": "Mosse Veleno +15%, durata delle mosse +10%.", "modifiers": { "durationPercent": 0.1 }, "typePower": 0.15 },
+      "active": { "kind": "StatusStorm", "nameIt": "Nube Tossica", "descriptionIt": "Avvelena tutti i nemici sullo schermo.", "cooldown": 35, "power": 1, "status": "Poison" },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Kanto" },
+      "team": [ "koffing", "muk", "weezing" ]
+    },
+    {
+      "id": "sabrina", "nameIt": "Sabrina", "region": "Kanto", "role": "GymLeader", "type": "Psychic",
+      "passive": { "nameIt": "Preveggenza", "descriptionIt": "Mosse Psico +15%, ricarica delle mosse -5%.", "modifiers": { "cooldownReductionPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "SlowTime", "nameIt": "Distortozona", "descriptionIt": "Per 6 secondi nemici e proiettili vanno a un terzo della velocità.", "cooldown": 50, "duration": 6, "power": 0.35 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Kanto" },
+      "team": [ "kadabra", "mr-mime", "alakazam" ]
+    },
+    {
+      "id": "blaine", "nameIt": "Blaine", "region": "Kanto", "role": "GymLeader", "type": "Fire",
+      "passive": { "nameIt": "Quiz Infuocato", "descriptionIt": "Mosse Fuoco +15%, mosse speciali +5%.", "modifiers": { "specialPowerPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "StatusStorm", "nameIt": "Fuocofatuo", "descriptionIt": "Scotta tutti i nemici sullo schermo.", "cooldown": 40, "power": 1, "status": "Burn" },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Kanto" },
+      "team": [ "growlithe", "rapidash", "arcanine" ]
+    },
+    {
+      "id": "giovanni", "nameIt": "Giovanni", "region": "Kanto", "role": "GymLeader", "type": "Ground",
+      "passive": { "nameIt": "Capo del Team Rocket", "descriptionIt": "Mosse Terra +15%, monete +20%.", "modifiers": { "coinPercent": 0.2 }, "typePower": 0.15 },
+      "active": { "kind": "Wave", "nameIt": "Scossa Tellurica", "descriptionIt": "La terra trema tutt'intorno: toglie il 60% dei PS ai nemici vicini e li respinge.", "cooldown": 35, "power": 0.6, "radius": 150 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Kanto" },
+      "team": [ "dugtrio", "nidoking", "rhydon" ]
+    },
+    {
+      "id": "lorelei", "nameIt": "Lorelei", "region": "Kanto", "role": "EliteFour", "type": "Ice",
+      "passive": { "nameIt": "Cuore di Ghiaccio", "descriptionIt": "Mosse Ghiaccio +15%, danni speciali subiti -6%.", "modifiers": { "specialResistPercent": 0.06 }, "typePower": 0.15 },
+      "active": { "kind": "SlowTime", "nameIt": "Gelo Eterno", "descriptionIt": "Per 7 secondi nemici e proiettili vanno al 40% della velocità.", "cooldown": 50, "duration": 7, "power": 0.4 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Kanto" },
+      "team": [ "dewgong", "cloyster", "slowbro", "lapras" ]
+    },
+    {
+      "id": "bruno", "nameIt": "Bruno", "region": "Kanto", "role": "EliteFour", "type": "Fighting",
+      "passive": { "nameIt": "Allenamento Duro", "descriptionIt": "Mosse Lotta +15%, mosse fisiche +5%.", "modifiers": { "physicalPowerPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "TypeBoost", "nameIt": "Concentrazione", "descriptionIt": "Per 10 secondi le mosse Lotta fanno il 50% di danni in più, le altre il 17%.", "cooldown": 45, "duration": 10, "power": 0.5 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Kanto" },
+      "team": [ "onix", "hitmonchan", "hitmonlee", "machamp" ]
+    },
+    {
+      "id": "agatha", "nameIt": "Agatha", "region": "Kanto", "role": "EliteFour", "type": "Ghost",
+      "passive": { "nameIt": "Vecchia Volpe", "descriptionIt": "Mosse Spettro +15%, brutti colpi +3%.", "modifiers": { "critChance": 0.03 }, "typePower": 0.15 },
+      "active": { "kind": "StatusStorm", "nameIt": "Stordiraggio", "descriptionIt": "Confonde tutti i nemici sullo schermo.", "cooldown": 40, "power": 1, "status": "Confusion" },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Kanto" },
+      "team": [ "golbat", "haunter", "arbok", "gengar" ]
+    },
+    {
+      "id": "lance", "nameIt": "Lance", "region": "Kanto", "role": "EliteFour", "type": "Dragon",
+      "passive": { "nameIt": "Domadraghi", "descriptionIt": "Mosse Drago +15%, PS massimi +10%.", "modifiers": { "maxHpPercent": 0.1 }, "typePower": 0.15 },
+      "active": { "kind": "TypeBoost", "nameIt": "Furia del Drago", "descriptionIt": "Per 10 secondi le mosse Drago fanno il 50% di danni in più, le altre il 17%.", "cooldown": 45, "duration": 10, "power": 0.5 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Kanto" },
+      "team": [ "gyarados", "aerodactyl", "dragonair", "dragonite" ]
+    },
+    {
+      "id": "blue", "nameIt": "Blu", "region": "Kanto", "role": "Champion",
+      "passive": { "nameIt": "Rivale", "descriptionIt": "Velocità +5%, monete +20%.", "modifiers": { "moveSpeedPercent": 0.05, "coinPercent": 0.2 } },
+      "active": { "kind": "Haste", "nameIt": "A Tutto Gas", "descriptionIt": "Per 6 secondi corri il 50% più veloce.", "cooldown": 30, "duration": 6, "power": 0.5 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Kanto" },
+      "team": [ "pidgeot", "alakazam", "rhydon", "exeggutor", "blastoise" ]
+    },
+    {
+      "id": "red", "nameIt": "Rosso", "region": "Kanto", "role": "Legend",
+      "passive": { "nameIt": "Leggenda Silenziosa", "descriptionIt": "Mosse fisiche e speciali +5%.", "modifiers": { "physicalPowerPercent": 0.05, "specialPowerPercent": 0.05 } },
+      "active": { "kind": "TypeBoost", "nameIt": "Spirito del Monte", "descriptionIt": "Per 10 secondi tutte le mosse fanno il 35% di danni in più.", "cooldown": 50, "duration": 10, "power": 0.35 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Monte Argento" },
+      "team": [ "espeon", "snorlax", "venusaur", "charizard", "pikachu" ]
+    },
+
+    // --- Johto ---
+    {
+      "id": "falkner", "nameIt": "Valerio", "region": "Johto", "role": "GymLeader", "type": "Flying",
+      "passive": { "nameIt": "Ali Libere", "descriptionIt": "Mosse Volante +15%, velocità +5%.", "modifiers": { "moveSpeedPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "Haste", "nameIt": "Ventoincoda", "descriptionIt": "Per 6 secondi corri il 50% più veloce.", "cooldown": 30, "duration": 6, "power": 0.5 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Johto" },
+      "team": [ "pidgey", "hoothoot", "pidgeotto" ]
+    },
+    {
+      "id": "bugsy", "nameIt": "Raffaello", "region": "Johto", "role": "GymLeader", "type": "Bug",
+      "passive": { "nameIt": "Ricercatore", "descriptionIt": "Mosse Coleottero +15%, esperienza +5%.", "modifiers": { "growthPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "Frenzy", "nameIt": "Sciame Frenetico", "descriptionIt": "Per 8 secondi le mosse si ricaricano il 35% più in fretta.", "cooldown": 40, "duration": 8, "power": 0.35 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Johto" },
+      "team": [ "metapod", "kakuna", "scyther" ]
+    },
+    {
+      "id": "whitney", "nameIt": "Chiara", "region": "Johto", "role": "GymLeader", "type": "Normal",
+      "passive": { "nameIt": "Testarda", "descriptionIt": "Mosse Normale +15%, PS massimi +10%.", "modifiers": { "maxHpPercent": 0.1 }, "typePower": 0.15 },
+      "active": { "kind": "Heal", "nameIt": "Bevilatte", "descriptionIt": "Recupera il 35% dei PS massimi.", "cooldown": 50, "power": 0.35 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Johto" },
+      "team": [ "clefairy", "wigglytuff", "miltank" ]
+    },
+    {
+      "id": "morty", "nameIt": "Angelo", "region": "Johto", "role": "GymLeader", "type": "Ghost",
+      "passive": { "nameIt": "Veggente", "descriptionIt": "Mosse Spettro +15%, raggio di raccolta +20%.", "modifiers": { "pickupRadiusPercent": 0.2 }, "typePower": 0.15 },
+      "active": { "kind": "SlowTime", "nameIt": "Malosguardo", "descriptionIt": "Per 6 secondi nemici e proiettili vanno a un terzo della velocità.", "cooldown": 50, "duration": 6, "power": 0.35 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Johto" },
+      "team": [ "gastly", "haunter", "gengar" ]
+    },
+    {
+      "id": "chuck", "nameIt": "Furio", "region": "Johto", "role": "GymLeader", "type": "Fighting",
+      "passive": { "nameIt": "Disciplina", "descriptionIt": "Mosse Lotta +15%, danni fisici subiti -6%.", "modifiers": { "physicalResistPercent": 0.06 }, "typePower": 0.15 },
+      "active": { "kind": "Wave", "nameIt": "Colpo di Cascata", "descriptionIt": "Un colpo tutt'intorno toglie metà dei PS ai nemici vicini e li respinge.", "cooldown": 30, "power": 0.5, "radius": 130 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Johto" },
+      "team": [ "primeape", "machoke", "poliwrath" ]
+    },
+    {
+      "id": "jasmine", "nameIt": "Jasmine", "region": "Johto", "role": "GymLeader", "type": "Steel",
+      "passive": { "nameIt": "Cuore Gentile", "descriptionIt": "Mosse Acciaio +15%, rigenera 0,2 PS al secondo.", "modifiers": { "regenPerSecond": 0.2 }, "typePower": 0.15 },
+      "active": { "kind": "Heal", "nameIt": "Luce del Faro", "descriptionIt": "Recupera il 30% dei PS massimi.", "cooldown": 45, "power": 0.3 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Johto" },
+      "team": [ "magnemite", "magneton", "steelix" ]
+    },
+    {
+      "id": "pryce", "nameIt": "Alfredo", "region": "Johto", "role": "GymLeader", "type": "Ice",
+      "passive": { "nameIt": "Pazienza Antica", "descriptionIt": "Mosse Ghiaccio +15%, PS massimi +10%.", "modifiers": { "maxHpPercent": 0.1 }, "typePower": 0.15 },
+      "active": { "kind": "Wave", "nameIt": "Valanga", "descriptionIt": "Una valanga tutt'intorno toglie metà dei PS ai nemici vicini e li respinge.", "cooldown": 30, "power": 0.5, "radius": 130 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Johto" },
+      "team": [ "seel", "dewgong", "piloswine" ]
+    },
+    {
+      "id": "clair", "nameIt": "Sandra", "region": "Johto", "role": "GymLeader", "type": "Dragon",
+      "passive": { "nameIt": "Orgoglio del Clan", "descriptionIt": "Mosse Drago +15%, brutti colpi +3%.", "modifiers": { "critChance": 0.03 }, "typePower": 0.15 },
+      "active": { "kind": "Haste", "nameIt": "Dragodanza", "descriptionIt": "Per 6 secondi corri il 50% più veloce.", "cooldown": 30, "duration": 6, "power": 0.5 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Johto" },
+      "team": [ "gyarados", "dragonair", "kingdra" ]
+    },
+    {
+      "id": "janine", "nameIt": "Nina", "region": "Johto", "role": "GymLeader", "type": "Poison",
+      "passive": { "nameIt": "Allieva Ninja", "descriptionIt": "Mosse Veleno +15%, velocità +5%.", "modifiers": { "moveSpeedPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "Intangible", "nameIt": "Doppioteam", "descriptionIt": "Per 4 secondi nessun colpo ti raggiunge.", "cooldown": 45, "duration": 4 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Johto" },
+      "team": [ "ariados", "venomoth", "crobat" ]
+    },
+    {
+      "id": "will", "nameIt": "Pino", "region": "Johto", "role": "EliteFour", "type": "Psychic",
+      "passive": { "nameIt": "Maschera", "descriptionIt": "Mosse Psico +15%, area delle mosse +5%.", "modifiers": { "areaPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "Shield", "nameIt": "Riflesso", "descriptionIt": "Per 10 secondi blocca i prossimi 3 colpi.", "cooldown": 40, "duration": 10, "charges": 3 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Johto" },
+      "team": [ "jynx", "exeggutor", "slowbro", "xatu" ]
+    },
+    {
+      "id": "karen", "nameIt": "Karen", "region": "Johto", "role": "EliteFour", "type": "Dark",
+      "passive": { "nameIt": "Sangue Freddo", "descriptionIt": "Mosse Buio +15%, brutti colpi +3%.", "modifiers": { "critChance": 0.03 }, "typePower": 0.15 },
+      "active": { "kind": "TypeBoost", "nameIt": "Congiura", "descriptionIt": "Per 10 secondi le mosse Buio fanno il 50% di danni in più, le altre il 17%.", "cooldown": 45, "duration": 10, "power": 0.5 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Johto" },
+      "team": [ "umbreon", "murkrow", "gengar", "houndoom" ]
+    },
+
+    // --- Hoenn ---
+    {
+      "id": "roxanne", "nameIt": "Petra", "region": "Hoenn", "role": "GymLeader", "type": "Rock",
+      "passive": { "nameIt": "Studiosa", "descriptionIt": "Mosse Roccia +15%, esperienza +5%.", "modifiers": { "growthPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "Fortune", "nameIt": "Ripasso", "descriptionIt": "Attira tutte le gemme; per 15 secondi esperienza e monete raddoppiano.", "cooldown": 60, "duration": 15, "power": 1 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Hoenn" },
+      "team": [ "geodude", "nosepass", "onix" ]
+    },
+    {
+      "id": "brawly", "nameIt": "Rudi", "region": "Hoenn", "role": "GymLeader", "type": "Fighting",
+      "passive": { "nameIt": "Surfista", "descriptionIt": "Mosse Lotta +15%, velocità +5%.", "modifiers": { "moveSpeedPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "Haste", "nameIt": "Cavalcaonda", "descriptionIt": "Per 6 secondi corri il 50% più veloce.", "cooldown": 30, "duration": 6, "power": 0.5 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Hoenn" },
+      "team": [ "machop", "meditite", "hariyama" ]
+    },
+    {
+      "id": "wattson", "nameIt": "Walter", "region": "Hoenn", "role": "GymLeader", "type": "Electric",
+      "passive": { "nameIt": "Risata Elettrica", "descriptionIt": "Mosse Elettro +15%, ricarica delle mosse -5%.", "modifiers": { "cooldownReductionPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "Frenzy", "nameIt": "Generatore", "descriptionIt": "Per 8 secondi le mosse si ricaricano il 35% più in fretta.", "cooldown": 40, "duration": 8, "power": 0.35 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Hoenn" },
+      "team": [ "magnemite", "voltorb", "manectric" ]
+    },
+    {
+      "id": "flannery", "nameIt": "Fiammetta", "region": "Hoenn", "role": "GymLeader", "type": "Fire",
+      "passive": { "nameIt": "Temperamento", "descriptionIt": "Mosse Fuoco +15%, mosse fisiche +5%.", "modifiers": { "physicalPowerPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "TypeBoost", "nameIt": "Giornodisole", "descriptionIt": "Per 10 secondi le mosse Fuoco fanno il 50% di danni in più, le altre il 17%.", "cooldown": 45, "duration": 10, "power": 0.5 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Hoenn" },
+      "team": [ "numel", "slugma", "torkoal" ]
+    },
+    {
+      "id": "norman", "nameIt": "Norman", "region": "Hoenn", "role": "GymLeader", "type": "Normal",
+      "passive": { "nameIt": "Padre Severo", "descriptionIt": "Mosse Normale +15%, danni fisici subiti -6%.", "modifiers": { "physicalResistPercent": 0.06 }, "typePower": 0.15 },
+      "active": { "kind": "Shield", "nameIt": "Protezione", "descriptionIt": "Per 10 secondi blocca i prossimi 3 colpi.", "cooldown": 40, "duration": 10, "charges": 3 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Hoenn" },
+      "team": [ "spinda", "vigoroth", "slaking" ]
+    },
+    {
+      "id": "winona", "nameIt": "Alice", "region": "Hoenn", "role": "GymLeader", "type": "Flying",
+      "passive": { "nameIt": "Grazia Aerea", "descriptionIt": "Mosse Volante +15%, raggio di raccolta +20%.", "modifiers": { "pickupRadiusPercent": 0.2 }, "typePower": 0.15 },
+      "active": { "kind": "Heal", "nameIt": "Trespolo", "descriptionIt": "Recupera il 30% dei PS massimi.", "cooldown": 45, "power": 0.3 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Hoenn" },
+      "team": [ "pelipper", "skarmory", "altaria" ]
+    },
+    {
+      "id": "tateandliza", "nameIt": "Tell e Pat", "region": "Hoenn", "role": "GymLeader", "type": "Psychic",
+      "passive": { "nameIt": "Sintonia", "descriptionIt": "Mosse Psico +15%, durata delle mosse +10%.", "modifiers": { "durationPercent": 0.1 }, "typePower": 0.15 },
+      "active": { "kind": "Frenzy", "nameIt": "Sincronia", "descriptionIt": "Per 8 secondi le mosse si ricaricano il 35% più in fretta.", "cooldown": 40, "duration": 8, "power": 0.35 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Hoenn" },
+      "team": [ "lunatone", "solrock", "claydol" ]
+    },
+    {
+      "id": "juan", "nameIt": "Rodolfo", "region": "Hoenn", "role": "GymLeader", "type": "Water",
+      "passive": { "nameIt": "Maestro d'Arte", "descriptionIt": "Mosse Acqua +15%, area delle mosse +5%.", "modifiers": { "areaPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "TypeBoost", "nameIt": "Pioggiadanza", "descriptionIt": "Per 10 secondi le mosse Acqua fanno il 50% di danni in più, le altre il 17%.", "cooldown": 45, "duration": 10, "power": 0.5 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Hoenn" },
+      "team": [ "whiscash", "sealeo", "kingdra" ]
+    },
+    {
+      "id": "sidney", "nameIt": "Fosco", "region": "Hoenn", "role": "EliteFour", "type": "Dark",
+      "passive": { "nameIt": "Spavaldo", "descriptionIt": "Mosse Buio +15%, velocità +5%.", "modifiers": { "moveSpeedPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "Haste", "nameIt": "Sbigoattacco", "descriptionIt": "Per 6 secondi corri il 50% più veloce.", "cooldown": 30, "duration": 6, "power": 0.5 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Hoenn" },
+      "team": [ "mightyena", "shiftry", "cacturne", "absol" ]
+    },
+    {
+      "id": "phoebe", "nameIt": "Ester", "region": "Hoenn", "role": "EliteFour", "type": "Ghost",
+      "passive": { "nameIt": "Legame Spirituale", "descriptionIt": "Mosse Spettro +15%, danni speciali subiti -6%.", "modifiers": { "specialResistPercent": 0.06 }, "typePower": 0.15 },
+      "active": { "kind": "Intangible", "nameIt": "Velo Spettrale", "descriptionIt": "Per 4 secondi nessun colpo ti raggiunge.", "cooldown": 45, "duration": 4 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Hoenn" },
+      "team": [ "duskull", "sableye", "banette", "dusclops" ]
+    },
+    {
+      "id": "glacia", "nameIt": "Frida", "region": "Hoenn", "role": "EliteFour", "type": "Ice",
+      "passive": { "nameIt": "Gelida", "descriptionIt": "Mosse Ghiaccio +15%, durata delle mosse +10%.", "modifiers": { "durationPercent": 0.1 }, "typePower": 0.15 },
+      "active": { "kind": "Shield", "nameIt": "Muro di Ghiaccio", "descriptionIt": "Per 10 secondi blocca i prossimi 3 colpi.", "cooldown": 40, "duration": 10, "charges": 3 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Hoenn" },
+      "team": [ "snorunt", "sealeo", "glalie", "walrein" ]
+    },
+    {
+      "id": "drake", "nameIt": "Drake", "region": "Hoenn", "role": "EliteFour", "type": "Dragon",
+      "passive": { "nameIt": "Lupo di Mare", "descriptionIt": "Mosse Drago +15%, mosse fisiche +5%.", "modifiers": { "physicalPowerPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "Wave", "nameIt": "Dragopulsar", "descriptionIt": "Un'onda tutt'intorno toglie metà dei PS ai nemici vicini e li respinge.", "cooldown": 30, "power": 0.5, "radius": 130 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Hoenn" },
+      "team": [ "shelgon", "altaria", "flygon", "salamence" ]
+    },
+    {
+      "id": "steven", "nameIt": "Rocco", "region": "Hoenn", "role": "Champion", "type": "Steel",
+      "passive": { "nameIt": "Collezionista", "descriptionIt": "Mosse Acciaio +15%, monete +20%.", "modifiers": { "coinPercent": 0.2 }, "typePower": 0.15 },
+      "active": { "kind": "Fortune", "nameIt": "Pietre Rare", "descriptionIt": "Attira tutte le gemme; per 15 secondi esperienza e monete raddoppiano.", "cooldown": 60, "duration": 15, "power": 1 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Hoenn" },
+      "team": [ "skarmory", "claydol", "aggron", "cradily", "metagross" ]
+    },
+    {
+      "id": "wallace", "nameIt": "Adriano", "region": "Hoenn", "role": "Champion", "type": "Water",
+      "passive": { "nameIt": "Eleganza", "descriptionIt": "Mosse Acqua +15%, rigenera 0,2 PS al secondo.", "modifiers": { "regenPerSecond": 0.2 }, "typePower": 0.15 },
+      "active": { "kind": "Heal", "nameIt": "Acquanello", "descriptionIt": "Recupera il 30% dei PS massimi.", "cooldown": 45, "power": 0.3 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Hoenn" },
+      "team": [ "wailord", "tentacruel", "ludicolo", "gyarados", "milotic" ]
+    },
+
+    // --- Sinnoh ---
+    {
+      "id": "roark", "nameIt": "Pedro", "region": "Sinnoh", "role": "GymLeader", "type": "Rock",
+      "passive": { "nameIt": "Minatore", "descriptionIt": "Mosse Roccia +15%, monete +20%.", "modifiers": { "coinPercent": 0.2 }, "typePower": 0.15 },
+      "active": { "kind": "Wave", "nameIt": "Crollo", "descriptionIt": "Massi tutt'intorno tolgono metà dei PS ai nemici vicini e li respingono.", "cooldown": 30, "power": 0.5, "radius": 130 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Sinnoh" },
+      "team": [ "geodude", "onix", "cranidos" ]
+    },
+    {
+      "id": "gardenia", "nameIt": "Gardenia", "region": "Sinnoh", "role": "GymLeader", "type": "Grass",
+      "passive": { "nameIt": "Pollice Verde", "descriptionIt": "Mosse Erba +15%, PS massimi +10%.", "modifiers": { "maxHpPercent": 0.1 }, "typePower": 0.15 },
+      "active": { "kind": "Heal", "nameIt": "Sintesi", "descriptionIt": "Recupera il 30% dei PS massimi.", "cooldown": 45, "power": 0.3 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Sinnoh" },
+      "team": [ "cherubi", "turtwig", "roserade" ]
+    },
+    {
+      "id": "maylene", "nameIt": "Marzia", "region": "Sinnoh", "role": "GymLeader", "type": "Fighting",
+      "passive": { "nameIt": "Piedi Scalzi", "descriptionIt": "Mosse Lotta +15%, ricarica delle mosse -5%.", "modifiers": { "cooldownReductionPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "Frenzy", "nameIt": "Raffica di Pugni", "descriptionIt": "Per 8 secondi le mosse si ricaricano il 35% più in fretta.", "cooldown": 40, "duration": 8, "power": 0.35 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Sinnoh" },
+      "team": [ "meditite", "machoke", "lucario" ]
+    },
+    {
+      "id": "crasherwake", "nameIt": "Omar", "region": "Sinnoh", "role": "GymLeader", "type": "Water",
+      "passive": { "nameIt": "Lottatore Mascherato", "descriptionIt": "Mosse Acqua +15%, mosse fisiche +5%.", "modifiers": { "physicalPowerPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "Haste", "nameIt": "Acquagetto", "descriptionIt": "Per 6 secondi corri il 50% più veloce.", "cooldown": 30, "duration": 6, "power": 0.5 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Sinnoh" },
+      "team": [ "gyarados", "quagsire", "floatzel" ]
+    },
+    {
+      "id": "fantina", "nameIt": "Fannie", "region": "Sinnoh", "role": "GymLeader", "type": "Ghost",
+      "passive": { "nameIt": "Danzatrice", "descriptionIt": "Mosse Spettro +15%, velocità +5%.", "modifiers": { "moveSpeedPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "Intangible", "nameIt": "Danza Spettrale", "descriptionIt": "Per 4 secondi nessun colpo ti raggiunge.", "cooldown": 45, "duration": 4 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Sinnoh" },
+      "team": [ "duskull", "haunter", "mismagius" ]
+    },
+    {
+      "id": "byron", "nameIt": "Ferruccio", "region": "Sinnoh", "role": "GymLeader", "type": "Steel",
+      "passive": { "nameIt": "Tempra d'Acciaio", "descriptionIt": "Mosse Acciaio +15%, danni fisici subiti -6%.", "modifiers": { "physicalResistPercent": 0.06 }, "typePower": 0.15 },
+      "active": { "kind": "Shield", "nameIt": "Ferroscudo", "descriptionIt": "Per 10 secondi blocca i prossimi 3 colpi.", "cooldown": 40, "duration": 10, "charges": 3 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Sinnoh" },
+      "team": [ "bronzor", "steelix", "bastiodon" ]
+    },
+    {
+      "id": "candice", "nameIt": "Bianca", "region": "Sinnoh", "role": "GymLeader", "type": "Ice",
+      "passive": { "nameIt": "Grinta", "descriptionIt": "Mosse Ghiaccio +15%, brutti colpi +3%.", "modifiers": { "critChance": 0.03 }, "typePower": 0.15 },
+      "active": { "kind": "StatusStorm", "nameIt": "Bufera di Neve", "descriptionIt": "Congela il 70% dei nemici sullo schermo.", "cooldown": 45, "power": 0.7, "status": "Freeze" },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Sinnoh" },
+      "team": [ "snover", "sneasel", "abomasnow" ]
+    },
+    {
+      "id": "volkner", "nameIt": "Corrado", "region": "Sinnoh", "role": "GymLeader", "type": "Electric",
+      "passive": { "nameIt": "Annoiato", "descriptionIt": "Mosse Elettro +15%, mosse speciali +5%.", "modifiers": { "specialPowerPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "TypeBoost", "nameIt": "Sovraccarico", "descriptionIt": "Per 10 secondi le mosse Elettro fanno il 50% di danni in più, le altre il 17%.", "cooldown": 45, "duration": 10, "power": 0.5 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Sinnoh" },
+      "team": [ "jolteon", "raichu", "luxray" ]
+    },
+    {
+      "id": "aaron", "nameIt": "Aaron", "region": "Sinnoh", "role": "EliteFour", "type": "Bug",
+      "passive": { "nameIt": "Amico degli Insetti", "descriptionIt": "Mosse Coleottero +15%, durata delle mosse +10%.", "modifiers": { "durationPercent": 0.1 }, "typePower": 0.15 },
+      "active": { "kind": "StatusStorm", "nameIt": "Velenpuntura", "descriptionIt": "Avvelena tutti i nemici sullo schermo.", "cooldown": 35, "power": 1, "status": "Poison" },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Sinnoh" },
+      "team": [ "dustox", "beautifly", "vespiquen", "drapion" ]
+    },
+    {
+      "id": "bertha", "nameIt": "Terrie", "region": "Sinnoh", "role": "EliteFour", "type": "Ground",
+      "passive": { "nameIt": "Saggezza", "descriptionIt": "Mosse Terra +15%, PS massimi +10%.", "modifiers": { "maxHpPercent": 0.1 }, "typePower": 0.15 },
+      "active": { "kind": "Shield", "nameIt": "Insabbiamento", "descriptionIt": "Per 10 secondi blocca i prossimi 3 colpi.", "cooldown": 40, "duration": 10, "charges": 3 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Sinnoh" },
+      "team": [ "quagsire", "sudowoodo", "golem", "hippowdon" ]
+    },
+    {
+      "id": "flint", "nameIt": "Vulcano", "region": "Sinnoh", "role": "EliteFour", "type": "Fire",
+      "passive": { "nameIt": "Passione Ardente", "descriptionIt": "Mosse Fuoco +15%, mosse speciali +5%.", "modifiers": { "specialPowerPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "Wave", "nameIt": "Eruzione", "descriptionIt": "Fiamme tutt'intorno tolgono metà dei PS ai nemici vicini e li respingono.", "cooldown": 30, "power": 0.5, "radius": 130 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Sinnoh" },
+      "team": [ "rapidash", "flareon", "houndoom", "infernape" ]
+    },
+    {
+      "id": "lucian", "nameIt": "Luciano", "region": "Sinnoh", "role": "EliteFour", "type": "Psychic",
+      "passive": { "nameIt": "Topo di Biblioteca", "descriptionIt": "Mosse Psico +15%, esperienza +5%.", "modifiers": { "growthPercent": 0.05 }, "typePower": 0.15 },
+      "active": { "kind": "Fortune", "nameIt": "Lettura", "descriptionIt": "Attira tutte le gemme; per 15 secondi esperienza e monete raddoppiano.", "cooldown": 60, "duration": 15, "power": 1 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Sinnoh" },
+      "team": [ "mr-mime", "girafarig", "alakazam", "bronzong" ]
+    },
+    {
+      "id": "cynthia", "nameIt": "Camilla", "region": "Sinnoh", "role": "Champion", "titleIt": "Campionessa",
+      "passive": { "nameIt": "Campionessa", "descriptionIt": "PS massimi +5%, mosse fisiche e speciali +5%.", "modifiers": { "maxHpPercent": 0.05, "physicalPowerPercent": 0.05, "specialPowerPercent": 0.05 } },
+      "active": { "kind": "SlowTime", "nameIt": "Mondo Distorto", "descriptionIt": "Per 7 secondi nemici e proiettili vanno a un terzo della velocità.", "cooldown": 50, "duration": 7, "power": 0.35 },
+      "unlock": { "kind": "Defeat", "hintIt": "Sfida a Ultra, Sinnoh" },
+      "team": [ "spiritomb", "roserade", "lucario", "milotic", "garchomp" ]
+    }
+  ]
+}

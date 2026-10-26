@@ -7,7 +7,8 @@ namespace PokeRogue.Game.Ui;
 
 /// <summary>
 /// In-run HUD, layout A approved in 0.6: XP bar and level, move and item slots top-left, timer top-centre,
-/// coins and KO top-right. The trainer card and the special-move gauge join in phases 5.2 and 4.4.
+/// coins and KO top-right; the ability and special-move strips under the items (phases 4.3 and 4.4); the trainer's card
+/// bottom-left (phase 5.2).
 /// </summary>
 public sealed class Hud
 {
@@ -55,8 +56,29 @@ public sealed class Hud
         if (_bannerAge >= 0 && ++_bannerAge >= BannerTicks)
             _bannerAge = -1;
 
+        if (_trainerCutIn >= 0 && ++_trainerCutIn >= CutInTicks)
+            _trainerCutIn = -1;
+        if (_trainerFlash > 0)
+            _trainerFlash--;
+
         foreach (var e in run.Events)
         {
+            if (e.Type == RunEventType.TrainerAbility)
+            {
+                switch ((Core.Run.Trainers.TrainerEffect)(int)e.Value)
+                {
+                    case Core.Run.Trainers.TrainerEffect.Used:
+                        _trainerCutIn = 0;
+                        _trainerFlash = FlashTicks;
+                        _trainerFlashColor = Color.White;
+                        break;
+                    case Core.Run.Trainers.TrainerEffect.Ready:
+                        _trainerFlash = FlashTicks;
+                        _trainerFlashColor = Gold;
+                        break;
+                }
+            }
+
             if (e.Type == RunEventType.MoveEvolved && (int)e.Value is >= 0 and < Slots)
                 _evolveFlash[(int)e.Value] = EvolveFlashTicks;
             if (e.Type == RunEventType.DominantAppeared && _services.Species(e.SpeciesId) is { } species)
@@ -110,7 +132,39 @@ public sealed class Hud
             p.Rect(batch, new Rectangle(bar.X + (int)(bar.Width * phase.Below), bar.Y - 2, 1, bar.Height + 4), Paper);
 
         var name = _services.Species(fight.Definition.SpeciesId)?.NameIt.ToUpperInvariant() ?? "";
+        if (run.Challenge is { } challenge)
+            name += $" DI {challenge.Trainer.NameIt.ToUpperInvariant()}";
         UiDraw.TextOutlined(batch, _services.Fonts.Small(_services.Style), name, new Vector2(bar.X, bar.Bottom + 3), Paper, Ink);
+
+        if (run.Challenge is { } trainer)
+            DrawTeam(batch, trainer, bar);
+    }
+
+    /// <summary>
+    /// A challenge's team (phase 5.3), as in the games: the trainer's head right of the bar, and under its right end a Poké
+    /// Ball for each Pokémon on a dark strip, faded and struck through once it has fainted.
+    /// </summary>
+    private void DrawTeam(SpriteBatch batch, Core.Run.Trainers.TrainerChallenge challenge, Rectangle bar)
+    {
+        var p = _services.Primitives;
+        var trainer = challenge.Trainer;
+        var head = new Rectangle(bar.Right + 5, bar.Y - 6, 20, 20);
+        UiDraw.Frame(batch, p, new Rectangle(head.X - 1, head.Y - 1, head.Width + 2, head.Height + 2), _services.Style.Theme);
+        p.Rect(batch, head, Color.Lerp(Vfx.TrainerVfx.ColorOf(trainer), Ink, 0.35f));
+        if (_services.TrainerPortraits.Sprite(trainer) is { } sprite)
+            batch.Draw(sprite, head, _services.TrainerPortraits.Head(trainer), Color.White);
+
+        var count = challenge.Team.Count;
+        p.Rect(batch, new Rectangle(bar.Right - count * 12 - 1, bar.Bottom + 2, count * 12 + 2, 12), Ink * 0.75f);
+        for (var i = 0; i < count; i++)
+        {
+            var slot = new Rectangle(bar.Right - (count - i) * 12 + 1, bar.Bottom + 3, 10, 10);
+            var fainted = i < challenge.Fainted;
+            var waiting = i >= challenge.SentOut;
+            _services.ItemIcons.Draw(batch, "poke-ball", slot, alpha: fainted ? 0.4f : waiting ? 0.75f : 1f);
+            if (fainted)
+                p.Rect(batch, new Rectangle(slot.X + 1, slot.Center.Y, slot.Width - 2, 1), Ink);
+        }
     }
 
     /// <summary>The announcement of a Dominante, sliding in under the timer, blinking twice, then fading out.</summary>
@@ -159,6 +213,8 @@ public sealed class Hud
 
         DrawAbility(batch, run, new Rectangle(3, 67, Slots * 26 - 2, 14));
         DrawSpecial(batch, run, new Rectangle(3, 83, Slots * 26 - 2, 14));
+        DrawTrainerCutIn(batch, run);
+        DrawTrainer(batch, run, new Rectangle(4, _services.Screen.Height - 48, 150, 44));
 
         var clock = UiFormat.Clock(run.Ticks);
         UiDraw.TextCentered(batch, numbers, clock, _services.Screen.Width / 2f, 9, Paper, Ink);
@@ -242,6 +298,85 @@ public sealed class Hud
             const string key = "E";
             UiDraw.TextOutlined(batch, small, key, new Vector2(strip.Right - 4 - UiDraw.Measure(small, key).X, strip.Y + 3), Gold, Ink);
         }
+    }
+
+    private const int CutInTicks = 60;
+    private const int FlashTicks = 14;
+    private static readonly Color Dim = new(110, 104, 140);
+
+    /// <summary>Age of the trainer's figure rising over the card when the key is pressed; -1 when not showing.</summary>
+    private int _trainerCutIn = -1;
+    private int _trainerFlash;
+    private Color _trainerFlashColor = Color.White;
+
+    /// <summary>
+    /// The trainer's card, bottom left as in the art direction of phase 0.6 (phase 5.2): the head on the type's colour,
+    /// darkened from the top while the key recharges, the key Q in a corner; the name, the active ability (gold when ready),
+    /// what it is doing now, and a thin gauge: the recharge, or what is left of the effect while it runs.
+    /// </summary>
+    public void DrawTrainer(SpriteBatch batch, RunState run, Rectangle card)
+    {
+        if (run.Trainer is not { } trainer)
+            return;
+
+        var p = _services.Primitives;
+        var small = _services.Fonts.Small(_services.Style);
+        var body = _services.Fonts.Body(_services.Style);
+        var state = run.TrainerState;
+        var color = Vfx.TrainerVfx.ColorOf(trainer);
+        var gauge = Core.Run.Trainers.TrainerSystem.Gauge(run) ?? 1f;
+        var ready = state.CooldownTicks == 0;
+        UiDraw.Frame(batch, p, card, ready ? EvolvedTheme : _services.Style.Theme);
+
+        // The head on a field of the type's colour, darkened from the top by the recharge still to go.
+        var head = new Rectangle(card.X + 4, card.Y + 4, card.Height - 8, card.Height - 8);
+        p.Rect(batch, head, Color.Lerp(color, Ink, 0.35f));
+        p.Rect(batch, new Rectangle(head.X, head.Y + head.Height / 2, head.Width, head.Height - head.Height / 2), Color.Lerp(color, Ink, 0.5f));
+        if (_services.TrainerPortraits.Sprite(trainer) is { } sprite)
+            batch.Draw(sprite, head, _services.TrainerPortraits.Head(trainer), Color.White);
+        if (!ready)
+            p.Rect(batch, new Rectangle(head.X, head.Y, head.Width, (int)MathF.Ceiling(head.Height * (1f - gauge))), new Color(8, 6, 16) * 0.67f);
+        if (_trainerFlash > 0)
+            p.Rect(batch, head, _trainerFlashColor * (0.7f * _trainerFlash / FlashTicks));
+        UiDraw.TextOutlined(batch, small, "Q", new Vector2(head.Right - 7, head.Bottom - 9), ready ? Gold : Dim, Ink);
+
+        var x = head.Right + 6;
+        UiDraw.Text(batch, body, trainer.NameIt, new Vector2(x, card.Y + 2), Paper);
+        UiDraw.Text(batch, small, trainer.Active.NameIt.ToUpperInvariant(), new Vector2(x, card.Y + 20), ready ? Gold : new Color(160, 152, 190));
+
+        var running = state.IsActive;
+        var (status, statusColor) = running ? ("ATTIVA", Color.Lerp(color, Color.White, 0.3f)) : ready ? ("PRONTA", Gold) : ("IN RICARICA", Dim);
+        UiDraw.Text(batch, small, status, new Vector2(x, card.Y + 30), statusColor);
+
+        // The shield's charges left, as small squares after the word.
+        if (running && trainer.Active.Kind == Core.Run.Trainers.TrainerActiveKind.Shield)
+        {
+            var pips = x + (int)UiDraw.Measure(small, status).X + 4;
+            for (var i = 0; i < trainer.Active.Charges; i++)
+                p.Rect(batch, new Rectangle(pips + i * 5, card.Y + 32, 3, 4), i < state.ShieldCharges ? statusColor : Ink * 0.8f);
+        }
+
+        var bar = new Rectangle(x, card.Bottom - 4, card.Right - 5 - x, 1);
+        var fill = running ? Core.Run.Trainers.TrainerSystem.EffectLeft(run) : gauge;
+        p.Rect(batch, bar, Ink * 0.8f);
+        p.Rect(batch, new Rectangle(bar.X, bar.Y, (int)(bar.Width * fill), 1), running ? statusColor : ready ? Gold : new Color(150, 200, 255));
+    }
+
+    /// <summary>
+    /// The trainer steps in when the key is pressed: their whole figure rises from behind the card, stays a moment, then
+    /// fades. The game does not stop.
+    /// </summary>
+    private void DrawTrainerCutIn(SpriteBatch batch, RunState run)
+    {
+        if (_trainerCutIn < 0 || run.Trainer is not { } trainer || _services.TrainerPortraits.Sprite(trainer) is not { } sprite)
+            return;
+
+        var rise = MathF.Min(1f, _trainerCutIn / 8f);
+        rise = 1f - (1f - rise) * (1f - rise);
+        var alpha = _trainerCutIn > CutInTicks - 16 ? (CutInTicks - _trainerCutIn) / 16f : 1f;
+        var cardTop = _services.Screen.Height - 48;
+        var y = cardTop + 4 - (sprite.Height - 6) * rise;
+        batch.Draw(sprite, new Vector2(10, MathF.Round(y)), Color.White * alpha);
     }
 
     /// <summary>A 24 px move slot with the icon and its level marks; an evolved move (phase 2.6) has a gold frame and a star instead.</summary>

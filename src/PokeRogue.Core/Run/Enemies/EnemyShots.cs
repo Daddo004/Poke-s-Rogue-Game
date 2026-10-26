@@ -69,13 +69,14 @@ public sealed class EnemyShotPool(int capacity)
     public void Tick(RunState run)
     {
         var player = run.Player;
+        var slow = Trainers.TrainerSystem.EnemySpeed(run);
         for (var i = 0; i < HighWater; i++)
         {
             ref var shot = ref _items[i];
             if (!shot.Active)
                 continue;
 
-            shot.Position += shot.Velocity * RunClock.Dt;
+            shot.Position += shot.Velocity * (RunClock.Dt * slow);
             var reach = shot.Radius + player.Radius;
             if (Vector2.DistanceSquared(shot.Position, player.Position) < reach * reach && !player.IsDown)
             {

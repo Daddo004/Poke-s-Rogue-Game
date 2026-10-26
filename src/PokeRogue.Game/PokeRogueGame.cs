@@ -117,11 +117,12 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
         Scene scene = _options.Preview is { } preview
             ? PreviewRegistry.Create(preview, _services, _options)
                 ?? throw new ArgumentException($"Unknown preview '{preview}'. Available: {string.Join(", ", PreviewRegistry.List.Select(p => p.Id))}")
-            : new GameplayScene(_services, _options.Str("pokemon"))
+            : new GameplayScene(_services, _options.Str("pokemon"), trainerId: _options.Str("allenatore"))
             {
                 PendingEvolutions = _options.Values.ContainsKey("evoluzioni"),
                 PendingEnemies = _options.Values.ContainsKey("nemici"),
                 PendingLoot = _options.Values.ContainsKey("oggetti"),
+                ChallengeId = _options.Str("sfida"),
                 StartTicks = _options.Str("da") is { } start ? Core.Run.Waves.WaveTimeline.ParseTime(start) : 0,
             };
         _scenes.Switch(scene);

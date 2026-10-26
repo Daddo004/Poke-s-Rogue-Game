@@ -11,6 +11,7 @@ using PokeRogue.Core.Run.Pickups;
 using PokeRogue.Core.Run.Progression;
 using PokeRogue.Core.Run.Specials;
 using PokeRogue.Core.Run.Statuses;
+using PokeRogue.Core.Run.Trainers;
 using PokeRogue.Core.Run.Waves;
 
 namespace PokeRogue.Core.Run;
@@ -144,6 +145,31 @@ public sealed class RunState
     /// <summary>Timers and stacks of the player's ability (phase 4.3).</summary>
     public AbilityState Ability { get; } = new();
 
+    /// <summary>The trainer of the run (phase 5.1); null in tests and previews without one.</summary>
+    public TrainerDefinition? Trainer { get; private set; }
+
+    /// <summary>The trainer's active ability: its cooldown and the effect running.</summary>
+    public TrainerState TrainerState { get; } = new();
+
+    /// <summary>The trainer challenged on this run (phase 5.3): they replace the level's boss when the time runs out.</summary>
+    public TrainerChallenge? Challenge { get; private set; }
+
+    /// <summary>Makes this run a challenge of <paramref name="trainer"/>, who needs a team.</summary>
+    public void ChallengeTrainer(TrainerDefinition trainer, ChallengeRules rules)
+    {
+        if (trainer.Team.Count == 0)
+            throw new ArgumentException($"{trainer.Id} has no team to challenge.", nameof(trainer));
+        Challenge = new TrainerChallenge(trainer, rules);
+    }
+
+    /// <summary>Plays with <paramref name="trainer"/>: its passive bonuses are on from now, its key ready.</summary>
+    public void UseTrainer(TrainerDefinition trainer)
+    {
+        Trainer = trainer;
+        Player.TrainerBonus = trainer.Passive.Modifiers;
+        Player.RecalculateStats();
+    }
+
     /// <summary>The special moves (content/data/specials.json, phase 4.4); null = no special gauge.</summary>
     public SpecialMoves? SpecialRules { get; init; }
 
@@ -217,6 +243,7 @@ public sealed class RunState
         Player.Move(input.Move);
         Player.Tick();
         AbilitySystem.Tick(this, input.UseAbility);
+        TrainerSystem.Tick(this, input.UseTrainer);
 
         if (Special.LockTicks > 0)
             Special.LockTicks--;
@@ -256,7 +283,7 @@ public sealed class RunState
     /// <summary>Gives coins, more with Monetamuleto.</summary>
     public void AddCoins(int amount)
     {
-        var gained = (int)MathF.Round(amount * Player.CoinMultiplier);
+        var gained = (int)MathF.Round(amount * Player.CoinMultiplier * TrainerSystem.GainMultiplier(this));
         Player.Coins += gained;
         Stats.RecordCoins(gained);
     }
@@ -293,22 +320,53 @@ public sealed class RunState
             _events.Add(new RunEvent(RunEventType.PlayerRevived, Player.Position, Player.RevivesLeft));
         else if (Player.IsDown)
             End(RunOutcome.Defeat);
+        else if (Challenge is { Started: true } challenge)
+            CheckChallenge(challenge);
         else if (Boss?.DefeatedTick is { } defeated && Ticks >= defeated + BossAi.VictoryDelayTicks)
             End(RunOutcome.Victory);
         else if (TimeLimitTicks is { } limit && Ticks >= limit && Boss is null)
         {
-            // Time is up: the level's boss arrives, or, without one, the level is won.
-            if (Spawner.Timeline.Boss is { } boss)
+            // Time is up: the challenged trainer steps in, or the level's boss arrives, or, without one, the level is won.
+            if (Challenge is { } trainer)
+                trainer.Begin(this);
+            else if (Spawner.Timeline.Boss is { } boss)
                 Boss = BossAi.Spawn(this, boss, Spawner.Timeline.HpMultiplier(Ticks));
             else
                 End(RunOutcome.Victory);
         }
     }
 
-    /// <summary>Previews and cheats: the boss arrives now, whatever the time.</summary>
+    /// <summary>
+    /// The challenge (phase 5.3): the trainer's Pokémon come out one at a time, each when the one before has fainted and a
+    /// moment has passed; when the last one has fallen the trainer is beaten and the run won.
+    /// </summary>
+    private void CheckChallenge(TrainerChallenge challenge)
+    {
+        if (Boss is { DefeatedTick: { } defeated } && challenge.Fainted < challenge.SentOut)
+            challenge.OnFainted(defeated);
+
+        if (Boss is { DefeatedTick: null })
+            return;
+
+        if (challenge.HasMore)
+        {
+            if (Ticks >= challenge.NextTick)
+                Boss = challenge.SendOut(this);
+        }
+        else if (Ticks >= challenge.NextTick - challenge.NextDelayTicks + BossAi.VictoryDelayTicks)
+        {
+            challenge.Won = true;
+            _events.Add(new RunEvent(RunEventType.TrainerDefeated, Player.Position, 0f, MoveId: challenge.Trainer.Id));
+            End(RunOutcome.Victory);
+        }
+    }
+
+    /// <summary>Previews and cheats: the boss (or the challenged trainer) arrives now, whatever the time.</summary>
     public void SummonBoss()
     {
-        if (Boss is null && Spawner.Timeline.Boss is { } boss)
+        if (Challenge is { Started: false } challenge)
+            challenge.Begin(this);
+        else if (Boss is null && Challenge is null && Spawner.Timeline.Boss is { } boss)
             Boss = BossAi.Spawn(this, boss, Spawner.Timeline.HpMultiplier(Ticks));
     }
 
@@ -316,7 +374,7 @@ public sealed class RunState
     public void CollectExperience(int value, Vector2 position)
     {
         _events.Add(new RunEvent(RunEventType.GemCollected, position, value));
-        var levels = Player.AddXp(value);
+        var levels = Player.AddXp(value * TrainerSystem.GainMultiplier(this));
         if (levels == 0)
             return;
 
@@ -403,7 +461,8 @@ public sealed class RunState
 
         var definition = move.Definition;
         var defender = new DefenderProfile(e.Type1, e.Type2, e.Defense, e.SpDefense);
-        var power = move.Stats.Power * Player.PowerMultiplier(definition.Category) * AbilitySystem.DamageMultiplier(this, move);
+        var power = move.Stats.Power * Player.PowerMultiplier(definition.Category) * AbilitySystem.DamageMultiplier(this, move)
+            * TrainerSystem.DamageMultiplier(this, move);
         var attacker = AbilitySystem.Attacker(this, Player.Attacker);
         if (definition.CritBonus > 0f)
             attacker = attacker with { CritChance = attacker.CritChance + definition.CritBonus };
@@ -438,7 +497,7 @@ public sealed class RunState
     /// </summary>
     public float HurtPlayer(in Hurt hurt)
     {
-        if (!Player.CanBeHurt)
+        if (!Player.CanBeHurt || TrainerSystem.Blocks(this, hurt))
             return 0f;
 
         var multiplier = AbilitySystem.HurtMultiplier(this, hurt);
@@ -561,6 +620,7 @@ public sealed class RunState
 
         var items = Enemies.Items;
         var playerPosition = Player.Position;
+        var slow = TrainerSystem.EnemySpeed(this);
 
         for (var i = 0; i < items.Length; i++)
         {
@@ -596,6 +656,7 @@ public sealed class RunState
 
             StatusSystem.Steer(this, e, ref desired, ref contactDamage);
             AbilitySystem.Steer(this, ref e, ref desired);
+            desired *= slow;
             e.Velocity = desired;
             e.Position += (desired + e.Knockback) * RunClock.Dt;
             e.Knockback *= 0.82f;

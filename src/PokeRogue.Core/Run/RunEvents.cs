@@ -112,6 +112,21 @@ public enum RunEventType
 
     /// <summary>The special hit everything on screen. Value = (int)type, MoveId = its id. Comes out when the game resumes.</summary>
     SpecialUnleashed,
+
+    /// <summary>
+    /// The trainer's active ability (phase 5.2): Value = (int)TrainerEffect, MoveId = the trainer's id, Target.Y = (int)its
+    /// archetype, Target.X = a wave's radius, Status = what a status storm spreads.
+    /// </summary>
+    TrainerAbility,
+
+    /// <summary>The time ran out on a challenge run (phase 5.3): the trainer steps in. Value = team size, MoveId = their id.</summary>
+    TrainerChallenged,
+
+    /// <summary>The trainer sent out a Pokémon: SpeciesId = it, Value = its place in the team (0 = first), Position = where.</summary>
+    TrainerSentOut,
+
+    /// <summary>The trainer's last Pokémon fainted: the trainer is beaten. MoveId = their id.</summary>
+    TrainerDefeated,
 }
 
 /// <summary>Something the renderer or audio may react to; the list is cleared at the start of every tick.</summary>
@@ -127,5 +142,5 @@ public readonly record struct RunEvent(
     StatusKind Status = StatusKind.None,
     bool Ohko = false);
 
-/// <summary>What the player does this tick: where it walks, and whether it pressed the key of its active ability.</summary>
-public readonly record struct PlayerInput(Vector2 Move, bool UseAbility = false, bool UseSpecial = false);
+/// <summary>What the player does this tick: where it walks, and whether it pressed the keys of its ability, its special and its trainer.</summary>
+public readonly record struct PlayerInput(Vector2 Move, bool UseAbility = false, bool UseSpecial = false, bool UseTrainer = false);

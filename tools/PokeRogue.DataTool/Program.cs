@@ -34,6 +34,12 @@ switch (command)
     case "personaggi":
         SimulateRoster();
         break;
+    case "allenatori":
+        SimulateTrainers();
+        break;
+    case "sfide":
+        SimulateChallenges();
+        break;
     default:
         Console.WriteLine("""
             Usage: dotnet run --project tools/PokeRogue.DataTool -- <command> [options]
@@ -45,6 +51,10 @@ switch (command)
               banco     Measure every move alone at levels 1, 4 and 8 against steady waves (phase 2.8)
               personaggi  Play every character headless and compare them (phase 4.5): --runs N (default 6),
                           --solo id,id to play only some, --out PATH (default previews/4.5/simulazione-personaggi.md)
+              allenatori  Write the trainers' summary (previews/5.1/allenatori.md); with --runs N also play four characters
+                          with every trainer and with none (previews/5.2/simulazione-allenatori.md)
+              sfide     Play every trainer's challenge with four characters (phase 5.3): --runs N (default 2),
+                        writes previews/5.3/simulazione-sfide.md
 
             Options:
               --force       Re-download files that are already cached
@@ -77,6 +87,33 @@ void SimulateRoster()
     Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output))!);
     File.WriteAllText(output, report);
     Console.WriteLine($"Wrote {output}");
+}
+
+void SimulateTrainers()
+{
+    var previews = Path.Combine(Path.GetDirectoryName(contentRoot)!, "previews");
+    var simulation = new PokeRogue.DataTool.Balance.TrainerSimulation(contentRoot);
+    var summary = Path.Combine(previews, "5.1", "allenatori.md");
+    Directory.CreateDirectory(Path.GetDirectoryName(summary)!);
+    File.WriteAllText(summary, simulation.Summary());
+    Console.WriteLine($"Wrote {summary}");
+
+    if (ReadIntOption("--runs") is not { } runs)
+        return;
+
+    var report = Path.Combine(previews, "5.2", "simulazione-allenatori.md");
+    Directory.CreateDirectory(Path.GetDirectoryName(report)!);
+    File.WriteAllText(report, simulation.Report(runs, Console.WriteLine));
+    Console.WriteLine($"Wrote {report}");
+}
+
+void SimulateChallenges()
+{
+    var runs = ReadIntOption("--runs") ?? 2;
+    var report = Path.Combine(Path.GetDirectoryName(contentRoot)!, "previews", "5.3", "simulazione-sfide.md");
+    Directory.CreateDirectory(Path.GetDirectoryName(report)!);
+    File.WriteAllText(report, new PokeRogue.DataTool.Balance.TrainerSimulation(contentRoot).ChallengeReport(runs, Console.WriteLine));
+    Console.WriteLine($"Wrote {report}");
 }
 
 void BenchMoves() => WriteReport(new PokeRogue.DataTool.Balance.MoveBench(contentRoot).Report(Console.WriteLine), "banco-di-prova.md");

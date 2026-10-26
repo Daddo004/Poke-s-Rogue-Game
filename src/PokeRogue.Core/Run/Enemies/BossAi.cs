@@ -30,7 +30,8 @@ public static class BossAi
     private const float RoarReach = 140f;
 
     /// <summary>Spawns the boss on screen beside the player (clear of the HUD at the top) and starts the fight.</summary>
-    public static BossFight Spawn(RunState run, BossDefinition boss, float hpMultiplier)
+    /// <param name="announce">The level boss is announced (its entrance plays); a trainer's Pokémon is sent out instead.</param>
+    public static BossFight Spawn(RunState run, BossDefinition boss, float hpMultiplier, bool announce = true)
     {
         var index = run.SpawnEnemy(boss.SpeciesId, run.Player.Position + new Vector2(150, 10), hpMultiplier * boss.Spec.Hp);
         ref var e = ref run.Enemies[index];
@@ -46,7 +47,8 @@ public static class BossAi
 
         var fight = new BossFight(boss, index, e.Serial);
         // Announced with the next tick, so a boss summoned between ticks (cheats, previews) gets its entrance too.
-        run.AddEventOnResume(new RunEvent(RunEventType.BossAppeared, e.Position, 0f, e.SpeciesId));
+        if (announce)
+            run.AddEventOnResume(new RunEvent(RunEventType.BossAppeared, e.Position, 0f, e.SpeciesId));
         return fight;
     }
 

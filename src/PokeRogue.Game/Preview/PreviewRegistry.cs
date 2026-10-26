@@ -10,15 +10,18 @@ public static class PreviewRegistry
         new(StringComparer.OrdinalIgnoreCase)
         {
             ["sprites"] = ("Sprite Viewer: --species N --anim Walk", (s, o) => new SpriteViewerScene(s, o.Int("species", 25), o.Str("anim"))),
-            ["run"] = ("Gameplay on autopilot: --pokemon id (characters.json) --stress N (enemies spawned at start, player invincible) --speed N --da m:ss (start later) [--evoluzioni] [--nemici]",
-                (s, o) => new GameplayScene(s, o.Str("pokemon"), initialSpawn: o.Int("stress", 0), autopilot: true)
+            ["run"] = ("Gameplay on autopilot: --pokemon id (characters.json) --allenatore id (trainers.json) --stress N (enemies spawned at start, player invincible) --speed N --da m:ss (start later) [--evoluzioni] [--nemici]",
+                (s, o) => new GameplayScene(s, o.Str("pokemon"), initialSpawn: o.Int("stress", 0), autopilot: true, trainerId: o.Str("allenatore"))
                 {
                     Speed = System.Math.Max(1, o.Int("speed", 1)),
                     PendingEvolutions = o.Values.ContainsKey("evoluzioni"),
                     PendingEnemies = o.Values.ContainsKey("nemici"),
                     PendingLoot = o.Values.ContainsKey("oggetti"),
                     StartTicks = o.Str("da") is { } start ? Core.Run.Waves.WaveTimeline.ParseTime(start) : 0,
+                    ChallengeId = o.Str("sfida"),
                 }),
+            ["sfida"] = ("Trainer challenge (5.3): --variant arrivo|cambio|squadra|vittoria [--sfida id] (Brock by default)",
+                (s, o) => new ChallengePreviewScene(s, o.Str("variant") ?? "arrivo", o.Str("sfida") ?? "brock")),
             ["movelab"] = ("Move Lab (2.1/2.2): --move id --level 1-8 --hitbox 0|1 --reel a,b,c --every N",
                 (s, o) => new CombatPreviewScene(s, o.Str("move") ?? o.Str("reel")?.Split(',')[0] ?? "thundershock", o.Int("level", 1),
                     hitboxes: o.Int("hitbox", 1) == 1, "LAB MOSSE", o.Str("reel"), o.Int("every", 0))),
@@ -38,7 +41,9 @@ public static class PreviewRegistry
             ["speciale"] = ("Special move (4.4): --tipo Fire (any of the 17) [--soloeffetto]",
                 (s, o) => new SpecialPreviewScene(s, Enum.TryParse<Core.Data.PokemonType>(o.Str("tipo"), true, out var type) ? type : Core.Data.PokemonType.Fire,
                     o.Values.ContainsKey("soloeffetto"))),
-            ["personaggi"] = ("Album of the playable characters (4.5): --pagina N, nine to a page", (s, o) => new CharacterAlbumScene(s, o.Int("pagina", 1))),
+            ["allenatori"] = ("Trainers (5.1/5.2): --variant scheda|album|<archetype: scudo|cura|onda|tempo|intangibile|tipo|fortuna|frenesia|stato|scatto> [--allenatore id] [--pagina N]",
+                (s, o) => new TrainerPreviewScene(s, o.Str("variant") ?? "scheda", o.Str("allenatore"), o.Int("pagina", 1))),
+            ["personaggi"] =("Album of the playable characters (4.5): --pagina N, nine to a page", (s, o) => new CharacterAlbumScene(s, o.Int("pagina", 1))),
             ["rinascita"] = ("Focalnastro (2.5): Pikachu is knocked out and stands back up", (s, _) => new RevivePreviewScene(s)),
             ["stati"] = ("Status conditions (2.3): --variant vetrina|icone|orda [--icone simbolo|riquadro|nessuna] [--stress N] [--mosse a,b,c]",
                 (s, o) => new StatusPreviewScene(s, o.Str("variant"), o.Str("icone"), o.Int("stress", 150), o.Str("mosse"))),

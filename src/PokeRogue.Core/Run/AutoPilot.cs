@@ -39,6 +39,50 @@ public static class AutoPilot
         _ => 100,
     };
 
+    /// <summary>
+    /// Whether a simple player would press the trainer's key now (phase 5.2): a heal when hurt, a shield or a dodge when
+    /// enemies are close, a wave when it would hit many, the field-wide ones in a crowd or against a Dominante or the boss,
+    /// Fortune when many gems lie around.
+    /// </summary>
+    public static bool UseTrainer(RunState run)
+    {
+        if (!Trainers.TrainerSystem.CanUse(run) || run.Trainer is not { } trainer)
+            return false;
+
+        var player = run.Player;
+        var half = run.ViewSize / 2f;
+        var onScreen = 0;
+        var inReach = 0;
+        var nearest = float.MaxValue;
+        var elite = false;
+        foreach (ref readonly var e in run.Enemies.Items)
+        {
+            if (!e.IsAlive || e.Rank == EnemyRank.Prop)
+                continue;
+
+            var offset = e.Position - player.Position;
+            if (MathF.Abs(offset.X) > half.X || MathF.Abs(offset.Y) > half.Y)
+                continue;
+
+            onScreen++;
+            elite |= e.Rank is EnemyRank.Dominant or EnemyRank.Boss;
+            var distance = offset.Length() - e.Radius;
+            nearest = MathF.Min(nearest, distance);
+            if (distance < trainer.Active.Radius)
+                inReach++;
+        }
+
+        var busy = onScreen >= 25 || elite;
+        return trainer.Active.Kind switch
+        {
+            Trainers.TrainerActiveKind.Heal => player.Hp < player.MaxHp * 0.5f,
+            Trainers.TrainerActiveKind.Shield or Trainers.TrainerActiveKind.Intangible or Trainers.TrainerActiveKind.Haste => nearest < PersonalSpace,
+            Trainers.TrainerActiveKind.Wave => inReach >= 8,
+            Trainers.TrainerActiveKind.Fortune => run.Pickups.Gems.ActiveCount >= 30,
+            _ => busy,
+        };
+    }
+
     private const float GemReach = 150f;
 
     /// <summary>With no gem close by, head for one this far: after fleeing a crowd, go back for what was left behind.</summary>
