@@ -62,6 +62,25 @@ public sealed class Spawner
         Recycle(run);
     }
 
+    /// <summary>Times the endless mode's loop has started again (phase 9.3).</summary>
+    private int _cycle;
+
+    /// <summary>The level's time the waves and events play now: the run's time, or past the end in an endless run, its loop.</summary>
+    public int TimeOf(RunState run) => run.EndlessRules?.Looped(run.Ticks, Timeline.DurationTicks) ?? run.Ticks;
+
+    /// <summary>A new round of the endless loop: its events are due again from its start.</summary>
+    private void Rearm(int from)
+    {
+        for (var i = 0; i < _nextEventTick.Length; i++)
+        {
+            var e = Timeline.Events[i];
+            var next = e.AtTick;
+            while (e.EveryTicks > 0 && next < from)
+                next += e.EveryTicks;
+            _nextEventTick[i] = next >= from && (e.EveryTicks == 0 || next <= e.UntilTick) && next < Timeline.DurationTicks ? next : int.MaxValue;
+        }
+    }
+
     /// <summary>Playtests that start the run later: the events before <paramref name="tick"/> never fire, their repeats still do.</summary>
     public void SkipEventsBefore(int tick)
     {
@@ -78,7 +97,7 @@ public sealed class Spawner
     /// <summary>Cheats and stress tests: one enemy of the current wave (or the first one) just outside the screen.</summary>
     public int SpawnOne(RunState run)
     {
-        var wave = Timeline.WaveAt(run.Ticks) ?? Timeline.Waves.FirstOrDefault();
+        var wave = Timeline.WaveAt(TimeOf(run)) ?? Timeline.Waves.FirstOrDefault();
         return wave is null ? -1 : SpawnOne(run, wave);
     }
 
@@ -127,7 +146,7 @@ public sealed class Spawner
 
     private void SpawnWave(RunState run)
     {
-        if (Timeline.WaveAt(run.Ticks) is not { } wave)
+        if (Timeline.WaveAt(TimeOf(run)) is not { } wave)
         {
             _accumulator = 0f;
             return;
@@ -192,9 +211,19 @@ public sealed class Spawner
     /// <summary>Fires each event whose time has come; a time jump (cheat) fires a skipped event once, not once per repeat.</summary>
     private void FireEvents(RunState run)
     {
+        // The endless mode (phase 9.3): each round of the loop plays its stretch's events again.
+        var now = TimeOf(run);
+        if (run.EndlessRules is { } endless && endless.Cycle(run.Ticks, Timeline.DurationTicks) is var cycle && cycle != _cycle)
+        {
+            _cycle = cycle;
+            // At the loop's start, so from its first event (after a time jump, from where it landed).
+            if (cycle > 0)
+                Rearm(now);
+        }
+
         for (var i = 0; i < _nextEventTick.Length; i++)
         {
-            if (run.Ticks < _nextEventTick[i])
+            if (now < _nextEventTick[i])
                 continue;
 
             var e = Timeline.Events[i];
@@ -207,7 +236,7 @@ public sealed class Spawner
             run.AddEvent(new RunEvent(RunEventType.WaveEventStarted, origin, (int)e.Kind, e.SpeciesId));
 
             var next = _nextEventTick[i];
-            while (e.EveryTicks > 0 && next <= run.Ticks)
+            while (e.EveryTicks > 0 && next <= now)
                 next += e.EveryTicks;
             _nextEventTick[i] = e.EveryTicks > 0 && next <= e.UntilTick ? next : int.MaxValue;
         }

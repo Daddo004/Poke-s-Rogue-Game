@@ -18,6 +18,9 @@ public sealed record RunRecord
 
     public bool Over { get; init; }
 
+    /// <summary>An endless run (phase 9.3).</summary>
+    public bool Endless { get; init; }
+
     public bool Won { get; init; }
 
     /// <summary>The trainer beaten in this run's challenge (phase 5.3).</summary>
@@ -83,6 +86,7 @@ public sealed record RunRecord
         CharacterId = run.Character?.Id,
         TrainerId = run.Trainer?.Id,
         Over = run.IsOver,
+        Endless = run.Endless,
         Won = run.Outcome == RunOutcome.Victory,
         ChallengeWon = run.Challenge is { Won: true } challenge ? challenge.Trainer.Id : null,
         Ticks = run.Ticks,

@@ -18,6 +18,9 @@ public sealed class Hud
     private static readonly Color Paper = new(244, 240, 228);
     private static readonly Color Gold = new(248, 208, 72);
 
+    /// <summary>The endless mode's violet (phase 9.3).</summary>
+    public static readonly Color Endless = new(170, 110, 240);
+
     /// <summary>How long a slot flashes white after its move evolves.</summary>
     private const int EvolveFlashTicks = 40;
 
@@ -138,6 +141,12 @@ public sealed class Hud
                 Announce(e.Value < -1f ? $"{plate.NameIt.ToUpperInvariant()}: {TypePalette.NameIt(plate.Type).ToUpperInvariant()} PIÙ FORTE!"
                     : $"HAI TROVATO {plate.NameIt.ToUpperInvariant()}!", Color.Lerp(TypePalette.Of(plate.Type), Color.White, 0.35f));
             }
+
+            // The endless mode (phase 9.3).
+            if (e.Type == RunEventType.EndlessContinues)
+                Announce("MODALITÀ INFINITA: SI CONTINUA!", Endless);
+            if (e.Type == RunEventType.ReaperWarning)
+                Announce("IL MIETITORE STA ARRIVANDO...", Endless);
 
             if (e.Type == RunEventType.MerchantArrived)
                 Announce("È ARRIVATO KECLEON IL MERCANTE!", Vfx.MerchantVfx.Green);
@@ -373,8 +382,9 @@ public sealed class Hud
         DrawTrainerCutIn(batch, run);
         DrawTrainer(batch, run, new Rectangle(4, _services.Screen.Height - 48, 150, 44));
 
+        // In the endless mode past the boss, the clock turns violet (phase 9.3).
         var clock = UiFormat.Clock(run.Ticks);
-        UiDraw.TextCentered(batch, numbers, clock, _services.Screen.Width / 2f, 9, Paper, Ink);
+        UiDraw.TextCentered(batch, numbers, clock, _services.Screen.Width / 2f, 9, run.Endless && run.PastBoss ? Color.Lerp(Endless, Color.White, 0.35f) : Paper, Ink);
 
         // The sky beside the timer (phase 7.2): the weather, then the moon at night.
         var sky = new Vector2(_services.Screen.Width / 2f + UiDraw.Measure(numbers, clock).X / 2f + 5, 11);

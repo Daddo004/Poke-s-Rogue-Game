@@ -12,6 +12,12 @@ public enum BossAttackKind
 
     /// <summary>Raises its arms; red circles mark where rocks will fall, one right under the player.</summary>
     Rockfall,
+
+    /// <summary>Fades away and comes back behind the player, <see cref="BossAttackSpec.Radius"/> away (Darkrai, phase 9.3).</summary>
+    Teleport,
+
+    /// <summary>Vuototetro (Darkrai): dark circles open like the rocks' ones; inside one when it closes, the player falls asleep.</summary>
+    DarkVoid,
 }
 
 /// <summary>One attack of a boss phase, as written in the level's waves file. Times in seconds, distances in pixels.</summary>
@@ -47,6 +53,9 @@ public sealed record BossAttackSpec
     public float Radius { get; set; } = 28f;
 
     public float Delay { get; set; } = 1f;
+
+    /// <summary>Vuototetro: seconds the player sleeps when caught.</summary>
+    public float Sleep { get; set; }
 }
 
 /// <summary>A stretch of the fight: it starts when the boss' PS drop to <see cref="Below"/> of the maximum.</summary>
@@ -110,6 +119,8 @@ public sealed record BossAttack(BossAttackSpec Spec, MoveDefinition? Move)
     public int RecoverTicks { get; } = RunClock.Seconds(Spec.Recover);
 
     public int DelayTicks { get; } = Math.Max(1, RunClock.Seconds(Spec.Delay));
+
+    public int SleepTicks { get; } = RunClock.Seconds(Spec.Sleep);
 }
 
 public sealed record BossPhase(float Below, float Speed, int RestTicks, IReadOnlyList<BossAttack> Attacks);
@@ -177,4 +188,10 @@ public sealed class BossFight(BossDefinition definition, int index, int serial)
 
     /// <summary>A legendary of Ultra (phase 7.3): beating it unlocks it.</summary>
     public bool IsLegendary { get; set; }
+
+    /// <summary>Darkrai the Reaper of the endless mode (phase 9.3): it grows angrier every minute, and beating it wins the run.</summary>
+    public bool IsReaper { get; set; }
+
+    /// <summary>The tick it arrived.</summary>
+    public int StartTick { get; set; }
 }

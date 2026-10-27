@@ -286,6 +286,9 @@ public sealed class MetaProgress(
         _ => IsWon(level, Difficulty.Hard),
     };
 
+    /// <summary>The endless mode (phase 9.3) opens on a level once it is won, at any difficulty.</summary>
+    public bool IsEndlessUnlocked(Run.Worlds.LevelInfo level) => IsWon(level);
+
     /// <summary>Won at least once, at <paramref name="difficulty"/> or, when null, at any.</summary>
     public bool IsWon(Run.Worlds.LevelInfo level, Difficulty? difficulty = null) =>
         difficulty is { } d ? Data.WinsOn(level.Id, d) > 0 : Enum.GetValues<Difficulty>().Any(x => Data.WinsOn(level.Id, x) > 0);
@@ -427,6 +430,8 @@ public sealed class MetaProgress(
             level.Wins++;
         level.BestTicks = Math.Max(level.BestTicks, run.Ticks);
         level.BestKills = Math.Max(level.BestKills, run.Kills);
+        if (run.Endless)
+            Data.EndlessBest[run.LevelId] = Math.Max(Data.EndlessBest.GetValueOrDefault(run.LevelId), run.Ticks);
         if (run.Won && run.CharacterId is { } characterId)
             Data.CharacterWins[characterId] = Data.CharacterWins.GetValueOrDefault(characterId) + 1;
 

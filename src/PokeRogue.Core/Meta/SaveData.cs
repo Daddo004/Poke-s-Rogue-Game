@@ -146,6 +146,9 @@ public sealed class SaveData
 
     public List<string> ItemsFound { get; set; } = [];
 
+    /// <summary>The longest endless run on each level (phase 9.3), in ticks.</summary>
+    public Dictionary<string, int> EndlessBest { get; set; } = [];
+
     /// <summary>Records by "level/difficulty".</summary>
     public Dictionary<string, LevelRecord> Levels { get; set; } = [];
 

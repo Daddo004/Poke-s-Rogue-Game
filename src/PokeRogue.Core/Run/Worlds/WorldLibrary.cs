@@ -57,6 +57,9 @@ public sealed record WorldsFile
     /// <summary>An ordinary level's special events; "pokemon" names a part the level's "cast" gives a species.</summary>
     public IReadOnlyList<WaveEventSpec> Events { get; set; } = [];
 
+    /// <summary>The endless mode and its Reaper (phase 9.3).</summary>
+    public EndlessSpec? Endless { get; set; }
+
     public IReadOnlyList<WorldSpec> Worlds { get; set; } = [];
 }
 
@@ -97,8 +100,9 @@ public sealed class WorldLibrary
     private readonly Dictionary<string, LevelInfo> _byId;
     private readonly IReadOnlyDictionary<Difficulty, DifficultySpec> _difficulties;
 
-    private WorldLibrary(IReadOnlyList<WorldInfo> worlds, LevelDefaults defaults, IReadOnlyDictionary<Difficulty, DifficultySpec> difficulties)
+    private WorldLibrary(IReadOnlyList<WorldInfo> worlds, LevelDefaults defaults, IReadOnlyDictionary<Difficulty, DifficultySpec> difficulties, EndlessSpec? endless)
     {
+        EndlessSpec = endless;
         Worlds = worlds;
         Levels = worlds.SelectMany(w => w.Levels).ToList();
         _byId = Levels.ToDictionary(l => l.Id, StringComparer.Ordinal);
@@ -125,6 +129,13 @@ public sealed class WorldLibrary
 
     /// <summary>Where a trainer's challenge is fought; null for a trainer without one.</summary>
     public LevelInfo? LevelOfTrainer(string trainerId) => Levels.FirstOrDefault(l => l.Trainers.Contains(trainerId));
+
+    /// <summary>The endless mode as written; null when the file has none.</summary>
+    public EndlessSpec? EndlessSpec { get; }
+
+    /// <summary>The endless mode with its Reaper ready to fight (phase 9.3); null when the file has none.</summary>
+    public EndlessRules? Endless(IReadOnlyList<SpeciesData> pokedex, Moves.MoveLibrary moves) =>
+        EndlessSpec is { } spec ? EndlessRules.From(spec, pokedex, moves) : null;
 
     public DifficultySpec Difficulty(Difficulty difficulty) => _difficulties.GetValueOrDefault(difficulty) ?? DifficultySpec.Normal;
 
@@ -173,6 +184,6 @@ public sealed class WorldLibrary
             throw new InvalidDataException($"{FileName}: '{trainer.Key}' is challenged on more than one level.");
 
         var defaults = new LevelDefaults(file.Pacing, file.Boss, file.Legendary, file.Shots, file.MapItems, file.Events, file.WarmUp);
-        return new WorldLibrary(worlds, defaults, file.Difficulties);
+        return new WorldLibrary(worlds, defaults, file.Difficulties, file.Endless);
     }
 }

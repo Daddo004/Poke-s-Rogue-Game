@@ -107,6 +107,32 @@
     ]
   },
 
+  // The endless mode (phase 9.3), open on a level once it is won. The level's boss no longer ends the run: past the
+  // level's end its waves and events from "loopFrom" come round again (the enemies keep growing with the minutes), and at
+  // "reaperAt" Darkrai the Reaper arrives. It grows angrier every minute it stays ("enragePerMinute" on its hits,
+  // "speedPerMinute" on its pace); beating it wins the run and unlocks Darkrai. Its "hp" multiplies the minute's growth,
+  // as a boss' does. Its attacks: "teleport" (back behind the player, "radius" away) and "darkVoid" (Vuototetro: dark
+  // circles; caught in one, the player sleeps "sleep" seconds).
+  "endless": {
+    "loopFrom": "10:00", "reaperAt": "30:00", "enragePerMinute": 0.15, "speedPerMinute": 0.03,
+    "reaper": {
+      "pokemon": "darkrai", "titleIt": "Il Mietitore", "hp": 80, "speed": 1.1,
+      "phases": [
+        { "below": 1, "rest": 1.2, "attacks": [
+          { "kind": "volley", "move": "dark-pulse", "windUp": 0.6, "count": 9, "spread": 100, "shotSpeed": 130 },
+          { "kind": "teleport", "windUp": 0.5, "radius": 70, "recover": 0.35 },
+          { "kind": "darkVoid", "windUp": 0.5, "count": 4, "radius": 34, "delay": 1.2, "damage": 1.5, "sleep": 1.2 }
+        ] },
+        { "below": 0.5, "speed": 1.2, "rest": 0.9, "attacks": [
+          { "kind": "teleport", "windUp": 0.4, "radius": 60, "recover": 0.25 },
+          { "kind": "charge", "windUp": 0.5, "dashSpeed": 5, "dashTime": 0.7, "recover": 0.5 },
+          { "kind": "darkVoid", "windUp": 0.4, "count": 6, "radius": 34, "delay": 1.1, "damage": 1.5, "sleep": 1.2 },
+          { "kind": "volley", "move": "dark-pulse", "windUp": 0.5, "count": 13, "spread": 160, "shotSpeed": 140 }
+        ] }
+      ]
+    }
+  },
+
   // Type → the move whose look a volley borrows (as for the trainers' teams, trainers.json); Rock and Ground throw rocks.
   "shots": {
     "Normal": "swift", "Fire": "ember", "Water": "bubble", "Grass": "razor-leaf", "Electric": "aura-sphere", "Ice": "ice-shard",

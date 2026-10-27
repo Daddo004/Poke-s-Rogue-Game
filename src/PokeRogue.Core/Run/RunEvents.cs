@@ -151,6 +151,15 @@ public enum RunEventType
 
     /// <summary>Something was bought from Kecleon: Value = the price, MoveId = the ware's kind.</summary>
     MerchantSale,
+
+    /// <summary>Vuototetro caught the player (phase 9.3): it sleeps for Value ticks.</summary>
+    PlayerSlept,
+
+    /// <summary>Endless mode (phase 9.3): the level's boss fell and the run goes on.</summary>
+    EndlessContinues,
+
+    /// <summary>Endless mode: the Reaper will come in Value ticks (a minute's warning).</summary>
+    ReaperWarning,
 }
 
 /// <summary>Something the renderer or audio may react to; the list is cleared at the start of every tick.</summary>

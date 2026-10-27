@@ -3,7 +3,8 @@ using System.Numerics;
 namespace PokeRogue.Core.Run.Enemies;
 
 /// <summary>A rock about to fall (a boss' rockfall, phase 3.4): a warning circle, then damage to the player if inside.</summary>
-public readonly record struct Hazard(Vector2 Position, float Radius, float Damage, bool Special, int StartTick, int DueTick, int SpeciesId);
+/// <param name="SleepTicks">Vuototetro (phase 9.3): a dark circle instead of a rock; the player caught inside sleeps this long.</param>
+public readonly record struct Hazard(Vector2 Position, float Radius, float Damage, bool Special, int StartTick, int DueTick, int SpeciesId, int SleepTicks = 0);
 
 /// <summary>
 /// The level boss (phase 3.4). It arrives when the time runs out, walks at the player and takes turns with the attacks
@@ -139,6 +140,32 @@ public static class BossAi
                 }
 
                 return;
+
+            case EnemyAction.Vanish when attack is not null:
+                // Fading out of reach, then back behind the player (Darkrai, phase 9.3).
+                desired = Vector2.Zero;
+                contactDamage = 0f;
+                if (--e.ActionTicks <= 0)
+                {
+                    var from = e.Position;
+                    var heading = run.Player.Velocity.NormalizedOrZero();
+                    if (heading == Vector2.Zero)
+                        heading = -towards == Vector2.Zero ? Vector2.UnitX : -towards;
+                    var at = run.Player.Position - heading * attack.Spec.Radius;
+                    e.Position = run.Map.IsConstrained ? run.Map.FreePoint(run.Map.Clamp(at, 24f), e.Radius * 0.6f) : at;
+                    e.Knockback = Vector2.Zero;
+                    e.Action = EnemyAction.Appear;
+                    e.ActionTicks = Math.Max(1, attack.RecoverTicks);
+                    run.AddEvent(new RunEvent(RunEventType.EnemyTeleported, from, 0f, e.SpeciesId, Target: e.Position));
+                }
+
+                return;
+
+            case EnemyAction.Appear:
+                desired = Vector2.Zero;
+                if (--e.ActionTicks <= 0)
+                    Rest(fight, ref e);
+                return;
         }
 
         // Walking between attacks.
@@ -155,6 +182,7 @@ public static class BossAi
         {
             BossAttackKind.Charge => EnemyAction.WindUp,
             BossAttackKind.Volley => EnemyAction.Aim,
+            BossAttackKind.Teleport => EnemyAction.Vanish,
             _ => EnemyAction.Slam,
         };
         desired = Vector2.Zero;
@@ -175,12 +203,25 @@ public static class BossAi
             var reach = hazard.Radius + player.Radius * 0.5f;
             if (Vector2.DistanceSquared(hazard.Position, player.Position) <= reach * reach)
             {
-                run.HurtPlayer(new Abilities.Hurt(Abilities.HurtKind.Hazard, hazard.Damage, hazard.Special, hazard.SpeciesId, Data.PokemonType.Rock));
+                var type = hazard.SleepTicks > 0 ? Data.PokemonType.Dark : Data.PokemonType.Rock;
+                var taken = run.HurtPlayer(new Abilities.Hurt(Abilities.HurtKind.Hazard, hazard.Damage, hazard.Special, hazard.SpeciesId, type));
+                if (hazard.SleepTicks > 0 && taken > 0f)
+                {
+                    player.Sleep(hazard.SleepTicks);
+                    run.AddEvent(new RunEvent(RunEventType.PlayerSlept, player.Position, hazard.SleepTicks));
+                }
             }
 
-            run.AddEvent(new RunEvent(RunEventType.HazardLanded, hazard.Position, hazard.Radius, hazard.SpeciesId));
+            // Target.X = 1 for a dark circle closing, rather than a rock landing.
+            run.AddEvent(new RunEvent(RunEventType.HazardLanded, hazard.Position, hazard.Radius, hazard.SpeciesId, Target: new Vector2(hazard.SleepTicks > 0 ? 1f : 0f, 0f)));
         }
     }
+
+    /// <summary>The Reaper's anger on its shots and circles (phase 9.3): stronger for every minute it has stayed; 1 for any other boss.</summary>
+    private static float Anger(RunState run) =>
+        run.Boss is { IsReaper: true } fight && run.EndlessRules is { } rules
+            ? 1f + rules.Spec.EnragePerMinute * (run.Ticks - fight.StartTick) / (RunClock.TicksPerSecond * 60f)
+            : 1f;
 
     private static void Rest(BossFight fight, ref Enemy e)
     {
@@ -198,7 +239,7 @@ public static class BossAi
         {
             var angle = spec.Count == 1 ? centre : centre - spread / 2f + spread * k / (spec.Count - 1);
             var direction = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
-            run.EnemyShots.Fire(run, e.Position + direction * e.Radius * 0.6f, direction * spec.ShotSpeed, e.ContactDamage * spec.Damage,
+            run.EnemyShots.Fire(run, e.Position + direction * e.Radius * 0.6f, direction * spec.ShotSpeed, e.ContactDamage * spec.Damage * Anger(run),
                 attack.Move!, e.SpeciesId, RunClock.Seconds(4f));
         }
     }
@@ -217,7 +258,8 @@ public static class BossAi
                 at += new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * (spec.Radius * 1.5f + run.Random.NextSingle() * 60f);
             }
 
-            run.Hazards.Add(new Hazard(at, spec.Radius, e.ContactDamage * spec.Damage, e.HitsSpecially, run.Ticks, run.Ticks + attack.DelayTicks, e.SpeciesId));
+            run.Hazards.Add(new Hazard(at, spec.Radius, e.ContactDamage * spec.Damage * Anger(run), e.HitsSpecially, run.Ticks, run.Ticks + attack.DelayTicks, e.SpeciesId,
+                spec.Kind == BossAttackKind.DarkVoid ? Math.Max(1, attack.SleepTicks) : 0));
         }
     }
 

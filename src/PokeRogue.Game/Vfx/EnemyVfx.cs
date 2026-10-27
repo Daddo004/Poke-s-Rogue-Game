@@ -87,6 +87,20 @@ public sealed class EnemyVfx(GameServices services, ScreenShake shake)
                 Explode(at, e.Value);
                 break;
 
+            case RunEventType.HazardLanded when e.Target.X > 0f:
+            {
+                // Vuototetro closes (phase 9.3): a dark burst sucked inwards, no dust.
+                for (var i = 0; i < 14; i++)
+                {
+                    var angle = Rand(0f, MathF.Tau);
+                    var dir = new Vector2(MathF.Cos(angle), MathF.Sin(angle) * 0.55f);
+                    _dust.Emit(at + dir * e.Value, -dir * Rand(60, 110), VoidLight, VoidDark * 0.2f, 18, 2f, drag: 0.9f);
+                }
+
+                shake.Add(0.08f);
+                break;
+            }
+
             case RunEventType.HazardLanded:
             {
                 // A rock smashes into the ground: chips and dust thrown out, a small jolt.
@@ -296,6 +310,12 @@ public sealed class EnemyVfx(GameServices services, ScreenShake shake)
         {
             var progress = MathHelper.Clamp((run.Ticks - hazard.StartTick) / (float)Math.Max(1, hazard.DueTick - hazard.StartTick), 0f, 1f);
             var at = hazard.Position.ToXna();
+            if (hazard.SleepTicks > 0)
+            {
+                DrawVoid(batch, at, hazard.Radius, progress);
+                continue;
+            }
+
             var rim = progress > 0.7f && _tick / 4 % 2 == 0 ? 0.95f : 0.65f;
             p.Ring(batch, at, hazard.Radius, hazard.Radius, WarningRed * rim, 2);
             p.Ring(batch, at, MathF.Max(1f, hazard.Radius * progress), MathF.Max(1f, hazard.Radius * progress), WarningRed * 0.5f);
@@ -385,13 +405,41 @@ public sealed class EnemyVfx(GameServices services, ScreenShake shake)
         foreach (var hazard in run.Hazards)
         {
             var progress = (run.Ticks - hazard.StartTick) / (float)Math.Max(1, hazard.DueTick - hazard.StartTick);
-            if (progress < 0.55f)
+            if (progress < 0.55f || hazard.SleepTicks > 0)
                 continue;
 
             // The rock drops the last part of the way, faster and faster.
             var u = MathHelper.Clamp((progress - 0.55f) / 0.45f, 0f, 1f);
             var at = hazard.Position.ToXna() - new Vector2(0, (1f - u) * (1f - u) * 150f + 6f);
             MoveShapes.DrawRotated(batch, _shapes.Rock, at, (hazard.StartTick % 4) * MathF.PI / 2f, Color.White, 2f);
+        }
+    }
+
+    private static readonly Color VoidDark = new(28, 12, 44);
+    private static readonly Color VoidLight = new(170, 110, 240);
+
+    /// <summary>
+    /// Vuototetro (Darkrai, phase 9.3): a pool of darkness opening on the ground, a violet rim, and a dark ring closing
+    /// from the edge to the middle as it is about to swallow whoever stands in it.
+    /// </summary>
+    private void DrawVoid(SpriteBatch batch, Vector2 at, float radius, float progress)
+    {
+        var p = services.Primitives;
+        var open = MathHelper.Clamp(progress * 3f, 0f, 1f);
+        var size = (int)(radius * 2f * open);
+        p.Ellipse(batch, at, size, size / 2, VoidDark * (0.35f + 0.35f * progress));
+        p.Ellipse(batch, at, (int)(size * 0.6f), (int)(size * 0.3f), Color.Black * (0.3f + 0.3f * progress));
+        var rim = progress > 0.7f && _tick / 4 % 2 == 0 ? 0.95f : 0.65f;
+        p.Ring(batch, at, radius * open, radius * open * 0.5f, VoidLight * rim, 2);
+        var closing = radius * (1f - progress);
+        if (closing > 2f)
+            p.Ring(batch, at, closing, closing * 0.5f, VoidLight * 0.45f);
+
+        // Wisps turning around the rim.
+        for (var k = 0; k < 4; k++)
+        {
+            var angle = _tick * 0.08f + k * MathF.Tau / 4f;
+            p.Rect(batch, at + new Vector2(MathF.Cos(angle) * radius * open, MathF.Sin(angle) * radius * open * 0.5f) - Vector2.One, new Vector2(2f), VoidLight * 0.8f);
         }
     }
 

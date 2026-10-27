@@ -46,6 +46,9 @@ switch (command)
     case "livelli":
         SimulateLevels();
         break;
+    case "infinita":
+        SimulateEndless();
+        break;
     default:
         Console.WriteLine("""
             Usage: dotnet run --project tools/PokeRogue.DataTool -- <command> [options]
@@ -147,6 +150,22 @@ void SimulateLevels()
     var output = outIndex >= 0 && outIndex + 1 < args.Length
         ? args[outIndex + 1]
         : Path.Combine(Path.GetDirectoryName(contentRoot)!, "previews", "7.3", "simulazione-livelli.md");
+    Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output))!);
+    File.WriteAllText(output, report);
+    Console.WriteLine($"Wrote {output}");
+}
+
+void SimulateEndless()
+{
+    var soloIndex = Array.IndexOf(args, "--solo");
+    var characters = soloIndex >= 0 && soloIndex + 1 < args.Length ? args[soloIndex + 1].Split(',') : PokeRogue.DataTool.Balance.LevelSimulation.DefaultCharacters;
+    var levelIndex = Array.IndexOf(args, "--livello");
+    var level = levelIndex >= 0 && levelIndex + 1 < args.Length ? args[levelIndex + 1] : "bosco-smeraldo";
+    var report = new PokeRogue.DataTool.Balance.EndlessSimulation(contentRoot).Report(ReadIntOption("--runs") ?? 2, characters, level, Console.WriteLine);
+    var outIndex = Array.IndexOf(args, "--out");
+    var output = outIndex >= 0 && outIndex + 1 < args.Length
+        ? args[outIndex + 1]
+        : Path.Combine(Path.GetDirectoryName(contentRoot)!, "previews", "9", "simulazione-infinita.md");
     Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output))!);
     File.WriteAllText(output, report);
     Console.WriteLine($"Wrote {output}");

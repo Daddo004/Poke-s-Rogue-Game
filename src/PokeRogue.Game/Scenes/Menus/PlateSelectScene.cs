@@ -26,19 +26,21 @@ public sealed class PlateSelectScene : MenuScene
     private readonly string _levelId;
     private readonly Difficulty _difficulty;
     private readonly TrainerDefinition? _challenge;
+    private readonly bool _endless;
     private readonly PlateLibrary _plates;
 
     /// <summary>0 = none, then the Plates in the file's order.</summary>
     private int _selected;
 
     public PlateSelectScene(GameServices services, CharacterDefinition character, TrainerDefinition trainer, string levelId, Difficulty difficulty,
-        TrainerDefinition? challenge) : base(services)
+        TrainerDefinition? challenge, bool endless = false) : base(services)
     {
         _character = character;
         _trainer = trainer;
         _levelId = levelId;
         _difficulty = difficulty;
         _challenge = challenge;
+        _endless = endless;
         _plates = services.Plates.Value;
         var last = _plates.All.ToList().FindIndex(p => p.Id == Meta.Data.LastPlate && Meta.IsUnlocked(p));
         _selected = last + 1;
@@ -87,7 +89,7 @@ public sealed class PlateSelectScene : MenuScene
         }
 
         Meta.ChoosePlate(Selected?.Id);
-        Services.Switch(MainMenuScene.Run(Services, _character, _trainer, _levelId, _difficulty, _challenge, Selected?.Id));
+        Services.Switch(MainMenuScene.Run(Services, _character, _trainer, _levelId, _difficulty, _challenge, Selected?.Id, _endless));
     }
 
     private Rectangle CellAt(int index) => new(

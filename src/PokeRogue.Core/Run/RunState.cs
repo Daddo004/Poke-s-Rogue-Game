@@ -349,6 +349,56 @@ public sealed class RunState
     /// <summary>This run ends with the level's legendaries rather than its boss.</summary>
     public bool LegendaryEncounter { get; private set; }
 
+    // ---- Endless mode (phase 9.3) ----
+
+    /// <summary>An endless run: the boss does not end it, the waves come round again, the Reaper comes. Null for an ordinary run.</summary>
+    public Worlds.EndlessRules? EndlessRules { get; init; }
+
+    public bool Endless => EndlessRules is not null;
+
+    /// <summary>Endless: the level's boss (and Ultra's legendaries) are behind; only the Reaper can end the run with a win.</summary>
+    public bool PastBoss { get; private set; }
+
+    /// <summary>Endless: Darkrai has come (it comes once).</summary>
+    public bool ReaperCame { get; private set; }
+
+    private bool _reaperWarned;
+
+    /// <summary>The Reaper's minutes on the field, for its anger.</summary>
+    private float ReaperMinutes(BossFight fight) => (Ticks - fight.StartTick) / (RunClock.TicksPerSecond * 60f);
+
+    /// <summary>Endless: a minute's warning, then Darkrai, once no other boss is on the field.</summary>
+    private void CheckReaper(Worlds.EndlessRules rules)
+    {
+        if (ReaperCame)
+            return;
+
+        var warnAt = rules.ReaperAtTicks - RunClock.TicksPerSecond * 60;
+        if (!_reaperWarned && Ticks >= warnAt)
+        {
+            _reaperWarned = true;
+            _events.Add(new RunEvent(RunEventType.ReaperWarning, Player.Position, Math.Max(0, rules.ReaperAtTicks - Ticks)));
+        }
+
+        if (Ticks >= rules.ReaperAtTicks && Boss is null)
+            SummonReaper();
+    }
+
+    /// <summary>Darkrai arrives now (the schedule, previews and cheats).</summary>
+    public void SummonReaper()
+    {
+        if (EndlessRules is not { } rules || ReaperCame)
+            return;
+
+        ReaperCame = true;
+        PastBoss = true;
+        var fight = BossAi.Spawn(this, rules.Reaper, Spawner.Timeline.HpMultiplier(Ticks));
+        fight.IsLegendary = true;
+        fight.IsReaper = true;
+        fight.StartTick = Ticks;
+        Boss = fight;
+    }
+
     /// <summary>Legendaries still to come after the one fighting.</summary>
     public int LegendariesLeft => _legendaries.Count;
 
@@ -478,25 +528,41 @@ public sealed class RunState
             CheckChallenge(challenge);
         else if (Boss?.DefeatedTick is { } defeated && Ticks >= defeated + BossAi.VictoryDelayTicks)
         {
-            // The next legendary steps in (phase 7.3), or the level is won.
+            // The next legendary steps in (phase 7.3), or the level is won; in the endless mode only the Reaper wins it,
+            // and after any other boss the run goes on (phase 9.3).
             if (_legendaries.TryDequeue(out var next))
                 Boss = SpawnLegendary(next);
+            else if (Endless && !Boss.IsReaper)
+                ContinueEndless();
             else
                 End(RunOutcome.Victory);
         }
-        else if (TimeLimitTicks is { } limit && Ticks >= limit && Boss is null)
+        else if (TimeLimitTicks is { } limit && Ticks >= limit && Boss is null && !PastBoss)
         {
             // Time is up: the challenged trainer steps in, or the legendaries of Ultra, or the level's boss arrives, or,
-            // without one, the level is won.
+            // without one, the level is won (an endless run just goes on).
             if (Challenge is { } trainer)
                 trainer.Begin(this);
             else if (_legendaries.TryDequeue(out var legendary))
                 Boss = SpawnLegendary(legendary);
             else if (Spawner.Timeline.Boss is { } boss)
                 Boss = BossAi.Spawn(this, boss, Spawner.Timeline.HpMultiplier(Ticks));
+            else if (Endless)
+                ContinueEndless();
             else
                 End(RunOutcome.Victory);
         }
+
+        if (!IsOver && EndlessRules is { } rules)
+            CheckReaper(rules);
+    }
+
+    /// <summary>Endless: the boss is behind, the field is clear of it, and the run goes on.</summary>
+    private void ContinueEndless()
+    {
+        Boss = null;
+        PastBoss = true;
+        _events.Add(new RunEvent(RunEventType.EndlessContinues, Player.Position));
     }
 
     /// <summary>
@@ -817,6 +883,14 @@ public sealed class RunState
             if (e.Rank == EnemyRank.Boss && Boss is { } fight && fight.Index == i)
             {
                 BossAi.Think(this, fight, ref e, playerPosition - e.Position, out desired, out aim, ref contactDamage);
+
+                // The Reaper grows angrier every minute it stays (phase 9.3).
+                if (fight.IsReaper && EndlessRules is { } endless)
+                {
+                    var minutes = ReaperMinutes(fight);
+                    desired *= 1f + endless.Spec.SpeedPerMinute * minutes;
+                    contactDamage *= 1f + endless.Spec.EnragePerMinute * minutes;
+                }
             }
             else if (e.Profile is null)
             {

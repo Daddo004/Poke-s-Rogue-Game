@@ -110,6 +110,9 @@ public sealed class GameplayScene : Scene
     /// <summary>The Plate chosen for the run (phase 9.1, --lastra id); null for none.</summary>
     public string? PlateId { get; init; }
 
+    /// <summary>The endless mode (phase 9.3, --infinita): the boss does not end the run, and Darkrai the Reaper comes.</summary>
+    public bool Endless { get; init; }
+
     /// <summary>
     /// The meta-progression (Block 6): the run gets the character's loadout and the trainer's grades from it, the missions
     /// it completes are announced, and its end is recorded (coins to the bank, Pokédex, rewards). Null for previews.
@@ -223,7 +226,7 @@ public sealed class GameplayScene : Scene
         var music = Services.Music;
         if (_run.Boss is not null || _run.Challenge is not null && _run.Events.Any(e => e.Type == RunEventType.TrainerChallenged))
             music.Play(music.Map.Boss);
-        else if (music.Wanted != music.Map.Boss)
+        else if (music.Wanted != music.Map.Boss || _run.Events.Any(e => e.Type == RunEventType.EndlessContinues))
             music.Play(LevelMusic);
     }
 
@@ -421,7 +424,7 @@ public sealed class GameplayScene : Scene
                 NoticeMissions();
             _renderer.Update(_run);
             _hud.Update(_run);
-            if (_run.Events.Any(e => e.Type is RunEventType.BossAppeared or RunEventType.TrainerChallenged or RunEventType.NightChanged))
+            if (_run.Events.Any(e => e.Type is RunEventType.BossAppeared or RunEventType.TrainerChallenged or RunEventType.NightChanged or RunEventType.EndlessContinues))
                 FollowMusic();
 
             if (_run.SpecialPending)
@@ -526,7 +529,9 @@ public sealed class GameplayScene : Scene
         // No digits here: the body font's 5 reads as an S; the time is on the results screen.
         var legendaries = _run.Stats.LegendariesDefeated.Select(id => Services.Species(id)?.NameIt ?? "").ToList();
         var subtitle = _run.Outcome != RunOutcome.Victory
-            ? $"{_run.Player.Species.NameIt} non può più lottare!"
+            ? _run.Boss is { IsReaper: true, DefeatedTick: null } ? "Il Mietitore ti ha raggiunto..." : $"{_run.Player.Species.NameIt} non può più lottare!"
+            : _run.Boss is { IsReaper: true }
+                ? "Hai sconfitto Darkrai, il Mietitore! Ora può lottare con te."
             : _run.Challenge is { Won: true } challenge
                 ? $"Hai sconfitto {challenge.Trainer.NameIt}! Ora può essere il tuo allenatore."
             : legendaries.Count > 0
@@ -600,6 +605,7 @@ public sealed class GameplayScene : Scene
             PlatePool = platesFound,
             SkipPlates = platesFound.Select(p => p.Id).ToHashSet(),
             MerchantRules = merchant.File.Enabled ? merchant : null,
+            EndlessRules = Endless ? worlds.Endless(pokedex, Services.Moves.Value) : null,
             TimeLimitTicks = waves.DurationTicks,
             MovePool = Services.Moves.Value.Enabled,
             Evolutions = PendingEvolutions
@@ -672,6 +678,8 @@ public sealed class GameplayScene : Scene
             Services.Sprites.Get(stage.Species.Id);
         foreach (var speciesId in waves.SpeciesIds)
             Services.Sprites.Get(speciesId);
+        if (_run.EndlessRules is { } endless)
+            Services.Sprites.Get(endless.Reaper.SpeciesId);
 
         if (Autopilot)
             _run.Player.Invincible = true;

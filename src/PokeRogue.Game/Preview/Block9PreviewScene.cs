@@ -47,6 +47,17 @@ public sealed class Block9PreviewScene : Scene
             }),
             "lastre-forziere" or "lastre-terra" or "kecleon-campo" or "kecleon-vicino" or "kecleon-negozio" =>
                 _game = new GameplayScene(services, setup: Prepare) { StartTicks = start },
+            "infinita-livello" => new LevelSelectScene(services, pikachu, ash, "bosco-smeraldo", Core.Meta.Difficulty.Normal),
+            "infinita-mietitore" or "infinita-vuoto" or "infinita-sonno" =>
+                _game = new GameplayScene(services, autopilot: _variant == "infinita-mietitore", setup: run =>
+                {
+                    run.SummonReaper();
+                    run.Spawner.Enabled = _variant == "infinita-mietitore";
+                })
+                {
+                    Endless = true,
+                    StartTicks = 30 * 60 * 60,
+                },
             _ => throw new ArgumentException($"Unknown variant '{variant}'."),
         };
     }
@@ -60,9 +71,24 @@ public sealed class Block9PreviewScene : Scene
     public override void Update()
     {
         _tick++;
+        if (_variant == "infinita-livello" && _tick == 2)
+            ((LevelSelectScene)_inner).PickEndless();
         _inner.Update();
         if (_game is null)
             return;
+
+        // Vuototetro: four dark circles opening around the player after Darkrai's entrance; then one closing on it.
+        var reaper = _game.Run.Boss;
+        if (_variant == "infinita-vuoto" && _tick == 190 && reaper is not null)
+        {
+            var player = _game.Run.Player.Position;
+            Vector2[] offsets = [Vector2.Zero, new(60, -20), new(-55, 25), new(20, 55)];
+            foreach (var offset in offsets)
+                _game.Run.Hazards.Add(new Core.Run.Enemies.Hazard(player + offset, 34f, 5f, false, _game.Run.Ticks, _game.Run.Ticks + 70, reaper.Definition.SpeciesId, 72));
+        }
+
+        if (_variant == "infinita-sonno" && _tick == 190 && reaper is not null)
+            _game.Run.Hazards.Add(new Core.Run.Enemies.Hazard(_game.Run.Player.Position, 34f, 5f, false, _game.Run.Ticks, _game.Run.Ticks + 2, reaper.Definition.SpeciesId, 300));
 
         var run = _game.Run;
         if (_variant == "kecleon-negozio" && _tick == 2)

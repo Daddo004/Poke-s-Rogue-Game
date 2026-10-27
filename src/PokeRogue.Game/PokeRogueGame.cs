@@ -141,7 +141,7 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
 
         // The title screen (phase 8.2), unless a run is asked for straight away (playtests: --pokemon, --allenatore,
         // --sfida, --da): that run still goes into the save and ends back in the menu.
-        var direct = new[] { "pokemon", "allenatore", "sfida", "da", "evoluzioni", "nemici", "oggetti", "livello", "difficolta", "lastra" }.Any(_options.Values.ContainsKey);
+        var direct = new[] { "pokemon", "allenatore", "sfida", "da", "evoluzioni", "nemici", "oggetti", "livello", "difficolta", "lastra", "infinita" }.Any(_options.Values.ContainsKey);
         Scene scene = _options.Preview is { } preview
             ? PreviewRegistry.Create(preview, _services, _options)
                 ?? throw new ArgumentException($"Unknown preview '{preview}'. Available: {string.Join(", ", PreviewRegistry.List.Select(p => p.Id))}")
@@ -154,6 +154,7 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
                     PendingLoot = _options.Values.ContainsKey("oggetti"),
                     ChallengeId = _options.Str("sfida"),
                     PlateId = _options.Str("lastra"),
+                    Endless = _options.Values.ContainsKey("infinita"),
                     StartTicks = _options.Str("da") is { } start ? Core.Run.Waves.WaveTimeline.ParseTime(start) : 0,
                     LevelId = _options.Str("livello") ?? GameplayScene.DefaultLevelId,
                     Difficulty = GameplayScene.ParseDifficulty(_options.Str("difficolta")),

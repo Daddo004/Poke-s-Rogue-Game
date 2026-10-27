@@ -193,6 +193,9 @@ public sealed class RunRenderer
                     if (trainer.Active.Kind == Core.Run.Trainers.TrainerActiveKind.Wave)
                         _vfx.Shake.Add(0.18f);
                     break;
+                case RunEventType.PlayerSlept:
+                    _abilityVfx.Announce("Addormentato!", new Color(170, 110, 240));
+                    break;
                 case RunEventType.PlateEffect when (int)e.Value == (int)Core.Run.Plates.PlateEffectKind.Phantom:
                     // Lastratetra: the hit went through.
                     _abilityVfx.Announce("Schivato!", new Color(190, 160, 240));
@@ -509,6 +512,7 @@ public sealed class RunRenderer
             DrawEdgeArrows(batch, run);
         DrawRevivals(batch, run);
         DrawEvolutions(batch, run);
+        DrawPlayerSleep(batch, run);
         _abilityVfx.DrawOverhead(batch, run);
         _numbers.Draw(batch, _services.Fonts.Numbers(_services.Style), _services.Fonts.Get(_services.Style.NumberFont, _services.Style.NumberFontSize / 2f));
         if (ShowHitboxes)
@@ -518,6 +522,24 @@ public sealed class RunRenderer
         batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         _trainerVfx.DrawScreen(batch, run, _services.Screen.Width, _services.Screen.Height);
         batch.End();
+    }
+
+    /// <summary>Asleep from Vuototetro (phase 9.3): a small and a big z rising in turn over the player's head.</summary>
+    private void DrawPlayerSleep(SpriteBatch batch, RunState run)
+    {
+        if (!run.Player.IsAsleep || run.IsOver)
+            return;
+
+        var icons = _services.StatusIcons;
+        var head = _services.Sprites.Get(run.Player.Form.Id)?.HeadHeight ?? 20;
+        var feet = run.Player.Position.ToXna();
+        for (var k = 0; k < 2; k++)
+        {
+            var t = (_tick + k * 20) % 40 / 40f;
+            var texture = k == 0 ? icons.SmallZ : icons.BigZ;
+            var at = feet + new Vector2(6 + t * 8f + k * 3, -head - 6 - t * 14f);
+            batch.Draw(texture, VirtualScreen.Snap(at - new Vector2(0, texture.Height)), Color.White * (t < 0.75f ? 1f : (1f - t) / 0.25f));
+        }
     }
 
     /// <summary>The Focalnastro icon popping up over Pikachu's head and drifting higher as it fades.</summary>
@@ -678,6 +700,11 @@ public sealed class RunRenderer
         if (run.Player.IsDown)
         {
             _playerAnimator.Play(playerSet.Anim(PmdAnimations.Faint) ?? playerSet.Resolve(PmdAnimations.Hurt), loop: false);
+        }
+        else if (run.Player.IsAsleep)
+        {
+            // Caught by Vuototetro (phase 9.3).
+            _playerAnimator.Play(playerSet.Resolve(PmdAnimations.Sleep));
         }
         else if (run.Outcome == RunOutcome.Victory)
         {

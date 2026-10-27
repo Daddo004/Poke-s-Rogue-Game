@@ -198,9 +198,23 @@ public sealed class Player
         _ => 1f,
     };
 
-    /// <summary>Moves with the given input (length ≤ 1, screen space).</summary>
+    /// <summary>Asleep from Darkrai's Vuototetro (phase 9.3): ticks left without moving.</summary>
+    public int SleepTicks { get; private set; }
+
+    public bool IsAsleep => SleepTicks > 0;
+
+    /// <summary>Falls asleep for <paramref name="ticks"/> (the longer of this and what was left).</summary>
+    public void Sleep(int ticks) => SleepTicks = Math.Max(SleepTicks, ticks);
+
+    /// <summary>Moves with the given input (length ≤ 1, screen space); asleep, it stays where it is.</summary>
     public void Move(Vector2 input)
     {
+        if (SleepTicks > 0)
+        {
+            SleepTicks--;
+            input = Vector2.Zero;
+        }
+
         Velocity = input.ClampLength(1f) * MoveSpeed * AbilitySpeedMultiplier * TrainerSpeedMultiplier * WeatherSpeedMultiplier;
         Position += Velocity * RunClock.Dt;
         Facing = Direction8Extensions.FromVector(input, Facing);

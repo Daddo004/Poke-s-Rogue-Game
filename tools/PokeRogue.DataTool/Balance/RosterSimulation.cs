@@ -63,6 +63,11 @@ public sealed class RosterSimulation
     {
         /// <summary>What the run did, for the meta-progression (Block 6).</summary>
         public PokeRogue.Core.Meta.RunRecord? Record { get; init; }
+
+        /// <summary>The endless mode (phase 9.3): whether Darkrai came, and how long it lasted when beaten.</summary>
+        public bool ReaperCame { get; init; }
+
+        public float? ReaperSeconds { get; init; }
     }
 
     /// <summary>The trainers (phase 5.1); a run plays with Ash, as the game does, unless another one or none is given.</summary>
@@ -78,12 +83,13 @@ public sealed class RosterSimulation
     /// <param name="level">Block 7: another level (built for its difficulty) instead of Bosco Smeraldo; at Ultra its legendaries come instead of the boss.</param>
     public RunResult Play(CharacterDefinition character, int seed, bool mortal, TrainerDefinition? trainer = null, bool noTrainer = false,
         TrainerDefinition? challenge = null, RunLoadout? loadout = null, WaveTimeline? level = null,
-        PokeRogue.Core.Meta.Difficulty difficulty = PokeRogue.Core.Meta.Difficulty.Normal)
+        PokeRogue.Core.Meta.Difficulty difficulty = PokeRogue.Core.Meta.Difficulty.Normal, PokeRogue.Core.Run.Worlds.EndlessRules? endless = null)
     {
         var waves = level ?? _waves;
         var run = new RunState(_pokedex.Species, _typeChart, character.First.Id, waves, new Vector2(640, 360), seed)
         {
             Difficulty = difficulty,
+            EndlessRules = endless,
             TimeLimitTicks = waves.DurationTicks,
             MovePool = _moves.Enabled,
             ItemPool = _items.Enabled,
@@ -106,7 +112,10 @@ public sealed class RosterSimulation
         var evolutions = new List<(string, int)>();
         int? bossArrived = null;
         float? bossSeconds = null;
-        while (!run.IsOver && run.Ticks < waves.DurationTicks + TicksPerMinute * 10)
+        int? reaperArrived = null;
+        float? reaperSeconds = null;
+        var limit = (endless?.ReaperAtTicks ?? waves.DurationTicks) + TicksPerMinute * 10;
+        while (!run.IsOver && run.Ticks < limit)
         {
             if (run.SpecialPending)
             {
@@ -133,7 +142,13 @@ public sealed class RosterSimulation
                 if (e.Type is RunEventType.BossAppeared or RunEventType.TrainerChallenged)
                     bossArrived ??= run.Ticks;
                 if ((e.Type == RunEventType.BossDefeated && challenge is null && run.LegendariesLeft == 0 || e.Type == RunEventType.TrainerDefeated) && bossArrived is { } arrived)
-                    bossSeconds = (run.Ticks - arrived) / (float)RunClock.TicksPerSecond;
+                    bossSeconds ??= (run.Ticks - arrived) / (float)RunClock.TicksPerSecond;
+
+                // The endless mode's Reaper (phase 9.3), timed on its own.
+                if (e.Type == RunEventType.BossAppeared && run.Boss is { IsReaper: true })
+                    reaperArrived ??= run.Ticks;
+                if (e.Type == RunEventType.BossDefeated && run.Boss is { IsReaper: true } && reaperArrived is { } came)
+                    reaperSeconds = (run.Ticks - came) / (float)RunClock.TicksPerSecond;
             }
         }
 
@@ -143,6 +158,8 @@ public sealed class RosterSimulation
             run.Special.Uses, total > 0f ? run.Special.DamageDealt / total : 0f, run.TrainerState.Uses)
         {
             Record = PokeRogue.Core.Meta.RunRecord.From(run, waves.Id),
+            ReaperSeconds = reaperSeconds,
+            ReaperCame = run.ReaperCame,
         };
     }
 

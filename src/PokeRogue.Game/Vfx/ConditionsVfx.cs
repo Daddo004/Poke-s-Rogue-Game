@@ -138,7 +138,11 @@ public sealed class ConditionsVfx
     }
 
     /// <summary>How dark the level is now: its own gloom, or the night's (dusk and dawn in between).</summary>
-    public static float Darkness(RunState run) => MathF.Max(run.Spawner.Timeline.Darkness, run.Spawner.Timeline.NightAmount(run.Ticks) * 0.62f);
+    public static float Darkness(RunState run) => MathF.Max(MathF.Max(run.Spawner.Timeline.Darkness, run.Spawner.Timeline.NightAmount(run.Ticks) * 0.62f), ReaperDark(run));
+
+    /// <summary>Darkrai the Reaper (phase 9.3) brings the dark with it, deepening over its first seconds on the field.</summary>
+    private static float ReaperDark(RunState run) =>
+        run.Boss is { IsReaper: true, DefeatedTick: null } fight ? 0.5f * MathHelper.Clamp((run.Ticks - fight.StartTick) / 180f, 0f, 1f) : 0f;
 
     /// <summary>The dark veil with its circle of light, and the warm light of dusk and dawn. Screen space.</summary>
     public void DrawDarkness(SpriteBatch batch, RunState run, Vector2 player, Tileset tileset)

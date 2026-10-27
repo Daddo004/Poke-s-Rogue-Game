@@ -37,6 +37,14 @@ public sealed class LevelSelectScene : MenuScene
     /// <summary>The trainer to challenge at Ultra, as an index in the level's list; -1 for none (the boss or the legendaries).</summary>
     private int _challenge = -1;
 
+    /// <summary>The endless mode (phase 9.3), on a level already won: [I] switches it.</summary>
+    private bool _endless;
+
+    private bool EndlessOpen => Meta.IsEndlessUnlocked(Level) && Services.Worlds.Value.EndlessSpec is not null;
+
+    /// <summary>Previews: switches the endless mode on.</summary>
+    public void PickEndless() => _endless = true;
+
     /// <param name="trainer">The trainer played with (in a challenge too).</param>
     /// <param name="challengeId">Opens on that trainer's level at Ultra, with the challenge picked (from the trainer select).</param>
     public LevelSelectScene(GameServices services, CharacterDefinition character, TrainerDefinition trainer, string? levelId = null,
@@ -101,6 +109,13 @@ public sealed class LevelSelectScene : MenuScene
             SwitchDifficulty(difficulty - (int)_difficulty);
         if (ClickedOn("sfida") is { } trainer)
             _challenge = _challenge == trainer ? -1 : trainer;
+        if (Pressed(Keys.I, Buttons.Y) || ClickedOn("infinita") is not null)
+        {
+            if (EndlessOpen)
+                _endless = !_endless;
+            else
+                Notice("LA MODALITÀ INFINITA SI APRE VINCENDO QUESTO LIVELLO", Dim);
+        }
         if (Pointed("livello") is { } pointed)
             Select(pointed);
         if (ClickedOn("livello") is { } clicked)
@@ -146,10 +161,12 @@ public sealed class LevelSelectScene : MenuScene
             return;
         }
 
-        // With a Plate found, it is chosen next (phase 9.1).
+        // With a Plate found, it is chosen next (phase 9.1). An endless run (phase 9.3) has no challenge.
+        var endless = _endless && EndlessOpen;
+        var challenge = endless ? null : Challenge;
         Services.Switch(Meta.UnlockedPlates().Count > 0 && Services.Plates.Value.File.Enabled
-            ? new PlateSelectScene(Services, _character, _trainer, level.Id, _difficulty, Challenge)
-            : MainMenuScene.Run(Services, _character, _trainer, level.Id, _difficulty, Challenge));
+            ? new PlateSelectScene(Services, _character, _trainer, level.Id, _difficulty, challenge, endless)
+            : MainMenuScene.Run(Services, _character, _trainer, level.Id, _difficulty, challenge, endless: endless));
     }
 
     private void SwitchWorld(int delta)
@@ -172,6 +189,8 @@ public sealed class LevelSelectScene : MenuScene
         _challenge = -1;
         if (!Meta.IsUnlocked(Level, _difficulty))
             _difficulty = Difficulty.Normal;
+        if (!EndlessOpen)
+            _endless = false;
     }
 
     private void SwitchDifficulty(int delta)
@@ -201,8 +220,39 @@ public sealed class LevelSelectScene : MenuScene
         DrawWorldTabs(batch);
         DrawLevels(batch);
         DrawDetail(batch, new Rectangle(262, 50, 362, 286));
+        DrawEndlessSwitch(batch, new Rectangle(470, 30, 154, 16));
         DrawFooter(batch, "[SU/GIÙ] LIVELLO   [Q/E] MONDO   [SINISTRA/DESTRA] DIFFICOLTÀ   " +
-            (_difficulty == Difficulty.Ultra && Level.Trainers.Count > 0 ? "[S] SFIDA   " : "") + "[INVIO] GIOCA   [ESC] INDIETRO");
+            (_difficulty == Difficulty.Ultra && Level.Trainers.Count > 0 && !_endless ? "[S] SFIDA   " : "") + "[I] INFINITA   [INVIO] GIOCA   [ESC] INDIETRO");
+    }
+
+    /// <summary>The endless mode's switch (phase 9.3), top right: dark violet when on, dim until the level is won.</summary>
+    private void DrawEndlessSwitch(SpriteBatch batch, Rectangle tab)
+    {
+        var p = Services.Primitives;
+        var open = EndlessOpen;
+        var violet = new Color(150, 96, 220);
+        Clickable(tab, "infinita");
+        p.Rect(batch, tab, _endless ? new Color(52, 30, 78) : new Color(34, 30, 54));
+        p.Outline(batch, tab, _endless ? violet : Under(tab) ? Paper : new Color(70, 64, 100));
+        var text = !open ? "INFINITA: VINCI IL LIVELLO" : _endless ? "MODALITÀ INFINITA: SÌ" : "MODALITÀ INFINITA: NO";
+        UiDraw.TextCentered(batch, Small, text, tab.Center.X, tab.Y + 4, !open ? Dim : _endless ? Color.Lerp(violet, Color.White, 0.4f) : Paper);
+    }
+
+    /// <summary>What the endless mode holds, in place of the missions: the loop, the Reaper, and the record.</summary>
+    private void DrawEndless(SpriteBatch batch, int x, int y, int width)
+    {
+        var best = Meta.Data.EndlessBest.GetValueOrDefault(Level.Id);
+        if (Services.Worlds.Value.EndlessSpec?.Reaper is { } reaper && Services.Sprites.Portrait(SpeciesOf(reaper.Pokemon).Id) is { } darkrai)
+        {
+            UiDraw.Frame(batch, Services.Primitives, new Rectangle(x, y, 44, 44), Services.Style.Theme);
+            batch.Draw(darkrai, new Rectangle(x + 2, y + 2, 40, 40), Color.White);
+        }
+
+        var text = "Dopo il boss la partita continua: le ondate tornano, sempre più forti. Alle 30:00 arriva Darkrai, il Mietitore, " +
+            "che si arrabbia ogni minuto di più: sconfiggilo per vincere e per averlo come Pokémon.";
+        DrawWrapped(batch, text, x + 52, y, width - 52, 5, Paper);
+        UiDraw.TextWithNumbers(batch, Small, SmallNumbers, best > 0 ? $"RECORD IN MODALITÀ INFINITA {UiFormat.Clock(best)}" : "MAI GIOCATO IN MODALITÀ INFINITA",
+            new Vector2(x, y + 56), Dim);
     }
 
     private void DrawWorldTabs(SpriteBatch batch)
@@ -326,7 +376,9 @@ public sealed class LevelSelectScene : MenuScene
         DrawWrapped(batch, open ? level.DescriptionIt : HowToOpen(level), panel.X + 8, panel.Y + 124, panel.Width - 16, 2, open ? theme.Text : theme.TextDim);
         DrawDifficultyTabs(batch, new Rectangle(panel.X + 8, panel.Y + 148, panel.Width - 16, 16));
         DrawRecord(batch, panel.X + 8, panel.Y + 170);
-        if (_difficulty == Difficulty.Ultra)
+        if (_endless)
+            DrawEndless(batch, panel.X + 8, panel.Y + 186, panel.Width - 16);
+        else if (_difficulty == Difficulty.Ultra)
             DrawUltra(batch, panel.X + 8, panel.Y + 186, panel.Width - 16);
         else
             DrawMissions(batch, panel.X + 8, panel.Y + 186, panel.Width - 16, 6);
