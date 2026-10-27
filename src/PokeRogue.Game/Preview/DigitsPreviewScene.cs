@@ -15,7 +15,7 @@ public sealed class DigitsPreviewScene(GameServices services) : Scene(services)
     public override void Draw(SpriteBatch batch)
     {
         Services.Device.Clear(new Color(22, 18, 36));
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         (string Font, float Size)[] rows =
         [
             ("PixelifySans", 12), ("PixelifySans", 16), ("PixelifySans", 20), ("PixelifySans", 24),

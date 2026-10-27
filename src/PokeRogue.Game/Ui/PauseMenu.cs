@@ -20,19 +20,30 @@ public enum PauseChoice
 }
 
 /// <summary>
-/// Pause (Esc), phase 3.6: on the left resume, two settings (damage numbers, full screen), restart and quit, with the
-/// current build; on the right the map of the level around the player, with what is still there to find. The full
-/// pause screen comes in 8.4.
+/// Pause (Esc), phase 3.6, completed in 8.4: on the left resume, the options, restart and quit, with the current build
+/// (the mouse resting on a slot tells what it does); on the right the map of the level around the player, with what is
+/// still there to find, or the options while they are open.
 /// </summary>
 public sealed class PauseMenu(GameServices services, Hud hud)
 {
     private enum Row
     {
         Resume,
-        DamageNumbers,
-        FullScreen,
+        Options,
         Restart,
         Quit,
+    }
+
+    private readonly OptionsPanel _options = new(services);
+
+    /// <summary>The options are open on the right, in place of the map.</summary>
+    public bool OptionsOpen { get; private set; }
+
+    /// <summary>Previews: the options open, at <paramref name="row"/>.</summary>
+    public void OpenOptions(int row)
+    {
+        OptionsOpen = true;
+        _options.Cursor = row;
     }
 
     private static readonly Row[] Rows = Enum.GetValues<Row>();
@@ -60,13 +71,19 @@ public sealed class PauseMenu(GameServices services, Hud hud)
     public void Open()
     {
         IsOpen = true;
+        OptionsOpen = false;
         Cursor = 0;
         _age = 0;
+        services.Sounds.Play("pausa");
     }
 
     public void Close() => IsOpen = false;
 
-    public void MoveCursor(int delta) => Cursor = (Cursor + delta + Rows.Length) % Rows.Length;
+    public void MoveCursor(int delta)
+    {
+        Cursor = (Cursor + delta + Rows.Length) % Rows.Length;
+        services.Sounds.Play("menu-sposta");
+    }
 
     public PauseChoice? Update(InputState? input)
     {
@@ -77,36 +94,44 @@ public sealed class PauseMenu(GameServices services, Hud hud)
         if (input is null || _age < 2)
             return null;
 
+        if (OptionsOpen)
+        {
+            if (!_options.Update(input))
+            {
+                OptionsOpen = false;
+                services.Sounds.Play("menu-indietro");
+            }
+
+            return null;
+        }
+
         if (input.Pressed(Keys.Escape) || input.Pressed(Buttons.Start) || input.Pressed(Buttons.B))
             return PauseChoice.Resume;
         if (input.Pressed(Keys.Up) || input.Pressed(Keys.W) || input.Pressed(Buttons.DPadUp))
             MoveCursor(-1);
         if (input.Pressed(Keys.Down) || input.Pressed(Keys.S) || input.Pressed(Buttons.DPadDown))
             MoveCursor(1);
+        if (input.HoverMoved("pausa") is { } pointed)
+            Cursor = pointed;
 
-        var toggle = input.Pressed(Keys.Left) || input.Pressed(Keys.Right) || input.Pressed(Keys.A) || input.Pressed(Keys.D);
-        var confirm = input.Pressed(Keys.Enter) || input.Pressed(Keys.Space) || input.Pressed(Buttons.A);
-        if (!confirm && !toggle)
+        var clicked = input.Click("pausa");
+        if (clicked is { } row)
+            Cursor = row;
+        if (clicked is null && !(input.Pressed(Keys.Enter) || input.Pressed(Keys.Space) || input.Pressed(Buttons.A)))
             return null;
 
-        var settings = services.Settings;
+        services.Sounds.Play("menu-conferma");
         switch (Rows[Cursor])
         {
-            case Row.DamageNumbers:
-                settings.ShowDamageNumbers = !settings.ShowDamageNumbers;
-                settings.Save();
+            case Row.Options:
+                OptionsOpen = true;
                 return null;
-            case Row.FullScreen:
-                services.SetFullScreen(!settings.FullScreen);
-                return null;
-            case Row.Resume when confirm:
-                return PauseChoice.Resume;
-            case Row.Restart when confirm:
+            case Row.Restart:
                 return PauseChoice.Restart;
-            case Row.Quit when confirm:
+            case Row.Quit:
                 return PauseChoice.Quit;
             default:
-                return null;
+                return PauseChoice.Resume;
         }
     }
 
@@ -116,14 +141,27 @@ public sealed class PauseMenu(GameServices services, Hud hud)
             return;
 
         var p = services.Primitives;
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         p.Rect(batch, new Rectangle(0, 0, services.Screen.Width, services.Screen.Height), Color.Black * 0.6f);
 
         DrawMenu(batch, run, new Rectangle(14, 36, 232, 292));
-        DrawMap(batch, run, explored, new Rectangle(256, 36, 370, 292));
+        if (OptionsOpen)
+        {
+            var panel = new Rectangle(256, 36, 370, 292);
+            UiDraw.Frame(batch, p, panel, services.Style.Theme);
+            UiDraw.Text(batch, services.Fonts.Body(services.Style), "OPZIONI", new Vector2(panel.X + 10, panel.Y + 5), Paper);
+            _options.Draw(batch, new Rectangle(panel.X + 8, panel.Y + 30, panel.Width - 16, 240));
+        }
+        else
+        {
+            DrawMap(batch, run, explored, new Rectangle(256, 36, 370, 292));
+        }
 
-        var small = services.Fonts.Small(services.Style);
-        UiDraw.TextCentered(batch, small, "[ESC] RIPRENDI     [SU/GIU] SCEGLI     [INVIO] CONFERMA     [SINISTRA/DESTRA] CAMBIA", services.Screen.Width / 2f, 338, Dim, Ink);
+        KeyHints.Draw(batch, services, OptionsOpen
+                ? "[ESC] FINE     [SU/GIÙ] SCEGLI     [SINISTRA/DESTRA] CAMBIA"
+                : "[ESC] RIPRENDI     [SU/GIÙ] SCEGLI     [INVIO] CONFERMA",
+            new Vector2(services.Screen.Width / 2f, 338), Dim, centered: true, outline: Ink);
+        Tooltip.ForBuild(batch, services, run);
         batch.End();
     }
 
@@ -133,7 +171,6 @@ public sealed class PauseMenu(GameServices services, Hud hud)
         var small = services.Fonts.Small(services.Style);
         var body = services.Fonts.Body(services.Style);
         var numbers = services.Fonts.Numbers(services.Style);
-        var settings = services.Settings;
 
         UiDraw.Frame(batch, p, panel, services.Style.Theme);
         UiDraw.TextCentered(batch, services.Fonts.Title(services.Style), "PAUSA", panel.Center.X, panel.Y + 6, Paper, Ink);
@@ -141,28 +178,22 @@ public sealed class PauseMenu(GameServices services, Hud hud)
 
         for (var i = 0; i < Rows.Length; i++)
         {
-            var row = new Rectangle(panel.X + 14, panel.Y + 70 + i * 22, panel.Width - 28, 19);
+            var row = new Rectangle(panel.X + 14, panel.Y + 72 + i * 24, panel.Width - 28, 20);
             var selected = i == Cursor;
+            services.Input.Region(row, "pausa", i);
             if (selected)
             {
-                p.Rect(batch, row, Color.White * 0.08f);
-                p.Outline(batch, row, _age / 8 % 2 == 0 ? Gold : Color.Lerp(Gold, Color.White, 0.6f), 1);
+                p.Rect(batch, row, Color.White * (OptionsOpen ? 0.04f : 0.08f));
+                if (!OptionsOpen)
+                    p.Outline(batch, row, _age / 8 % 2 == 0 ? Gold : Color.Lerp(Gold, Color.White, 0.6f), 1);
+            }
+            else if (services.Input.PointerAwake && row.Contains(services.Input.Pointer))
+            {
+                p.Outline(batch, row, Paper * 0.6f, 1);
             }
 
-            var color = selected ? Paper : Dim;
-            switch (Rows[i])
-            {
-                case Row.DamageNumbers:
-                    DrawSetting(batch, row, "Numeri dei danni", settings.ShowDamageNumbers, color);
-                    break;
-                case Row.FullScreen:
-                    DrawSetting(batch, row, "Schermo intero", settings.FullScreen, color);
-                    break;
-                default:
-                    var label = Rows[i] switch { Row.Resume => "Riprendi", Row.Restart => "Ricomincia", _ => QuitLabel };
-                    UiDraw.TextCentered(batch, body, label, row.Center.X, row.Y + 2, color);
-                    break;
-            }
+            var label = Rows[i] switch { Row.Resume => "Riprendi", Row.Options => "Opzioni", Row.Restart => "Ricomincia", _ => QuitLabel };
+            UiDraw.TextCentered(batch, body, label, row.Center.X, row.Y + 2, selected ? Paper : Dim);
         }
 
         // Current build: five moves (the sixth slot is locked until bought in the shop), six held items.
@@ -170,12 +201,14 @@ public sealed class PauseMenu(GameServices services, Hud hud)
         for (var i = 0; i < Hud.Slots; i++)
         {
             var moveSlot = new Rectangle(panel.X + 14 + i * 35, panel.Y + 198, 24, 24);
+            services.Input.Region(moveSlot, "mossa", i);
             if (i < run.MaxMoves)
                 hud.DrawMoveSlot(batch, moveSlot, i < run.Player.Moves.Count ? run.Player.Moves[i] : null);
             else
                 hud.DrawLockedSlot(batch, moveSlot);
 
             var itemSlot = new Rectangle(panel.X + 14 + i * 35, panel.Y + 228, 24, 24);
+            services.Input.Region(itemSlot, "strumento", i);
             UiDraw.Frame(batch, p, itemSlot, services.Style.Theme);
             if (i < run.Player.Items.Count)
             {
@@ -184,15 +217,6 @@ public sealed class PauseMenu(GameServices services, Hud hud)
                 hud.Pips(batch, itemSlot, item.Level, item.Definition.MaxLevel);
             }
         }
-    }
-
-    /// <summary>A setting row: its name on the left, SÌ or NO on the right (gold when on).</summary>
-    private void DrawSetting(SpriteBatch batch, Rectangle row, string label, bool on, Color color)
-    {
-        var body = services.Fonts.Body(services.Style);
-        UiDraw.Text(batch, body, label, new Vector2(row.X + 8, row.Y + 2), color);
-        var value = on ? "SÌ" : "NO";
-        UiDraw.Text(batch, body, value, new Vector2(row.Right - 8 - UiDraw.Measure(body, value).X, row.Y + 2), on ? Gold : Dim);
     }
 
     /// <summary>

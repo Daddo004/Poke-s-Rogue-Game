@@ -44,7 +44,7 @@ public sealed class LevelAlbumScene(GameServices services, int page) : Scene(ser
         Services.Device.Clear(new Color(22, 18, 36));
         var small = Services.Fonts.Small(Services.Style);
         var body = Services.Fonts.Body(Services.Style);
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         var pages = (Services.Worlds.Value.Levels.Count + PerPage - 1) / PerPage;
         UiDraw.TextOutlined(batch, body, $"MAPPE DEI LIVELLI  {Math.Max(1, page)}/{pages}", new Vector2(16, 8), new Color(244, 240, 228), new Color(16, 12, 28));
         for (var i = 0; i < levels.Count; i++)

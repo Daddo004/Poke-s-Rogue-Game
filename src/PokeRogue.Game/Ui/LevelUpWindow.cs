@@ -100,13 +100,19 @@ public sealed class LevelUpWindow(GameServices services)
     public void MoveCursor(int delta)
     {
         if (Interactive && _options.Count > 0)
+        {
             Cursor = (Cursor + delta + _options.Count) % _options.Count;
+            services.Sounds.Play("menu-sposta");
+        }
     }
 
     public void Confirm()
     {
         if (Interactive)
+        {
             _confirmAge = 0;
+            services.Sounds.Play(_banishMode ? "menu-indietro" : "menu-conferma");
+        }
     }
 
     /// <summary>Scripted players (autopilot): take the card at <paramref name="index"/>.</summary>
@@ -123,21 +129,30 @@ public sealed class LevelUpWindow(GameServices services)
     public void RequestReroll()
     {
         if (Interactive && !_banishMode && Charges.Rerolls > 0)
+        {
             _pending = new LevelUpAction(LevelUpCommand.Reroll);
+            services.Sounds.Play("menu-conferma");
+        }
     }
 
     /// <summary>Salta: no card this time, if a charge is left.</summary>
     public void RequestSkip()
     {
         if (Interactive && !_banishMode && Charges.Skips > 0)
+        {
             _pending = new LevelUpAction(LevelUpCommand.Skip);
+            services.Sounds.Play("menu-indietro");
+        }
     }
 
     /// <summary>Bandisci: enters (or leaves) the mode where confirming banishes the selected card.</summary>
     public void ToggleBanish()
     {
         if (Interactive && (_banishMode || Charges.Banishes > 0))
+        {
             _banishMode = !_banishMode;
+            services.Sounds.Play("menu-sposta");
+        }
     }
 
     /// <summary>Advances animations and reads <paramref name="input"/> (null when scripted). Returns what the player did, once its flash ends.</summary>
@@ -186,6 +201,19 @@ public sealed class LevelUpWindow(GameServices services)
             }
         }
 
+        // The mouse (phase 8.1): pointing at a card selects it, a click takes it (or banishes it in Bandisci).
+        if (Interactive && input.HoverMoved("carta") is { } pointed && pointed != Cursor)
+        {
+            Cursor = pointed;
+            services.Sounds.Play("menu-sposta");
+        }
+
+        if (Interactive && input.Click("carta") is { } clicked)
+        {
+            Cursor = clicked;
+            Confirm();
+        }
+
         if (input.Pressed(Keys.R) || input.Pressed(Buttons.X))
             RequestReroll();
         if (input.Pressed(Keys.X) || input.Pressed(Buttons.Y))
@@ -204,7 +232,7 @@ public sealed class LevelUpWindow(GameServices services)
 
         var p = services.Primitives;
         var open = Ease(Age / (float)OpenTicks);
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         p.Rect(batch, new Rectangle(0, 0, services.Screen.Width, services.Screen.Height), Color.Black * (0.55f * open));
         if (Layout == LevelUpLayout.Cards)
             DrawCards(batch);
@@ -231,6 +259,7 @@ public sealed class LevelUpWindow(GameServices services)
         {
             var row = new Rectangle(panel.X + 8, panel.Y + 40 + i * 68, panel.Width - 16, 62);
             var selected = i == Cursor;
+            services.Input.Region(row, "carta", i);
             UiDraw.Frame(batch, p, row, selected ? Selected : UiTheme.Dark);
             if (selected)
                 p.Outline(batch, new Rectangle(row.X - 1, row.Y - 1, row.Width + 2, row.Height + 2), Blink(), 1);
@@ -253,7 +282,7 @@ public sealed class LevelUpWindow(GameServices services)
         }
 
         DrawActions(batch, panel.Center.X, panel.Bottom + 6);
-        UiDraw.TextCentered(batch, Small, "[SU/GIU] SCEGLI     [INVIO] CONFERMA", panel.Center.X, panel.Bottom + 28, Dim, Ink);
+        KeyHints.Draw(batch, services, "[SU/GIÙ] SCEGLI     [INVIO] CONFERMA", new Vector2(panel.Center.X, panel.Bottom + 28), Dim, centered: true, outline: Ink);
     }
 
     private void DrawCards(SpriteBatch batch)
@@ -280,6 +309,7 @@ public sealed class LevelUpWindow(GameServices services)
             var selected = i == Cursor;
             var y = 74 + (int)MathF.Round((1f - appear) * 26f) - (selected ? 6 : 0);
             var card = new Rectangle(left + i * (width + gap), y, width, height);
+            services.Input.Region(new Rectangle(card.X, 68, card.Width, height + 12), "carta", i);
             var accent = _banishMode ? BanishRed : Gold;
             var option = _options[i];
             var evolution = option.Kind == LevelUpKind.Evolution;
@@ -325,7 +355,7 @@ public sealed class LevelUpWindow(GameServices services)
         }
 
         DrawActions(batch, centerX, 286);
-        UiDraw.TextCentered(batch, Small, "[SINISTRA/DESTRA] SCEGLI     [INVIO] CONFERMA", centerX, 308, Dim, Ink);
+        KeyHints.Draw(batch, services, "[SINISTRA/DESTRA] SCEGLI     [INVIO] CONFERMA", new Vector2(centerX, 308), Dim, centered: true, outline: Ink);
     }
 
     /// <summary>Rilancio, Salta and Bandisci as three buttons with their key and the charges left; spent ones fade.</summary>
@@ -347,9 +377,12 @@ public sealed class LevelUpWindow(GameServices services)
             var (label, charges, active) = buttons[i];
             var box = new Rectangle(left + i * (width + gap), y, width, height);
             var usable = charges > 0 || active;
+            services.Input.KeyRegion(box, i switch { 0 => Keys.R, 1 => Keys.X, _ => Keys.B });
             UiDraw.Frame(batch, p, box, UiTheme.Dark);
             if (active)
                 p.Outline(batch, new Rectangle(box.X - 1, box.Y - 1, box.Width + 2, box.Height + 2), BanishRed, 1);
+            else if (usable && services.Input.PointerAwake && box.Contains(services.Input.Pointer))
+                p.Outline(batch, new Rectangle(box.X - 1, box.Y - 1, box.Width + 2, box.Height + 2), Gold, 1);
 
             var color = active ? BanishRed : usable ? Paper : Dim * 0.6f;
             UiDraw.Text(batch, Small, label, new Vector2(box.X + 6, box.Y + 4), color);

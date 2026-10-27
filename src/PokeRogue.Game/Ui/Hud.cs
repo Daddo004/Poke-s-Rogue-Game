@@ -265,6 +265,7 @@ public sealed class Hud
         {
             _mission = next;
             _missionAge = 0;
+            _services.Sounds.Play("missione");
         }
     }
 
@@ -329,7 +330,7 @@ public sealed class Hud
         var numbers = _services.Fonts.Numbers(_services.Style);
         var player = run.Player;
 
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         XpBar.Draw(batch, player);
 
         for (var i = 0; i < Slots; i++)

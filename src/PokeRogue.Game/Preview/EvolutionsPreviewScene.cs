@@ -34,7 +34,7 @@ public sealed class EvolutionsPreviewScene(GameServices services) : Scene(servic
         var evolutions = moves.All.Where(m => m.IsEvolution).ToList();
         var screen = new Rectangle(0, 0, Services.Screen.Width, Services.Screen.Height);
 
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         p.Rect(batch, screen, Background);
         UiDraw.TextOutlined(batch, small, "ANTEPRIMA 2.6  -  LE MOSSE EVOLUTE: MOSSA AL MASSIMO + STRUMENTO", new Vector2(8, 8), Paper, Ink);
 

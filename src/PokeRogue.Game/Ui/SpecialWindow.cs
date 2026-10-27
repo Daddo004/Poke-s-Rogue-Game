@@ -82,7 +82,7 @@ public sealed partial class SpecialWindow(GameServices services)
             return;
 
         var p = services.Primitives;
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
 
         // The field darkens while the special plays, more for the dark types.
         var dim = special.Type is PokemonType.Dark or PokemonType.Ghost ? 0.75f : 0.45f;

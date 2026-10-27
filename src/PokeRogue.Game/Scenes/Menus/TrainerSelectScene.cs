@@ -54,12 +54,22 @@ public sealed class TrainerSelectScene : MenuScene
             Move(-Columns);
         if (Down())
             Move(Columns);
+        if (Pointed("griglia") is { } pointed)
+            _cursor = pointed;
+
+        // A click on the selected trainer is [INVIO]; on another, it selects them.
+        var clicked = ClickedOn("griglia");
+        if (clicked is { } cell && cell != _cursor)
+        {
+            _cursor = cell;
+            return;
+        }
 
         var trainer = Selected;
         var unlocked = Meta.IsUnlocked(trainer);
         if (Back())
             Services.Switch(new PokemonSelectScene(Services, _character.Id));
-        else if (Confirm())
+        else if (clicked is not null || Confirm())
         {
             if (unlocked)
                 Services.Switch(new LevelSelectScene(Services, _character, trainer));
@@ -162,6 +172,7 @@ public sealed class TrainerSelectScene : MenuScene
             var slot = i - _scroll * Columns;
             var cell = new Rectangle(16 + slot % Columns * Pitch, 40 + slot / Columns * Pitch, 44, 44);
             var unlocked = Meta.IsUnlocked(trainer);
+            Clickable(cell, "griglia", i);
             UiDraw.Frame(batch, p, cell, Services.Style.Theme);
             DrawHead(batch, trainer, new Rectangle(cell.X + 4, cell.Y + 4, 36, 36), unlocked);
             if (!unlocked)
@@ -178,6 +189,8 @@ public sealed class TrainerSelectScene : MenuScene
                 UiDraw.TextOutlined(batch, Small, "TU", new Vector2(cell.X + 4, cell.Y + 3), Gold, Ink);
             if (i == _cursor)
                 DrawCursor(batch, cell);
+            else
+                DrawHover(batch, cell);
         }
 
         var rows = (_all.Count + Columns - 1) / Columns;
@@ -265,7 +278,10 @@ public sealed class TrainerSelectScene : MenuScene
         if (!unlocked)
             UiDraw.Text(batch, Small, "BLOCCATO", new Vector2(608 - UiDraw.Measure(Small, "BLOCCATO").X, 205), theme.TextDim);
         else if (Meta.TrainerGradePrice(trainer) is { } price)
+        {
             DrawPrice(batch, price, 608, 205);
+            KeyHints.Draw(batch, Services, "[F] COMPRA", new Vector2(608 - KeyHints.Measure(Services, "[F] COMPRA"), 220), Paper);
+        }
         else
             UiDraw.Text(batch, Small, "MAX", new Vector2(608 - UiDraw.Measure(Small, "MAX").X, 205), Gold);
 
@@ -289,6 +305,6 @@ public sealed class TrainerSelectScene : MenuScene
         var where = Services.Worlds.Value.LevelOfTrainer(trainer.Id) is { } place ? $"  {place.NameIt.ToUpperInvariant()}, ULTRA" : "";
         UiDraw.Text(batch, Small, (defeated ? "SCONFITTO!" : "DA SCONFIGGERE") + where, new Vector2(326, 312), defeated ? Green : theme.TextDim);
         if (trainer.Team.Count > 0)
-            UiDraw.Text(batch, Small, "[S] SFIDA", new Vector2(608 - UiDraw.Measure(Small, "[S] SFIDA").X, 312), Paper);
+            KeyHints.Draw(batch, Services, "[S] SFIDA", new Vector2(608 - KeyHints.Measure(Services, "[S] SFIDA"), 312), Paper);
     }
 }

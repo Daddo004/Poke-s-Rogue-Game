@@ -40,7 +40,7 @@ public sealed class ItemsPreviewScene(GameServices services) : Scene(services)
                 cards.Add((item, false));
         }
 
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         p.Rect(batch, screen, Background);
         UiDraw.TextOutlined(batch, small, "ANTEPRIMA  -  STRUMENTI", new Vector2(8, 8), Paper, Ink);
 

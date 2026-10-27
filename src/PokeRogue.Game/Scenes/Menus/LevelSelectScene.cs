@@ -94,6 +94,24 @@ public sealed class LevelSelectScene : MenuScene
         if (Right())
             SwitchDifficulty(1);
 
+        // The mouse: tabs and trainers are clicked; pointing at a level selects it, a click on the selected one plays.
+        if (ClickedOn("mondo") is { } world)
+            SwitchWorld(world - _world);
+        if (ClickedOn("difficolta") is { } difficulty)
+            SwitchDifficulty(difficulty - (int)_difficulty);
+        if (ClickedOn("sfida") is { } trainer)
+            _challenge = _challenge == trainer ? -1 : trainer;
+        if (Pointed("livello") is { } pointed)
+            Select(pointed);
+        if (ClickedOn("livello") is { } clicked)
+        {
+            if (clicked == _level)
+                Play();
+            else
+                Select(clicked);
+            return;
+        }
+
         if (Back())
         {
             Services.Switch(new TrainerSelectScene(Services, _character, _trainer.Id));
@@ -193,8 +211,9 @@ public sealed class LevelSelectScene : MenuScene
             var tab = new Rectangle(16 + i * 60, 30, 56, 16);
             var open = Meta.IsUnlocked(world.Levels[0]);
             var selected = i == _world;
+            Clickable(tab, "mondo", i);
             p.Rect(batch, tab, selected ? new Color(60, 48, 24) : new Color(34, 30, 54));
-            p.Outline(batch, tab, selected ? Gold : new Color(70, 64, 100));
+            p.Outline(batch, tab, selected ? Gold : Under(tab) ? Paper : new Color(70, 64, 100));
             UiDraw.TextCentered(batch, Small, world.NameIt.ToUpperInvariant(), tab.Center.X, tab.Y + 4, selected ? Gold : open ? Paper : Dim);
         }
 
@@ -211,9 +230,12 @@ public sealed class LevelSelectScene : MenuScene
             var row = new Rectangle(16, 52 + i * RowPitch, 236, RowPitch - 4);
             var open = Meta.IsUnlocked(level);
             var selected = i == _level;
+            Clickable(row, "livello", i);
             UiDraw.Frame(batch, p, row, selected ? new UiTheme(new Color(60, 48, 24, 235), Gold, new Color(140, 110, 40), Ink, Paper, Dim) : Services.Style.Theme);
             if (selected)
                 DrawCursor(batch, row);
+            else
+                DrawHover(batch, row);
 
             // The boss' face, dark until the level opens.
             var face = new Rectangle(row.X + 3, row.Y + 3, 28, 28);
@@ -321,8 +343,9 @@ public sealed class LevelSelectScene : MenuScene
             var open = Meta.IsUnlocked(Level, difficulty);
             var selected = difficulty == _difficulty;
             var color = DifficultyColors[d];
+            Clickable(tab, "difficolta", d);
             p.Rect(batch, tab, selected ? Color.Lerp(color, Ink, 0.55f) : new Color(30, 26, 48));
-            p.Outline(batch, tab, selected ? color : new Color(70, 64, 100));
+            p.Outline(batch, tab, selected ? color : Under(tab) ? Paper : new Color(70, 64, 100));
             var name = _worlds.Difficulty(difficulty).NameIt.ToUpperInvariant();
             UiDraw.TextCentered(batch, Small, open ? name : $"{name} (BLOCCATA)", tab.Center.X, tab.Y + 4, open ? (selected ? Paper : color) : Dim);
         }
@@ -389,17 +412,20 @@ public sealed class LevelSelectScene : MenuScene
         if (trainers.Count > 0)
         {
             var tx = x + width - trainers.Count * 34 + 2;
-            UiDraw.Text(batch, Small, "[S] SFIDE", new Vector2(tx - UiDraw.Measure(Small, "[S] SFIDE").X - 6, y + 22), Paper);
+            KeyHints.Draw(batch, Services, "[S] SFIDE", new Vector2(tx - KeyHints.Measure(Services, "[S] SFIDE") - 6, y + 22), Paper);
             for (var i = 0; i < trainers.Count; i++)
             {
                 var trainer = trainers[i];
                 var head = new Rectangle(tx + i * 34, y + 12, 30, 30);
+                Clickable(head, "sfida", i);
                 p.Rect(batch, head, Color.Lerp(TrainerVfx.ColorOf(trainer), Ink, 0.4f));
                 if (Services.TrainerPortraits.Sprite(trainer) is { } sprite)
                     batch.Draw(sprite, head, Services.TrainerPortraits.Head(trainer), Meta.IsUnlocked(trainer) ? Color.White : new Color(120, 110, 150));
                 p.Outline(batch, new Rectangle(head.X - 1, head.Y - 1, head.Width + 2, head.Height + 2), Meta.IsDefeated(trainer) ? Green : Ink);
                 if (i == _challenge)
                     DrawCursor(batch, head);
+                else
+                    DrawHover(batch, head);
             }
         }
 

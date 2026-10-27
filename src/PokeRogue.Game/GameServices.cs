@@ -45,6 +45,29 @@ public sealed class GameServices(GraphicsDevice device, string contentRoot, Virt
     /// <summary>Pokémon cries (phase 3.4); muted for captures and with --muto.</summary>
     public Audio.Cries Cries { get; } = new(contentRoot);
 
+    private Core.Audio.AudioFile? _audioData;
+
+    /// <summary>content/data/audio.json: the sound effects and which music plays where (phase 8.3).</summary>
+    public Core.Audio.AudioFile AudioData => _audioData ??= Core.Audio.AudioFile.Load(ContentRoot);
+
+    private Audio.Sounds? _sounds;
+
+    /// <summary>The sound effects (phase 8.3); muted for captures and with --muto.</summary>
+    public Audio.Sounds Sounds => _sounds ??= new Audio.Sounds(AudioData);
+
+    private Audio.Music? _music;
+
+    /// <summary>The music (phase 8.3); muted for captures and with --muto.</summary>
+    public Audio.Music Music => _music ??= new Audio.Music(ContentRoot, AudioData);
+
+    /// <summary>Applies the player's volumes (Opzioni) to the music, the effects and the cries.</summary>
+    public void ApplyVolumes()
+    {
+        Music.Volume = Settings.MusicVolume / (float)Game.Settings.MaxVolume;
+        Sounds.Volume = Settings.EffectsVolume / (float)Game.Settings.MaxVolume;
+        Cries.Volume = 0.85f * Settings.CriesVolume / Game.Settings.MaxVolume;
+    }
+
     public UiStyle Style { get; } = UiStyle.Load(contentRoot);
 
     /// <summary>Closes the game (set by <see cref="PokeRogueGame"/>).</summary>
@@ -55,6 +78,9 @@ public sealed class GameServices(GraphicsDevice device, string contentRoot, Virt
 
     /// <summary>Switches full screen on or off (set by <see cref="PokeRogueGame"/>).</summary>
     public Action<bool> SetFullScreen { get; set; } = _ => { };
+
+    /// <summary>Fills the window (true) or scales it by a whole number (set by <see cref="PokeRogueGame"/>, phase 8.2).</summary>
+    public Action<bool> SetFillScreen { get; set; } = _ => { };
 
     public Lazy<PokedexFile> Pokedex { get; } = new(() => GameDataFiles.LoadPokedex(contentRoot));
 

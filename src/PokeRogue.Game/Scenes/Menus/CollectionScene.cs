@@ -91,6 +91,12 @@ public sealed class CollectionScene : MenuScene
             Show(Section.Pokedex, (_region + 1) % Regions.Length);
         if (_section == Section.Pokedex && Pressed(Keys.Q))
             Show(Section.Pokedex, (_region + Regions.Length - 1) % Regions.Length);
+        if (ClickedOn("sezione") is { } section)
+            Show((Section)section);
+
+        // The mouse: pointing at an entry shows it on the right (a click too, for those who prefer clicking).
+        if ((Pointed("voce") ?? ClickedOn("voce")) is { } entry)
+            _cursor = entry;
 
         var columns = _section switch { Section.Pokedex => DexColumns, Section.Missions => 1, Section.Items => ItemColumns, _ => GridColumns };
         var move = (Left() ? -1 : 0) + (Right() ? 1 : 0) + (Up() ? -columns : 0) + (Down() ? columns : 0);
@@ -113,15 +119,16 @@ public sealed class CollectionScene : MenuScene
         {
             var tab = new Rectangle(150 + i * 96, 10, 90, 16);
             var active = (int)_section == i;
+            Clickable(tab, "sezione", i);
             UiDraw.Frame(batch, p, tab, active ? new UiTheme(new Color(60, 48, 24, 235), Gold, new Color(140, 110, 40), Ink, Paper, Dim) : Services.Style.Theme);
-            UiDraw.TextCentered(batch, Small, SectionNames[i], tab.Center.X, tab.Y + 4, active ? Gold : Dim);
+            UiDraw.TextCentered(batch, Small, SectionNames[i], tab.Center.X, tab.Y + 4, active ? Gold : Under(tab) ? Paper : Dim);
         }
 
         switch (_section)
         {
             case Section.Pokedex:
                 DrawPokedex(batch);
-                DrawFooter(batch, "[TAB] SEZIONE     [Q/E] REGIONE     [FRECCE] SCEGLI     [ESC] INDIETRO");
+                DrawFooter(batch, "[TAB] SEZIONE     [Q] [E] REGIONE     [FRECCE] SCEGLI     [ESC] INDIETRO");
                 break;
             case Section.Moves:
                 DrawMoves(batch);
@@ -160,11 +167,14 @@ public sealed class CollectionScene : MenuScene
             var id = from + i;
             var cell = new Rectangle(grid.X + 4 + i % DexColumns * DexCell, grid.Y + 26 + i / DexColumns * DexCell, DexCell - 2, DexCell - 2);
             var entry = dex.GetValueOrDefault(id);
+            Clickable(cell, "voce", i);
             p.Rect(batch, cell, entry is { Seen: > 0 } ? new Color(40, 34, 64) : new Color(28, 24, 44));
             if (entry is { Seen: > 0 } && Services.Sprites.Portrait(id) is { } portrait)
                 batch.Draw(portrait, cell, entry.Defeated > 0 ? Color.White : SeenTint);
             if (i == _cursor)
                 DrawCursor(batch, cell);
+            else
+                DrawHover(batch, cell);
         }
 
         // Legend under the grid.
@@ -295,6 +305,7 @@ public sealed class CollectionScene : MenuScene
             var (found, name, icon, gold) = tile(i);
             var pitch = (grid.Width - 12) / columns;
             var cell = new Rectangle(grid.X + 6 + i % columns * pitch, grid.Y + 22 + i / columns * 34, pitch - 4, 30);
+            Clickable(cell, "voce", i);
             p.Rect(batch, cell, found ? new Color(40, 34, 64) : new Color(28, 24, 44));
             if (found)
             {
@@ -309,6 +320,8 @@ public sealed class CollectionScene : MenuScene
 
             if (i == _cursor)
                 DrawCursor(batch, cell);
+            else
+                DrawHover(batch, cell);
         }
     }
 
@@ -342,6 +355,7 @@ public sealed class CollectionScene : MenuScene
             var mission = missions[i];
             var completed = Meta.IsDone(mission);
             var box = new Rectangle(panel.X + 6, panel.Y + 22 + row * 30, panel.Width - 18, 28);
+            Clickable(box, "voce", i);
             p.Rect(batch, box, completed ? new Color(46, 60, 40) : Color.White * 0.04f);
             if (i == _cursor)
                 DrawCursor(batch, box);

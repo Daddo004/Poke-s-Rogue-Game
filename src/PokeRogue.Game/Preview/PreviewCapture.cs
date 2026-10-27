@@ -14,8 +14,12 @@ public sealed class PreviewCapture(LaunchOptions options)
 
     public bool Active => options.CapturePng is not null || options.CaptureGif is not null;
 
-    /// <summary>Call after the virtual screen is drawn. Returns true once the export is written.</summary>
-    public bool AfterDraw(GraphicsDevice device, RenderTarget2D target)
+    /// <summary>
+    /// Call after the virtual screen is drawn. Returns true once the export is written. Since phase 8.2 the screen is
+    /// drawn at <paramref name="zoom"/> (the capture's --scale), so smooth text shows as it does on a monitor; only what
+    /// --scale asks beyond the zoom is upscaled.
+    /// </summary>
+    public bool AfterDraw(GraphicsDevice device, RenderTarget2D target, int zoom)
     {
         if (!Active)
             return false;
@@ -24,10 +28,11 @@ public sealed class PreviewCapture(LaunchOptions options)
         if (_frame < options.WaitFrames)
             return false;
 
-        var area = options.Crop ?? new Rectangle(0, 0, target.Width, target.Height);
+        var area = options.Crop is { } crop ? new Rectangle(crop.X * zoom, crop.Y * zoom, crop.Width * zoom, crop.Height * zoom) : new Rectangle(0, 0, target.Width, target.Height);
+        var scale = Math.Max(1, options.Scale / zoom);
         if (options.CapturePng is { } png)
         {
-            SavePng(device, Crop(ReadRgba(target), target.Width, area), area, png, options.Scale);
+            SavePng(device, Crop(ReadRgba(target), target.Width, area), area, png, scale);
             Console.WriteLine($"Saved {png}");
             return true;
         }
@@ -40,9 +45,9 @@ public sealed class PreviewCapture(LaunchOptions options)
 
         var gif = options.CaptureGif!;
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(gif))!);
-        var scaled = _frames.Select(f => Upscale(f, area.Width, area.Height, options.Scale)).ToList();
+        var scaled = _frames.Select(f => Upscale(f, area.Width, area.Height, scale)).ToList();
         using (var file = File.Create(gif))
-            GifEncoder.Write(file, area.Width * options.Scale, area.Height * options.Scale, scaled, (int)MathF.Round(options.Step * 100f / PokeRogueGame.TargetFps));
+            GifEncoder.Write(file, area.Width * scale, area.Height * scale, scaled, (int)MathF.Round(options.Step * 100f / PokeRogueGame.TargetFps));
         Console.WriteLine($"Saved {gif} ({_frames.Count} frames)");
         return true;
     }

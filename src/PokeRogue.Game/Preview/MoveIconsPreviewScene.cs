@@ -43,7 +43,7 @@ public sealed class MoveIconsPreviewScene : Scene
         var body = Services.Fonts.Body(Services.Style);
         var screen = new Rectangle(0, 0, Services.Screen.Width, Services.Screen.Height);
 
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         p.Rect(batch, screen, Background);
         UiDraw.TextOutlined(batch, small, "ANTEPRIMA  -  ICONE DELLE MOSSE", new Vector2(8, 8), Paper, Ink);
 

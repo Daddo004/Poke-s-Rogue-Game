@@ -75,7 +75,7 @@ public sealed class SpriteViewerScene : Scene
         var screen = Services.Screen;
         var prim = Services.Primitives;
         Services.Device.Clear(Background);
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
 
         var set = Set;
         var species = Services.Species(_speciesId);
@@ -126,7 +126,7 @@ public sealed class SpriteViewerScene : Scene
         var big = Services.Fonts.Get(fonts.Contains("Silkscreen-Regular") ? "Silkscreen-Regular" : fonts[0], 16);
 
         var title = species is null ? $"#{_speciesId:D3}" : $"#{species.Id:D3} {species.NameIt}";
-        big.DrawText(batch, title, new Vector2(16, 12), TextColor);
+        UiDraw.Text(batch, big, title, new Vector2(16, 12), TextColor);
 
         var anim = set?.Resolve(AnimName);
         var lines = new List<string>
@@ -137,9 +137,9 @@ public sealed class SpriteViewerScene : Scene
         };
 
         for (var i = 0; i < lines.Count; i++)
-            font.DrawText(batch, lines[i], new Vector2(16, 268 + i * 12), i == 0 ? TextColor : Dim);
+            UiDraw.Text(batch, font, lines[i], new Vector2(16, 268 + i * 12), i == 0 ? TextColor : Dim);
 
-        font.DrawText(batch, "Frecce/AD: Pokemon (Shift x10, PagSu/Giu x50)   WS: animazione   QE: direzione   R: ruota   F: sagoma   Spazio: pausa", new Vector2(16, 340), Dim);
+        UiDraw.Text(batch, font, "Frecce/AD: Pokemon (Shift x10, PagSu/Giu x50)   WS: animazione   QE: direzione   R: ruota   F: sagoma   Spazio: pausa", new Vector2(16, 340), Dim);
     }
 
     private void DrawShadow(SpriteBatch batch, PokemonSpriteSet set, Vector2 feet, int scale)

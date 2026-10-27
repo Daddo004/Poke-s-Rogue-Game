@@ -64,7 +64,7 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
         var confirm = input.Pressed(Keys.Enter) || input.Pressed(Keys.Space) || input.Pressed(Buttons.A) || input.Pressed(Buttons.Start);
         if (_newsOpen)
         {
-            if (confirm || input.Pressed(Keys.Escape) || input.Pressed(Buttons.B))
+            if (confirm || input.Pressed(Keys.Escape) || input.Pressed(Buttons.B) || input.Click("novita") is not null)
             {
                 _newsOpen = false;
                 _age = 10;
@@ -89,7 +89,7 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
         var theme = services.Style.Theme;
         var victory = run.Outcome == RunOutcome.Victory;
 
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         p.Rect(batch, new Rectangle(0, 0, services.Screen.Width, services.Screen.Height), Color.Black * 0.78f);
 
         UiDraw.TextCentered(batch, services.Fonts.Title(services.Style), victory ? "VITTORIA" : "SCONFITTA", services.Screen.Width / 2f, 6, victory ? Gold : Red, Ink);
@@ -107,9 +107,11 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
         UiDraw.Frame(batch, p, defeated, theme);
         DrawDefeated(batch, run, defeated);
 
-        UiDraw.TextCentered(batch, services.Fonts.Small(services.Style), $"[INVIO] RICOMINCIA          [ESC] {QuitLabel}", services.Screen.Width / 2f, 344, Dim, Ink);
+        KeyHints.Draw(batch, services, $"[INVIO] RICOMINCIA     [ESC] {QuitLabel}", new Vector2(services.Screen.Width / 2f, 344), Dim, centered: true, outline: Ink);
         if (_newsOpen && _report is { } report)
             DrawNews(batch, report);
+        else
+            Tooltip.ForBuild(batch, services, run);
         batch.End();
     }
 
@@ -139,6 +141,7 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
         var body = services.Fonts.Body(services.Style);
         var numbers = services.Fonts.Get(services.Style.NumberFont, services.Style.NumberFontSize / 2f);
         p.Rect(batch, new Rectangle(0, 0, services.Screen.Width, services.Screen.Height), Color.Black * 0.6f);
+        services.Input.Region(new Rectangle(0, 0, services.Screen.Width, services.Screen.Height), "novita");
 
         var unlocks = report.NewCharacters.Count + report.NewTrainers.Count + report.Fossils.Count;
         var rows = Math.Min(report.Missions.Count, 6);
@@ -202,7 +205,7 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
         if (opened is not null)
             UiDraw.Text(batch, small, opened, new Vector2(panel.X + 16, y + 6), Paper);
 
-        UiDraw.TextCentered(batch, small, "[INVIO] CONTINUA", panel.Center.X, panel.Bottom + 6, Dim, Ink);
+        KeyHints.Draw(batch, services, "[INVIO] CONTINUA", new Vector2(panel.Center.X, panel.Bottom + 6), Dim, centered: true, outline: Ink);
     }
 
     /// <summary>"SI APRE: MONTE LUNA, BOSCO SMERALDO A DIFFICILE" (Block 7); null when nothing opened.</summary>
@@ -242,7 +245,7 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
             UiDraw.Pill(batch, p, small, new Rectangle(panel.X + 100 + i * 52, panel.Y + 54, 48, 10), TypePalette.Of(type), TypePalette.NameIt(type).ToUpperInvariant());
         }
 
-        (string Label, string Value, Color Color)[] rows =
+        List<(string Label, string Value, Color Color)> rows =
         [
             ("TEMPO", UiFormat.Clock(run.Ticks), Paper),
             ("POKÉMON SCONFITTI", UiFormat.Number(run.Stats.Kills), Paper),
@@ -251,13 +254,19 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
             ("PS RECUPERATI", UiFormat.Number((long)run.Player.HpRecovered), Paper),
         ];
 
-        for (var i = 0; i < rows.Length; i++)
+        // The special move's damage (phase 8.4), when it was unleashed at least once: its name and how many times.
+        if (run.Special.Uses > 0 && run.SpecialMove is { } special)
+            rows.Add(($"{special.NameIt.ToUpperInvariant()} X{run.Special.Uses}", UiFormat.Number((long)run.Special.DamageDealt), TypePalette.Of(special.Type)));
+
+        var pitch = rows.Count > 5 ? 29 : 34;
+        for (var i = 0; i < rows.Count; i++)
         {
-            var y = panel.Y + 104 + i * 34;
-            p.Rect(batch, new Rectangle(panel.X + 8, y, panel.Width - 16, 28), Color.White * 0.04f);
-            UiDraw.Text(batch, small, rows[i].Label, new Vector2(panel.X + 14, y + 10), Dim);
+            var y = panel.Y + 104 + i * pitch;
+            p.Rect(batch, new Rectangle(panel.X + 8, y, panel.Width - 16, pitch - 6), Color.White * 0.04f);
+            UiDraw.TextWithNumbers(batch, small, services.Fonts.Get(services.Style.NumberFont, services.Style.NumberFontSize / 2f), rows[i].Label,
+                new Vector2(panel.X + 14, y + pitch / 2f - 7), Dim);
             var width = UiDraw.Measure(numbers, rows[i].Value).X;
-            UiDraw.TextOutlined(batch, numbers, rows[i].Value, new Vector2(panel.Right - 14 - width, y + 3), rows[i].Color, Ink);
+            UiDraw.TextOutlined(batch, numbers, rows[i].Value, new Vector2(panel.Right - 14 - width, y + pitch / 2f - 14), rows[i].Color, Ink);
         }
     }
 
@@ -279,6 +288,7 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
             var y = panel.Y + 20 + i * MoveRowPitch;
             var slot = new Rectangle(panel.X + 10, y, 20, 20);
             var evolved = move.Definition.IsEvolution;
+            services.Input.Region(new Rectangle(panel.X + 8, y, panel.Width - 16, MoveRowPitch - 1), "mossa", i);
             UiDraw.Frame(batch, p, slot, evolved ? hud.EvolvedTheme : services.Style.Theme);
             services.MoveIcons.Draw(batch, p, new Rectangle(slot.X + 2, slot.Y + 2, 16, 16), move.Definition.Id, move.Definition.Type);
 
@@ -299,6 +309,7 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
         for (var i = 0; i < Hud.Slots; i++)
         {
             var slot = new Rectangle(slotsX + i * 30, itemsY, 24, 24);
+            services.Input.Region(slot, "strumento", i);
             UiDraw.Frame(batch, p, slot, services.Style.Theme);
             if (i < run.Player.Items.Count)
             {

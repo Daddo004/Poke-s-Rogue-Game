@@ -1,0 +1,18 @@
+// Victory jingle (phase 8.3): plays once.
+{
+  "nameIt": "Vittoria",
+  "bpm": 132,
+  "stepsPerBeat": 2,
+  "loop": false,
+  "volume": 1.0,
+  "channels": [
+    { "wave": "square", "duty": 0.25, "volume": 0.2, "release": 0.15, "vibrato": 0.15, "cutoff": 3500,
+      "patterns": { "A": "G4 C5 E5 G5 . E5 G5 . | C6 . . . . . . -" } },
+    { "wave": "square", "duty": 0.5, "volume": 0.1, "release": 0.15, "cutoff": 2000,
+      "patterns": { "A": "E4 G4 C5 E5 . C5 E5 . | G5 . . . . . . -" } },
+    { "wave": "triangle", "volume": 0.32, "release": 0.1,
+      "patterns": { "A": "C3 . . . G2 . . . | C3 . . . . . . -" } },
+    { "drums": true, "volume": 0.35,
+      "patterns": { "A": "k - s - k - s s | k - - - - - - -" } }
+  ]
+}

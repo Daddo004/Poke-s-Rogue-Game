@@ -8,12 +8,16 @@ using PokeRogue.Game.Ui;
 namespace PokeRogue.Game.Scenes.Menus;
 
 /// <summary>
-/// The menu the game opens on (Block 6; the full title screen comes in Block 8): play, the shop's upgrades, the
-/// collection, quit. The last character and trainer played stand on the right; the save's totals are at the bottom.
+/// The main menu (Block 6, after the title screen since phase 8.2): play, the shop's upgrades, the collection, the
+/// options, the credits, quit. The last character and trainer played stand on the right; the save's totals are at the
+/// bottom.
 /// </summary>
 public sealed class MainMenuScene : MenuScene
 {
-    private static readonly string[] Rows = ["Gioca", "Potenziamenti", "Collezione", "Esci"];
+    private static readonly string[] Rows = ["Gioca", "Potenziamenti", "Collezione", "Opzioni", "Crediti", "Esci"];
+
+    public const int OptionsRow = 3;
+    public const int CreditsRow = 4;
 
     private readonly MenuPokemon _pokemon;
     private int _cursor;
@@ -49,7 +53,14 @@ public sealed class MainMenuScene : MenuScene
             _cursor = (_cursor + Rows.Length - 1) % Rows.Length;
         if (Down())
             _cursor = (_cursor + 1) % Rows.Length;
-        if (!Confirm())
+        if (Pointed("menu") is { } pointed)
+            _cursor = pointed;
+        if (Back())
+            Services.Switch(new TitleScene(Services));
+
+        if (ClickedOn("menu") is { } clicked)
+            _cursor = clicked;
+        else if (!Confirm())
             return;
 
         switch (_cursor)
@@ -62,6 +73,12 @@ public sealed class MainMenuScene : MenuScene
                 break;
             case 2:
                 Services.Switch(new CollectionScene(Services));
+                break;
+            case OptionsRow:
+                Services.Switch(new OptionsScene(Services));
+                break;
+            case CreditsRow:
+                Services.Switch(new CreditsScene(Services));
                 break;
             default:
                 Services.Exit();
@@ -79,8 +96,9 @@ public sealed class MainMenuScene : MenuScene
 
         for (var i = 0; i < Rows.Length; i++)
         {
-            var row = new Rectangle(32, 104 + i * 30, 200, 24);
+            var row = new Rectangle(32, 100 + i * 29, 200, 24);
             var selected = i == _cursor;
+            Clickable(row, "menu", i);
             UiDraw.Frame(batch, p, row, selected ? new UiTheme(new Color(60, 48, 24, 235), Gold, new Color(140, 110, 40), Ink, Paper, Dim) : Services.Style.Theme);
             if (selected)
                 p.Outline(batch, new Rectangle(row.X - 1, row.Y - 1, row.Width + 2, row.Height + 2), Age / 20 % 2 == 0 ? Gold : Color.Lerp(Gold, Color.White, 0.5f), 1);
@@ -108,6 +126,6 @@ public sealed class MainMenuScene : MenuScene
         var width = UiDraw.Measure(Small, line).X;
         UiDraw.TextWithNumbers(batch, Small, SmallNumbers, line, new Vector2(panel.Center.X - width / 2f, panel.Y + 9), Paper);
 
-        DrawFooter(batch, "[SU/GIÙ] SCEGLI     [INVIO] CONFERMA");
+        DrawFooter(batch, "[SU/GIÙ] SCEGLI     [INVIO] CONFERMA     [ESC] TITOLO");
     }
 }

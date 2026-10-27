@@ -1,0 +1,46 @@
+// Caves, towers and nights (phase 8.3): slow and mysterious, A minor. One token per eighth note.
+{
+  "nameIt": "Grotta",
+  "bpm": 100,
+  "stepsPerBeat": 2,
+  "volume": 1.0,
+  "channels": [
+    {
+      "wave": "triangle", "volume": 0.3, "attack": 0.02, "release": 0.08, "vibrato": 0.25, "vibratoRate": 5,
+      "patterns": {
+        "A": "A4 . . . C5 . E5 . | F5 . . . E5 . C5 . | D5 . . . F5 . A5 . | G#5 . . . . . - - | A5 . . G5 E5 . . . | F5 . E5 . C5 . A4 . | D5 . F5 . E5 . D5 . | B4 . . . G#4 . . .",
+        "B": "C6 . . . A5 . F5 . | B5 . . . G5 . D5 . | E5 . G5 . B5 . . . | A5 . . . . . - - | F5 . E5 . D5 . A4 . | G#4 . B4 . E5 . D5 . | C5 . . . B4 . A4 . | G#4 . . . E4 . . ."
+      },
+      "order": [ "A", "B" ]
+    },
+    {
+      "wave": "triangle", "volume": 0.08, "attack": 0.1, "release": 0.2,
+      "patterns": {
+        "Am": "A3+C4+E4 . . . . . . .",
+        "F": "A3+C4+F4 . . . . . . .",
+        "Dm": "A3+D4+F4 . . . . . . .",
+        "E": "G#3+B3+E4 . . . . . . .",
+        "G": "B3+D4+G4 . . . . . . .",
+        "Em": "B3+E4+G4 . . . . . . ."
+      },
+      "order": [ "Am", "F", "Dm", "E", "Am", "F", "Dm", "E", "F", "G", "Em", "Am", "Dm", "E", "Am", "E" ]
+    },
+    {
+      "wave": "square", "duty": 0.5, "volume": 0.2, "release": 0.06, "cutoff": 600,
+      "patterns": {
+        "Am": "A2 . . . E2 . . .",
+        "F": "F2 . . . C3 . . .",
+        "Dm": "D2 . . . A2 . . .",
+        "E": "E2 . . . B2 . . .",
+        "G": "G2 . . . D3 . . .",
+        "Em": "E2 . . . B2 . . ."
+      },
+      "order": [ "Am", "F", "Dm", "E", "Am", "F", "Dm", "E", "F", "G", "Em", "Am", "Dm", "E", "Am", "E" ]
+    },
+    {
+      "drums": true, "volume": 0.24,
+      "patterns": { "beat": "k - - h - - s -" },
+      "order": [ "beat" ]
+    }
+  ]
+}

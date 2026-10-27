@@ -139,7 +139,7 @@ public sealed class StatusPreviewScene : Scene
         _renderer.Draw(batch, _run);
 
         var small = Services.Fonts.Small(Services.Style);
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         // No digits in the label font: they read badly there.
         UiDraw.TextOutlined(batch, small, "ANTEPRIMA  -  STATI ALTERATI", new Vector2(8, 8), Paper, Ink);
         if (_variant == "icone")

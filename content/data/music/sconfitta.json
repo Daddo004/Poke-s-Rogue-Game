@@ -1,0 +1,14 @@
+// Defeat jingle (phase 8.3): plays once.
+{
+  "nameIt": "Sconfitta",
+  "bpm": 84,
+  "stepsPerBeat": 2,
+  "loop": false,
+  "volume": 1.0,
+  "channels": [
+    { "wave": "triangle", "volume": 0.32, "attack": 0.02, "release": 0.2, "vibrato": 0.3, "vibratoRate": 4,
+      "patterns": { "A": "E5 . D5 . C5 . B4 . | A4 . . . . . . . | G#4 . . . A4 . . . . . . -" } },
+    { "wave": "square", "duty": 0.5, "volume": 0.16, "release": 0.2, "cutoff": 700,
+      "patterns": { "A": "A2 . . . . . . . | F2 . . . . . . . | E2 . . . A2 . . . . . . -" } }
+  ]
+}

@@ -41,7 +41,7 @@ public sealed class FloorPreviewScene(GameServices services, string? variant) : 
         var p = Services.Primitives;
         var view = _camera.VisibleWorld;
 
-        batch.Begin(samplerState: SamplerState.PointClamp, transformMatrix: _camera.Transform);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp, transformMatrix: _camera.Transform);
         _floor.Draw(batch, view);
 
         var props = _floor.Props(new Rectangle(view.X - 16, view.Y - 16, view.Width + 32, view.Height + 32)).ToList();
@@ -58,7 +58,7 @@ public sealed class FloorPreviewScene(GameServices services, string? variant) : 
             d.Draw();
         batch.End();
 
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         var label = $"Anteprima 1.1  -  pavimento: {_floor.Style.Id}   (chunk in cache: {_floor.CachedChunks})";
         UiDraw.TextOutlined(batch, Services.Fonts.Small(Services.Style), label, new Vector2(8, 8), new Color(244, 240, 228), new Color(16, 12, 28));
         batch.End();

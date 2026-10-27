@@ -8,9 +8,10 @@ using PokeRogue.Game.Ui;
 namespace PokeRogue.Game.Scenes.Menus;
 
 /// <summary>
-/// What the menus of Block 6 share (the full menus come in Block 8): the background of the art direction's character
-/// select (phase 0.6), the title and the coins in the bank on top, the keys at the bottom, a notice for what just
-/// happened, and a confirmation before spending coins.
+/// What the menus share (Block 6, completed in Block 8): the background of the art direction's character select
+/// (phase 0.6), the title and the coins in the bank on top, the keys at the bottom (buttons for the mouse too), a notice
+/// for what just happened, and a confirmation before spending coins. Moving, confirming and going back make their
+/// sounds, and the menus play their music.
 /// </summary>
 public abstract class MenuScene(GameServices services) : Scene(services)
 {
@@ -50,13 +51,20 @@ public abstract class MenuScene(GameServices services) : Scene(services)
 
     protected bool Asking => _question is not null;
 
+    /// <summary>The music of this screen; the menus share one, so it plays on from screen to screen.</summary>
+    protected virtual string? MusicTrack => Services.Music.Map.Menu;
+
     public sealed override void Update()
     {
         Age++;
+        if (Age == 1)
+        {
+            Services.Music.Duck = 1f;
+            Services.Music.Play(MusicTrack);
+        }
         if (_notice is not null && ++_noticeAge >= NoticeTicks)
             _notice = null;
 
-        var input = Services.Input;
         if (_question is not null)
         {
             if (Confirm())
@@ -82,7 +90,7 @@ public abstract class MenuScene(GameServices services) : Scene(services)
     {
         BeforeDraw(batch);
         Services.Device.Clear(Background);
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         for (var x = -360; x < Services.Screen.Width; x += 16)
             UiDraw.Line(batch, Services.Primitives, new Vector2(x, Services.Screen.Height), new Vector2(x + 360, 0), Color.White * 0.03f, 6f);
 
@@ -100,23 +108,50 @@ public abstract class MenuScene(GameServices services) : Scene(services)
 
     // ---- Input ----
 
-    protected bool Up() => Pressed(Keys.Up, Keys.W, Buttons.DPadUp);
+    protected bool Up() => Sound(Pressed(Keys.Up, Keys.W, Buttons.DPadUp), "menu-sposta");
 
-    protected bool Down() => Pressed(Keys.Down, Keys.S, Buttons.DPadDown);
+    protected bool Down() => Sound(Pressed(Keys.Down, Keys.S, Buttons.DPadDown), "menu-sposta");
 
-    protected bool Left() => Pressed(Keys.Left, Keys.A, Buttons.DPadLeft);
+    protected bool Left() => Sound(Pressed(Keys.Left, Keys.A, Buttons.DPadLeft), "menu-sposta");
 
-    protected bool Right() => Pressed(Keys.Right, Keys.D, Buttons.DPadRight);
+    protected bool Right() => Sound(Pressed(Keys.Right, Keys.D, Buttons.DPadRight), "menu-sposta");
 
-    protected bool Confirm() => Pressed(Keys.Enter, Keys.Space, Buttons.A);
+    protected bool Confirm() => Sound(Pressed(Keys.Enter, Keys.Space, Buttons.A), "menu-conferma");
 
-    protected bool Back() => Pressed(Keys.Escape, Keys.Back, Buttons.B);
+    protected bool Back() => Sound(Pressed(Keys.Escape, Keys.Back, Buttons.B), "menu-indietro");
 
     protected bool Pressed(Keys key) => Services.Input.Pressed(key);
 
     private bool Pressed(Keys a, Keys b, Buttons button) => Services.Input.Pressed(a) || Services.Input.Pressed(b) || Services.Input.Pressed(button);
 
     protected bool Pressed(Keys key, Buttons button) => Services.Input.Pressed(key) || Services.Input.Pressed(button);
+
+    private bool Sound(bool pressed, string sound)
+    {
+        if (pressed)
+            Services.Sounds.Play(sound);
+        return pressed;
+    }
+
+    // ---- Pointer (phase 8.1) ----
+
+    /// <summary>Something drawn that the mouse can point at and click: a cell, a row, a tab.</summary>
+    protected void Clickable(Rectangle area, string tag, int index = 0) => Services.Input.Region(area, tag, index);
+
+    /// <summary>The cell tagged <paramref name="tag"/> the mouse has just moved onto (it moves the cursor there).</summary>
+    protected int? Pointed(string tag) => Services.Input.HoverMoved(tag);
+
+    /// <summary>The cell tagged <paramref name="tag"/> clicked this tick.</summary>
+    protected int? ClickedOn(string tag)
+    {
+        var index = Services.Input.Click(tag);
+        if (index is not null)
+            Services.Sounds.Play("menu-conferma");
+        return index;
+    }
+
+    /// <summary>The mouse is over <paramref name="area"/> (a lighter rim).</summary>
+    protected bool Under(Rectangle area) => Services.Input.PointerAwake && area.Contains(Services.Input.Pointer);
 
     // ---- Shared pieces ----
 
@@ -126,6 +161,10 @@ public abstract class MenuScene(GameServices services) : Scene(services)
         _notice = text;
         _noticeColor = color;
         _noticeAge = 0;
+        if (color == Red)
+            Services.Sounds.Play("menu-errore");
+        else if (color == Green)
+            Services.Sounds.Play("acquisto");
     }
 
     /// <summary>Asks before doing something that spends or gives back coins: [INVIO] does it, [ESC] does not.</summary>
@@ -189,9 +228,9 @@ public abstract class MenuScene(GameServices services) : Scene(services)
         batch.Draw(Services.Pickups.Coin, new Vector2(right - width - 10, y + 5), Color.White);
     }
 
-    /// <summary>The keys of the screen along the bottom.</summary>
+    /// <summary>The keys of the screen along the bottom; those naming one key are buttons for the mouse too.</summary>
     protected void DrawFooter(SpriteBatch batch, string keys) =>
-        UiDraw.Text(batch, Small, keys, new Vector2(16, Services.Screen.Height - 16), Dim);
+        KeyHints.Draw(batch, Services, keys, new Vector2(16, Services.Screen.Height - 16), Dim);
 
     /// <summary>A price with the coin: gold when affordable, red when not.</summary>
     protected void DrawPrice(SpriteBatch batch, int price, int right, int y)
@@ -212,6 +251,13 @@ public abstract class MenuScene(GameServices services) : Scene(services)
             p.Rect(batch, new Rectangle(pip.X - 1, pip.Y - 1, pip.Width + 2, pip.Height + 2), Ink);
             p.Rect(batch, pip, i < owned ? Gold : new Color(60, 54, 88));
         }
+    }
+
+    /// <summary>A pale outline around the cell under the mouse (the selected one has the gold cursor instead).</summary>
+    protected void DrawHover(SpriteBatch batch, Rectangle cell)
+    {
+        if (Under(cell) && !Asking)
+            Services.Primitives.Outline(batch, new Rectangle(cell.X - 1, cell.Y - 1, cell.Width + 2, cell.Height + 2), Paper * 0.7f, 1);
     }
 
     /// <summary>A blinking gold outline around the selected cell.</summary>
@@ -250,6 +296,7 @@ public abstract class MenuScene(GameServices services) : Scene(services)
 
         var p = Services.Primitives;
         p.Rect(batch, new Rectangle(0, 0, Services.Screen.Width, Services.Screen.Height), Color.Black * 0.55f);
+        Services.Input.Blocker(new Rectangle(0, 0, Services.Screen.Width, Services.Screen.Height));
         var panel = new Rectangle(150, 130, 340, 84);
         UiDraw.Frame(batch, p, panel, Services.Style.Theme);
         UiDraw.TextCentered(batch, Body, _question, panel.Center.X, panel.Y + 12, Paper);
@@ -259,6 +306,6 @@ public abstract class MenuScene(GameServices services) : Scene(services)
             UiDraw.TextWithNumbers(batch, Small, SmallNumbers, detail, new Vector2(panel.Center.X - width / 2f, panel.Y + 38), Gold);
         }
 
-        UiDraw.TextCentered(batch, Small, "[INVIO] SÌ          [ESC] NO", panel.Center.X, panel.Bottom - 18, Dim);
+        KeyHints.Draw(batch, Services, "[INVIO] SÌ     [ESC] NO", new Vector2(panel.Center.X, panel.Bottom - 18), Dim, centered: true);
     }
 }

@@ -29,7 +29,7 @@ public sealed class CharacterAlbumScene(GameServices services, int page) : Scene
         var pages = (all.Count + PerPage - 1) / PerPage;
         var index = Math.Clamp(page, 1, pages);
         Services.Device.Clear(new Color(24, 20, 36));
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         UiDraw.TextOutlined(batch, Services.Fonts.Body(Services.Style), $"PERSONAGGI  {index}/{pages}", new Vector2(10, 7), Gold, Ink);
         UiDraw.Text(batch, Services.Fonts.Small(Services.Style), $"{all.Count} LINEE EVOLUTIVE", new Vector2(540, 11), Dim);
 

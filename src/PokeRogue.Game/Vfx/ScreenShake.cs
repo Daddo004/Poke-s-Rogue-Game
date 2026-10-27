@@ -14,6 +14,9 @@ public sealed class ScreenShake
     /// <summary>Off by player choice (Options, phase 8.2).</summary>
     public bool Enabled { get; set; } = true;
 
+    /// <summary>The player's setting (Opzioni, phase 8.2): 0 to 1 of the full shake.</summary>
+    public float Strength { get; set; } = 1f;
+
     public void Add(float trauma) => _trauma = MathHelper.Clamp(_trauma + trauma, 0f, 1f);
 
     /// <summary>The player's own moves (phase 3.6): half as strong, and they never push the shake past this ceiling.</summary>
@@ -35,10 +38,10 @@ public sealed class ScreenShake
     {
         get
         {
-            if (!Enabled || _trauma <= 0f)
+            if (!Enabled || _trauma <= 0f || Strength <= 0f)
                 return Vector2.Zero;
 
-            var strength = _trauma * _trauma * MaxOffset;
+            var strength = _trauma * _trauma * MaxOffset * Strength;
             return new Vector2(MathF.Round((_random.NextSingle() * 2f - 1f) * strength), MathF.Round((_random.NextSingle() * 2f - 1f) * strength));
         }
     }

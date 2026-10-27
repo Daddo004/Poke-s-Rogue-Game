@@ -28,6 +28,9 @@ public sealed class AssetDownloader(Downloader downloader, string contentRoot, i
         ("VT323-Regular.ttf", $"{GoogleFontsRaw}/vt323/VT323-Regular.ttf"),
         ("PixelifySans.ttf", "https://raw.githubusercontent.com/eifetx/Pixelify-Sans/main/fonts/ttf/PixelifySans-Regular.ttf"),
         ("Jersey10-Regular.ttf", $"{GoogleFontsRaw}/jersey10/Jersey10-Regular.ttf"),
+        // Smooth text drawn at the screen's own resolution (phase 8.2, "Scritte: nitide").
+        ("MPLUSRounded1c-Bold.ttf", $"{GoogleFontsRaw}/mplusrounded1c/MPLUSRounded1c-Bold.ttf"),
+        ("MPLUSRounded1c-ExtraBold.ttf", $"{GoogleFontsRaw}/mplusrounded1c/MPLUSRounded1c-ExtraBold.ttf"),
     ];
 
     /// <summary>Item icons (PokeAPI identifiers) for passives, pickups, chests and evolution stones.</summary>
@@ -259,7 +262,7 @@ public sealed class AssetDownloader(Downloader downloader, string contentRoot, i
         sb.AppendLine("- Pokémon Showdown client (fx, sprite allenatori) — https://github.com/smogon/pokemon-showdown-client");
         sb.AppendLine();
         sb.AppendLine("## Font (SIL Open Font License)");
-        sb.AppendLine("- Silkscreen, Press Start 2P, VT323, Pixelify Sans, Jersey 10 — https://github.com/google/fonts");
+        sb.AppendLine("- Silkscreen, Press Start 2P, VT323, Pixelify Sans, Jersey 10, M PLUS Rounded 1c — https://github.com/google/fonts");
 
         File.WriteAllText(Path.Combine(contentRoot, "generated", "CREDITS.md"), sb.ToString(), new UTF8Encoding(false));
     }

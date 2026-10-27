@@ -1,0 +1,136 @@
+// Sounds and music (phase 8.3). Every effect is made by the game's own sound chip (Core/Audio/Synth):
+// "parts" are voices (wave square|triangle|saw|sine|noise, pitch "from" → "to" in Hz, "notes" for jingles, times in seconds).
+// "volume" is how loud it plays, "minGapTicks" how soon it may play again (60 ticks = 1 s), "pitchJitter" a random detune.
+// Music: each name is content/data/music/<name>.json, unless content/audio/<name>.ogg exists: then that file plays instead.
+{
+  "sampleRate": 22050,
+  "music": {
+    "menu": "titolo",
+    "level": "avventura",
+    "levelDark": "grotta",
+    "boss": "boss",
+    "victory": "vittoria",
+    "defeat": "sconfitta",
+    "volume": 0.55,
+    "levels": {}
+  },
+  "sfx": {
+    // ---- Menus ----
+    "menu-sposta": { "volume": 0.22, "minGapTicks": 2, "parts": [ { "wave": "square", "duty": 0.25, "from": 1320, "length": 0.035, "release": 0.015, "cutoff": 5000 } ] },
+    "menu-conferma": { "volume": 0.26, "minGapTicks": 3, "parts": [ { "wave": "square", "duty": 0.25, "notes": "E6 B6", "step": 0.05, "length": 0.08, "cutoff": 5000 } ] },
+    "menu-indietro": { "volume": 0.22, "minGapTicks": 3, "parts": [ { "wave": "square", "duty": 0.5, "notes": "B5 E5", "step": 0.05, "length": 0.07, "cutoff": 3000 } ] },
+    "menu-errore": { "volume": 0.26, "minGapTicks": 8, "parts": [
+      { "wave": "square", "duty": 0.5, "from": 170, "to": 140, "length": 0.09, "cutoff": 1800 },
+      { "wave": "square", "duty": 0.5, "from": 170, "to": 130, "at": 0.11, "length": 0.14, "cutoff": 1800 } ] },
+    "acquisto": { "volume": 0.26, "minGapTicks": 6, "parts": [
+      { "wave": "square", "duty": 0.25, "from": 988, "length": 0.07, "cutoff": 5000 },
+      { "wave": "square", "duty": 0.25, "from": 1319, "at": 0.07, "length": 0.32, "decay": 6, "release": 0.1, "cutoff": 5000 } ] },
+    "titolo-via": { "volume": 0.26, "minGapTicks": 10, "parts": [
+      { "wave": "square", "duty": 0.25, "notes": "C5 E5 G5 C6 E6", "step": 0.045, "length": 0.1, "cutoff": 5000 },
+      { "wave": "triangle", "from": 1047, "at": 0.225, "length": 0.4, "vibrato": 0.2, "release": 0.2 } ] },
+    "pausa": { "volume": 0.2, "minGapTicks": 6, "parts": [ { "wave": "square", "duty": 0.25, "notes": "E6 C6", "step": 0.05, "length": 0.07, "cutoff": 4000 } ] },
+
+    // ---- Battle ----
+    "colpo": { "volume": 0.16, "minGapTicks": 3, "pitchJitter": 0.12, "parts": [
+      { "wave": "noise", "from": 3000, "to": 900, "length": 0.06, "decay": 25, "cutoff": 4000 },
+      { "wave": "sine", "from": 220, "to": 90, "length": 0.06, "decay": 20 } ] },
+    "colpo-forte": { "volume": 0.22, "minGapTicks": 5, "pitchJitter": 0.08, "parts": [
+      { "wave": "noise", "from": 5000, "to": 1000, "length": 0.09, "decay": 18, "cutoff": 5000 },
+      { "wave": "square", "duty": 0.5, "from": 320, "to": 120, "length": 0.09, "cutoff": 2000 } ] },
+    "ko": { "volume": 0.14, "minGapTicks": 3, "pitchJitter": 0.15, "parts": [ { "wave": "sine", "from": 900, "to": 280, "length": 0.09, "decay": 14 } ] },
+    "gemma": { "volume": 0.12, "minGapTicks": 3, "pitchJitter": 0.08, "parts": [
+      { "wave": "triangle", "from": 1500, "to": 1750, "length": 0.05 },
+      { "wave": "triangle", "from": 2200, "at": 0.03, "length": 0.07, "decay": 20 } ] },
+    "moneta": { "volume": 0.2, "minGapTicks": 4, "parts": [
+      { "wave": "square", "duty": 0.25, "from": 988, "length": 0.05, "cutoff": 5000 },
+      { "wave": "square", "duty": 0.25, "from": 1319, "at": 0.05, "length": 0.22, "decay": 10, "cutoff": 5000 } ] },
+    "cura": { "volume": 0.26, "minGapTicks": 10, "parts": [ { "wave": "triangle", "notes": "C5 E5 G5 C6", "step": 0.06, "length": 0.14, "vibrato": 0.3 } ] },
+    "oggetto": { "volume": 0.26, "minGapTicks": 6, "parts": [ { "wave": "triangle", "notes": "G5 C6", "step": 0.06, "length": 0.12 } ] },
+    "strumento": { "volume": 0.24, "minGapTicks": 10, "parts": [
+      { "wave": "square", "duty": 0.25, "notes": "C5 E5 G5 C6 E6", "step": 0.05, "length": 0.08, "cutoff": 5000 },
+      { "wave": "square", "duty": 0.25, "from": 1568, "at": 0.25, "length": 0.4, "vibrato": 0.2, "release": 0.2, "cutoff": 5000 } ] },
+    "livello": { "volume": 0.28, "minGapTicks": 10, "parts": [
+      { "wave": "square", "duty": 0.25, "notes": "C5 E5 G5", "step": 0.07, "length": 0.08, "cutoff": 5000 },
+      { "wave": "square", "duty": 0.25, "from": 1047, "at": 0.21, "length": 0.4, "vibrato": 0.2, "release": 0.18, "cutoff": 5000 },
+      { "wave": "triangle", "from": 262, "length": 0.6, "release": 0.2 } ] },
+    "danno": { "volume": 0.3, "minGapTicks": 8, "parts": [
+      { "wave": "square", "duty": 0.5, "from": 300, "to": 110, "length": 0.13, "cutoff": 2400 },
+      { "wave": "noise", "from": 2000, "length": 0.08, "decay": 20, "cutoff": 3000 } ] },
+    "rinascita": { "volume": 0.32, "minGapTicks": 30, "parts": [
+      { "wave": "sine", "from": 300, "to": 1200, "length": 0.5, "vibrato": 0.6, "vibratoRate": 12 },
+      { "wave": "triangle", "notes": "C6 E6 G6 C7", "at": 0.3, "step": 0.08, "length": 0.16, "decay": 6 } ] },
+
+    // ---- Chests, Dominanti, boss ----
+    "forziere-scuote": { "volume": 0.2, "minGapTicks": 4, "parts": [
+      { "wave": "noise", "from": 1200, "length": 0.06, "decay": 20, "cutoff": 2000 },
+      { "wave": "square", "duty": 0.5, "from": 220, "to": 180, "length": 0.05, "cutoff": 1500 } ] },
+    "forziere-apre": { "volume": 0.28, "minGapTicks": 30, "parts": [
+      { "wave": "square", "duty": 0.25, "notes": "G5 C6 E6 G6", "step": 0.08, "length": 0.12, "cutoff": 5000 },
+      { "wave": "square", "duty": 0.25, "from": 2093, "at": 0.32, "length": 0.55, "vibrato": 0.25, "release": 0.25, "cutoff": 5000 },
+      { "wave": "triangle", "notes": "C4 G4 C5", "step": 0.16, "length": 0.3 } ] },
+    "dominante": { "volume": 0.26, "minGapTicks": 30, "parts": [
+      { "wave": "saw", "from": 220, "length": 0.28, "vibrato": 0.15, "cutoff": 1600 },
+      { "wave": "saw", "from": 330, "at": 0.32, "length": 0.4, "vibrato": 0.15, "release": 0.15, "cutoff": 1600 } ] },
+    "boss-allarme": { "volume": 0.28, "minGapTicks": 30, "parts": [ { "wave": "square", "duty": 0.5, "notes": "A4 E4 A4 E4", "step": 0.18, "length": 0.17, "cutoff": 2400 } ] },
+    "esplosione": { "volume": 0.42, "minGapTicks": 6, "parts": [
+      { "wave": "noise", "from": 2000, "to": 200, "length": 0.6, "decay": 5, "cutoff": 3000 },
+      { "wave": "sine", "from": 120, "to": 35, "length": 0.4, "decay": 6 } ] },
+    "carica": { "volume": 0.18, "minGapTicks": 8, "parts": [ { "wave": "noise", "from": 500, "to": 6000, "length": 0.25, "cutoff": 2500 } ] },
+    "teletrasporto": { "volume": 0.18, "minGapTicks": 8, "parts": [
+      { "wave": "sine", "from": 400, "to": 1600, "length": 0.15, "vibrato": 1, "vibratoRate": 30 },
+      { "wave": "sine", "from": 1600, "to": 400, "at": 0.15, "length": 0.15, "vibrato": 1, "vibratoRate": 30 } ] },
+    "sparo-nemico": { "volume": 0.1, "minGapTicks": 4, "pitchJitter": 0.1, "parts": [ { "wave": "square", "duty": 0.25, "from": 900, "to": 400, "length": 0.07, "cutoff": 3000 } ] },
+    "roccia": { "volume": 0.32, "minGapTicks": 4, "parts": [
+      { "wave": "noise", "from": 800, "to": 200, "length": 0.25, "decay": 8, "cutoff": 1500 },
+      { "wave": "sine", "from": 90, "to": 40, "length": 0.2, "decay": 8 } ] },
+    "pokeball": { "volume": 0.24, "minGapTicks": 10, "parts": [
+      { "wave": "noise", "from": 1000, "to": 4000, "length": 0.22, "cutoff": 3000 },
+      { "wave": "square", "duty": 0.25, "from": 900, "to": 1800, "at": 0.36, "length": 0.06, "cutoff": 4000 } ] },
+    "rompi-erba": { "volume": 0.1, "minGapTicks": 3, "pitchJitter": 0.2, "parts": [ { "wave": "noise", "from": 6000, "to": 2000, "length": 0.08, "cutoff": 5000 } ] },
+    "rompi-roccia": { "volume": 0.2, "minGapTicks": 4, "parts": [ { "wave": "noise", "from": 1500, "to": 400, "length": 0.15, "decay": 12, "cutoff": 2000 } ] },
+    "cromatico": { "volume": 0.24, "minGapTicks": 30, "parts": [ { "wave": "triangle", "notes": "E7 B6 E7 G#7", "step": 0.06, "length": 0.22, "decay": 6 } ] },
+    "missione": { "volume": 0.26, "minGapTicks": 30, "parts": [
+      { "wave": "square", "duty": 0.25, "notes": "C6 D6 E6", "step": 0.07, "length": 0.09, "cutoff": 5000 },
+      { "wave": "square", "duty": 0.25, "from": 1568, "at": 0.21, "length": 0.35, "vibrato": 0.2, "release": 0.15, "cutoff": 5000 } ] },
+
+    // ---- Evolutions, special, abilities ----
+    "evoluzione": { "volume": 0.26, "minGapTicks": 30, "parts": [
+      { "wave": "triangle", "from": 200, "to": 800, "length": 1.6, "vibrato": 0.5, "vibratoRate": 8, "release": 0.3 },
+      { "wave": "square", "duty": 0.125, "notes": "C6 G6 C7", "at": 1.2, "step": 0.1, "length": 0.2, "decay": 6, "cutoff": 5000 } ] },
+    "evoluzione-fine": { "volume": 0.28, "minGapTicks": 30, "parts": [
+      { "wave": "square", "duty": 0.25, "notes": "G5 C6 E6 G6", "step": 0.1, "length": 0.14, "cutoff": 5000 },
+      { "wave": "square", "duty": 0.25, "from": 2093, "at": 0.4, "length": 0.7, "vibrato": 0.25, "release": 0.3, "cutoff": 5000 },
+      { "wave": "triangle", "notes": "C4 E4 G4 C5", "step": 0.1, "length": 0.5 } ] },
+    "mossa-evoluta": { "volume": 0.26, "minGapTicks": 30, "parts": [
+      { "wave": "square", "duty": 0.25, "notes": "E5 G5 C6 E6", "step": 0.07, "length": 0.1, "cutoff": 5000 },
+      { "wave": "triangle", "from": 1319, "at": 0.28, "length": 0.45, "vibrato": 0.3, "release": 0.2 } ] },
+    "speciale": { "volume": 0.3, "minGapTicks": 30, "parts": [
+      { "wave": "noise", "from": 300, "to": 8000, "length": 0.4, "cutoff": 4000 },
+      { "wave": "sine", "from": 200, "to": 900, "length": 0.4 } ] },
+    "speciale-impatto": { "volume": 0.5, "minGapTicks": 30, "parts": [
+      { "wave": "noise", "from": 3000, "to": 150, "length": 1.0, "decay": 3, "cutoff": 3500 },
+      { "wave": "sine", "from": 100, "to": 30, "length": 0.7, "decay": 4 },
+      { "wave": "square", "duty": 0.5, "from": 60, "length": 0.3, "decay": 8, "cutoff": 600 } ] },
+    "abilita": { "volume": 0.18, "minGapTicks": 10, "parts": [ { "wave": "square", "duty": 0.125, "notes": "E6 A6", "step": 0.05, "length": 0.09, "cutoff": 5000 } ] },
+    "allenatore": { "volume": 0.24, "minGapTicks": 10, "parts": [
+      { "wave": "square", "duty": 0.25, "notes": "C6 G6 C7", "step": 0.05, "length": 0.09, "cutoff": 5000 },
+      { "wave": "noise", "from": 800, "to": 5000, "length": 0.2, "volume": 0.4, "cutoff": 3000 } ] },
+
+    // ---- The player's moves, by family of types ----
+    "mossa-elettro": { "volume": 0.09, "minGapTicks": 4, "pitchJitter": 0.08, "parts": [ { "wave": "square", "duty": 0.125, "from": 1800, "to": 600, "length": 0.09, "vibrato": 2, "vibratoRate": 40, "cutoff": 4000 } ] },
+    "mossa-fuoco": { "volume": 0.12, "minGapTicks": 4, "pitchJitter": 0.08, "parts": [
+      { "wave": "noise", "from": 800, "to": 2500, "length": 0.14, "cutoff": 2200 },
+      { "wave": "saw", "from": 120, "to": 200, "length": 0.1, "volume": 0.5, "cutoff": 900 } ] },
+    "mossa-acqua": { "volume": 0.12, "minGapTicks": 4, "pitchJitter": 0.1, "parts": [
+      { "wave": "sine", "from": 400, "to": 900, "length": 0.08 },
+      { "wave": "sine", "from": 600, "to": 1200, "at": 0.04, "length": 0.06 } ] },
+    "mossa-vento": { "volume": 0.08, "minGapTicks": 4, "pitchJitter": 0.1, "parts": [ { "wave": "noise", "from": 3000, "to": 6000, "length": 0.11, "cutoff": 4500 } ] },
+    "mossa-colpo": { "volume": 0.12, "minGapTicks": 4, "pitchJitter": 0.1, "parts": [
+      { "wave": "noise", "from": 1500, "to": 300, "length": 0.08, "cutoff": 2000 },
+      { "wave": "sine", "from": 160, "to": 60, "length": 0.08 } ] },
+    "mossa-raggio": { "volume": 0.09, "minGapTicks": 4, "pitchJitter": 0.06, "parts": [
+      { "wave": "sine", "from": 900, "to": 1300, "length": 0.14, "vibrato": 0.4, "vibratoRate": 20 },
+      { "wave": "triangle", "from": 450, "length": 0.14, "volume": 0.5 } ] },
+    "mossa-ombra": { "volume": 0.1, "minGapTicks": 4, "pitchJitter": 0.08, "parts": [ { "wave": "saw", "from": 300, "to": 150, "length": 0.12, "cutoff": 1200 } ] }
+  }
+}

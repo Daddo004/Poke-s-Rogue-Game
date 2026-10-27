@@ -173,6 +173,7 @@ public sealed class RunRenderer
             _enemyVfx.OnEvent(e);
             _abilityVfx.OnEvent(e, run, _playerAnimator.Anim, _playerAnimator.Frame);
             _trainerVfx.OnEvent(e, run);
+            Audio.RunSounds.OnEvent(_services.Sounds, e, run);
             switch (e.Type)
             {
                 case RunEventType.TrainerAbility when (Core.Run.Trainers.TrainerEffect)(int)e.Value == Core.Run.Trainers.TrainerEffect.Used && run.Trainer is { } trainer:
@@ -369,11 +370,12 @@ public sealed class RunRenderer
     {
         var p = _services.Primitives;
         Camera.Position = run.Player.Position.ToXna();
+        _vfx.Shake.Strength = _services.Settings.ShakePercent / 100f;
         Camera.Shake = _vfx.Shake.Offset;
         var view = Camera.VisibleWorld;
         var cull = Cull();
 
-        batch.Begin(samplerState: SamplerState.PointClamp, transformMatrix: Camera.Transform);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp, transformMatrix: Camera.Transform);
         Floor.Draw(batch, view);
         _edges.Draw(batch, run.Map, view, _tick);
         _vfx.DrawGround(batch, run);
@@ -400,7 +402,7 @@ public sealed class RunRenderer
             UiDraw.Bar(batch, p, new Rectangle((int)feet.X - 13, (int)feet.Y + 5, 26, 4), hpRatio, UiDraw.HpColor(hpRatio), new Color(40, 24, 32), Ink);
         batch.End();
 
-        batch.Begin(blendState: BlendState.Additive, samplerState: SamplerState.PointClamp, transformMatrix: Camera.Transform);
+        batch.BeginVirtual(blendState: BlendState.Additive, samplerState: SamplerState.PointClamp, transformMatrix: Camera.Transform);
         _vfx.DrawGlow(batch, run);
         _enemyVfx.DrawGlow(batch);
         DrawStatusGlow(batch, run);
@@ -470,13 +472,13 @@ public sealed class RunRenderer
         batch.End();
 
         // The level's dark and weather (phase 7.2), under the numbers and bars so those stay readable.
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         var screenFeet = Vector2.Transform(feet, Camera.Transform);
         _conditions.DrawDarkness(batch, run, screenFeet + new Vector2(0, -10), Tileset);
         _conditions.DrawWeather(batch, screenFeet);
         batch.End();
 
-        batch.Begin(samplerState: SamplerState.PointClamp, transformMatrix: Camera.Transform);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp, transformMatrix: Camera.Transform);
         _statusVfx.DrawOverhead(batch, run, cull);
         DrawDominantBars(batch, run, cull);
         if (!run.IsOver)
@@ -489,7 +491,7 @@ public sealed class RunRenderer
             DrawHitboxes(batch, run);
         batch.End();
 
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         _trainerVfx.DrawScreen(batch, run, _services.Screen.Width, _services.Screen.Height);
         batch.End();
     }

@@ -23,7 +23,7 @@ public sealed partial class ArtboardScene
         var theme = UiTheme.Dark;
         Services.Device.Clear(new Color(22, 18, 36));
 
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
 
         // Subtle diagonal stripes
         for (var x = -360; x < 640; x += 16)
@@ -146,7 +146,7 @@ public sealed partial class ArtboardScene
     {
         var p = Services.Primitives;
         Services.Device.Clear(new Color(22, 18, 36));
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
 
         var label = Services.Fonts.Get("Silkscreen-Regular", 8);
         UiDraw.Text(batch, label, "TAVOLA DI STILE  -  FONT", new Vector2(8, 6), Gold);
@@ -215,14 +215,14 @@ public sealed partial class ArtboardScene
         UiDraw.Text(batch, label, "B: sprite Showdown ridotti", new Vector2(488, 194), Paper);
 
         batch.End();
-        batch.Begin(blendState: BlendState.Additive, samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(blendState: BlendState.Additive, samplerState: SamplerState.PointClamp);
         DrawBolt(batch, new Vector2(346, 240), new Vector2(460, 226), _tick / 4 * 13);
         DrawSpark(batch, new Vector2(460, 226), _tick);
         DrawPixelFlame(batch, new Vector2(370, 290));
         DrawPixelFlame(batch, new Vector2(410, 286));
         batch.End();
 
-        batch.Begin(samplerState: SamplerState.LinearClamp);
+        batch.BeginVirtual(samplerState: SamplerState.LinearClamp);
         string[] fx = ["electroball", "fireball", "leaf1", "shadowball", "iceball", "waterwisp"];
         for (var i = 0; i < fx.Length; i++)
         {
@@ -234,7 +234,7 @@ public sealed partial class ArtboardScene
         }
 
         batch.End();
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
     }
 
     private void DrawPixelFlame(SpriteBatch batch, Vector2 at)

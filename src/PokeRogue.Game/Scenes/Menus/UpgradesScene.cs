@@ -37,6 +37,16 @@ public sealed class UpgradesScene(GameServices services) : MenuScene(services)
             _cursor -= Columns;
         if (Down() && _cursor + Columns < Upgrades.Count)
             _cursor += Columns;
+        if (Pointed("griglia") is { } pointed)
+            _cursor = pointed;
+
+        // A click on the selected tile buys it, as [INVIO]; on another one it selects it.
+        var clicked = ClickedOn("griglia");
+        if (clicked is { } tile && tile != _cursor)
+        {
+            _cursor = tile;
+            return;
+        }
 
         var upgrade = Upgrades[_cursor];
         if (Back())
@@ -49,7 +59,7 @@ public sealed class UpgradesScene(GameServices services) : MenuScene(services)
                 Ask("Rimborsare tutti i potenziamenti?", $"TORNANO {UiFormat.Number(Meta.Data.UpgradeCoins)} MONETE",
                     () => Notice($"RIMBORSATE {UiFormat.Number(Meta.RefundUpgrades())} MONETE", Green));
         }
-        else if (Confirm())
+        else if (clicked is not null || Confirm())
         {
             if (Meta.UpgradePrice(upgrade) is not { } price)
                 Notice("GRADI AL MASSIMO", Dim);
@@ -69,7 +79,7 @@ public sealed class UpgradesScene(GameServices services) : MenuScene(services)
         for (var i = 0; i < Upgrades.Count; i++)
         {
             var tile = new Rectangle(16 + i % Columns * 152, 44 + i / Columns * 92, 144, 84);
-            DrawTile(batch, Upgrades[i], tile, i == _cursor);
+            DrawTile(batch, Upgrades[i], i, tile, i == _cursor);
         }
 
         var selected = Upgrades[_cursor];
@@ -89,16 +99,21 @@ public sealed class UpgradesScene(GameServices services) : MenuScene(services)
                 new Vector2(panel.Right - 10 - UiDraw.Measure(Small, $"SPESE QUI: {UiFormat.Number(Meta.Data.UpgradeCoins)} MONETE, [R] PER RIAVERLE").X, panel.Y + 76), Dim);
 
         DrawFooter(batch, "[FRECCE] SCEGLI     [INVIO] COMPRA     [R] RIMBORSA TUTTO     [ESC] INDIETRO");
+        if (Meta.UpgradePrice(selected) is not null)
+            KeyHints.Draw(batch, Services, "[INVIO] COMPRA", new Vector2(panel.Right - 10 - KeyHints.Measure(Services, "[INVIO] COMPRA"), panel.Y + 10), Gold);
     }
 
-    private void DrawTile(SpriteBatch batch, UpgradeSpec upgrade, Rectangle tile, bool selected)
+    private void DrawTile(SpriteBatch batch, UpgradeSpec upgrade, int index, Rectangle tile, bool selected)
     {
         var p = Services.Primitives;
         var grade = Meta.UpgradeGrade(upgrade);
         var maxed = grade >= upgrade.MaxGrade;
+        Clickable(tile, "griglia", index);
         UiDraw.Frame(batch, p, tile, Services.Style.Theme);
         if (selected)
             DrawCursor(batch, tile);
+        else
+            DrawHover(batch, tile);
 
         var icon = new Rectangle(tile.X + 8, tile.Y + 8, 28, 28);
         UiDraw.Frame(batch, p, icon, maxed ? new UiTheme(new Color(60, 48, 24, 235), Gold, new Color(140, 110, 40), Ink, Paper, Dim) : Services.Style.Theme);

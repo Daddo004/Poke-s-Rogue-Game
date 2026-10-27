@@ -1,0 +1,44 @@
+// Bosses, legendaries and trainer challenges (phase 8.3): fast and tense, D minor. One token per eighth note.
+{
+  "nameIt": "Boss",
+  "bpm": 168,
+  "stepsPerBeat": 2,
+  "volume": 1.0,
+  "channels": [
+    {
+      "wave": "square", "duty": 0.25, "volume": 0.16, "release": 0.03, "vibrato": 0.08, "cutoff": 3200,
+      "patterns": {
+        "A": "D5 . F5 . A5 . D6 . | C6 . A5 . F5 . A5 . | Bb5 . . . F5 . D5 . | C6 . . . G5 . E5 . | D6 . . C6 A5 . F5 . | G5 . F5 . E5 . D5 . | G5 . Bb5 . D6 . Bb5 . | C#6 . . . A5 . E5 .",
+        "B": "F5 . D5 . Bb4 . D5 . | G5 . E5 . C5 . E5 . | A5 . F5 . D5 . F5 . | A5 . . . . . - - | Bb5 . A5 . G5 . D5 . | C#5 . E5 . A5 . G5 . | F5 . E5 . D5 . A4 . | C#5 . . . E5 . A5 ."
+      },
+      "order": [ "A", "B" ]
+    },
+    {
+      "wave": "square", "duty": 0.125, "volume": 0.06, "release": 0.02, "cutoff": 2500,
+      "patterns": {
+        "Dm": "- D4+F4+A4 - D4+F4+A4 - D4+F4+A4 - D4+F4+A4",
+        "Bb": "- D4+F4+Bb4 - D4+F4+Bb4 - D4+F4+Bb4 - D4+F4+Bb4",
+        "C": "- C4+E4+G4 - C4+E4+G4 - C4+E4+G4 - C4+E4+G4",
+        "Gm": "- D4+G4+Bb4 - D4+G4+Bb4 - D4+G4+Bb4 - D4+G4+Bb4",
+        "A": "- C#4+E4+A4 - C#4+E4+A4 - C#4+E4+A4 - C#4+E4+A4"
+      },
+      "order": [ "Dm", "Dm", "Bb", "C", "Dm", "Dm", "Gm", "A", "Bb", "C", "Dm", "Dm", "Gm", "A", "Dm", "A" ]
+    },
+    {
+      "wave": "saw", "volume": 0.15, "release": 0.02, "cutoff": 900,
+      "patterns": {
+        "Dm": "D2 D3 D2 D3 D2 D3 D2 D3",
+        "Bb": "Bb1 Bb2 Bb1 Bb2 Bb1 Bb2 Bb1 Bb2",
+        "C": "C2 C3 C2 C3 C2 C3 C2 C3",
+        "Gm": "G1 G2 G1 G2 G1 G2 G1 G2",
+        "A": "A1 A2 A1 A2 A1 A2 A1 A2"
+      },
+      "order": [ "Dm", "Dm", "Bb", "C", "Dm", "Dm", "Gm", "A", "Bb", "C", "Dm", "Dm", "Gm", "A", "Dm", "A" ]
+    },
+    {
+      "drums": true, "volume": 0.42,
+      "patterns": { "beat": "k h s h k h s s", "fill": "k k s h k h s o" },
+      "order": [ "beat", "beat", "beat", "fill" ]
+    }
+  ]
+}

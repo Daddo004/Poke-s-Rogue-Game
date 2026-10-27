@@ -56,7 +56,7 @@ public sealed partial class ArtboardScene
         var p = Services.Primitives;
         var flashOn = _tick / 6 % 2 == 0;
 
-        batch.Begin(samplerState: SamplerState.PointWrap);
+        batch.BeginVirtual(samplerState: SamplerState.PointWrap);
         batch.Draw(_art.Grass, new Rectangle(0, 0, 640, 360), new Rectangle(37, 11, 640, 360), Color.White);
 
         foreach (var (position, type) in _gems)
@@ -99,7 +99,7 @@ public sealed partial class ArtboardScene
         batch.End();
 
         // Thundershock: procedural pixel lightning with additive glow
-        batch.Begin(blendState: BlendState.Additive, samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(blendState: BlendState.Additive, samplerState: SamplerState.PointClamp);
         for (var i = 0; i < _boltTargets.Count; i++)
         {
             var target = _mons[_boltTargets[i]].Position - new Vector2(0, 10);
@@ -109,7 +109,7 @@ public sealed partial class ArtboardScene
 
         batch.End();
 
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         DrawDamageNumbers(batch);
         if (battleBoxHud)
             DrawHudBattleBox(batch);

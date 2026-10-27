@@ -21,4 +21,10 @@ public abstract class Scene(GameServices services)
 
     /// <summary>When true the scene uses Esc itself (pause); otherwise Esc closes the game.</summary>
     public virtual bool HandlesEscape => false;
+
+    /// <summary>
+    /// The mouse pointer stays on screen while the mouse is still (menus, phase 8.1). False while playing: it then hides
+    /// a few seconds after the mouse stops.
+    /// </summary>
+    public virtual bool ShowsPointer => true;
 }

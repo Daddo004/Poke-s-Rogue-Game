@@ -90,7 +90,7 @@ public sealed class LevelUpPreviewScene(GameServices services, string? variant, 
         if (_evolution)
             _hud.Draw(batch, _run);
 
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         if (!_evolution)
             _xpBar.Draw(batch, _run.Player);
         var layout = _window.Layout == LevelUpLayout.Cards ? "B carte" : "A lista";

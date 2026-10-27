@@ -9,6 +9,9 @@ public sealed class SceneManager
 
     public Scene? Current { get; private set; }
 
+    /// <summary>Another scene has just taken over (the mouse forgets what the last one drew).</summary>
+    public event Action? Switched;
+
     public void Switch(Scene scene) => _pending = scene;
 
     public void Update()
@@ -18,6 +21,7 @@ public sealed class SceneManager
             Current?.OnLeave();
             Current = _pending;
             _pending = null;
+            Switched?.Invoke();
             Current.Enter();
         }
 

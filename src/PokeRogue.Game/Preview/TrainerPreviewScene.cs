@@ -135,7 +135,7 @@ public sealed class TrainerPreviewScene : Scene
         }
 
         Services.Device.Clear(new Color(36, 52, 40));
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         if (_variant == "album")
             DrawAlbum(batch);
         else

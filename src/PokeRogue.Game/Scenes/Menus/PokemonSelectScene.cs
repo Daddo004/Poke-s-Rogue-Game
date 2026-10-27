@@ -70,6 +70,26 @@ public sealed class PokemonSelectScene : MenuScene
         if (Down())
             Move(Columns);
 
+        // The mouse: pointing selects, a click on the selected one goes on; a click on a stat or a move opens the upgrades.
+        if (Pointed("griglia") is { } pointed)
+            _cursor = pointed;
+        if (ClickedOn("griglia") is { } cell)
+        {
+            if (cell == _cursor)
+                Choose();
+            _cursor = cell;
+            return;
+        }
+
+        if (ClickedOn("potenzia") is { } row)
+        {
+            if (Meta.IsUnlocked(Selected))
+                OpenUpgrades(row);
+            else
+                Notice("PRIMA SBLOCCALO", Red);
+            return;
+        }
+
         var character = Selected;
         if (Back())
             Services.Switch(new MainMenuScene(Services));
@@ -102,6 +122,8 @@ public sealed class PokemonSelectScene : MenuScene
             _row = (_row + UpgradeRows - 1) % UpgradeRows;
         if (Down())
             _row = (_row + 1) % UpgradeRows;
+        if (Pointed("potenzia") is { } pointed)
+            _row = pointed;
 
         var character = Selected;
         if (Back() || Pressed(Keys.F, Buttons.Y))
@@ -109,6 +131,18 @@ public sealed class PokemonSelectScene : MenuScene
             _upgrading = false;
             return;
         }
+
+        // A click on the roster leaves the upgrades for that Pokémon; a click on a row buys there.
+        if (ClickedOn("griglia") is { } cell)
+        {
+            _upgrading = false;
+            _cursor = cell;
+            return;
+        }
+
+        var clicked = ClickedOn("potenzia");
+        if (clicked is { } row)
+            _row = row;
 
         if (Pressed(Keys.R, Buttons.X))
         {
@@ -121,7 +155,7 @@ public sealed class PokemonSelectScene : MenuScene
             return;
         }
 
-        if (!Confirm())
+        if (clicked is null && !Confirm())
             return;
 
         if (_row < 6)
@@ -189,6 +223,7 @@ public sealed class PokemonSelectScene : MenuScene
             var slot = i - _scroll * Columns;
             var cell = new Rectangle(16 + slot % Columns * Pitch, 40 + slot / Columns * Pitch, 44, 44);
             var unlocked = Meta.IsUnlocked(character);
+            Clickable(cell, "griglia", i);
             UiDraw.Frame(batch, p, cell, theme);
             if (Services.Sprites.Portrait(character.First.Id) is { } portrait)
                 batch.Draw(portrait, new Rectangle(cell.X + 2, cell.Y + 2, 40, 40), unlocked ? Color.White : LockedTint);
@@ -210,6 +245,8 @@ public sealed class PokemonSelectScene : MenuScene
 
             if (i == _cursor)
                 DrawCursor(batch, cell);
+            else
+                DrawHover(batch, cell);
         }
 
         // Scroll bar beside the grid.
@@ -324,8 +361,12 @@ public sealed class PokemonSelectScene : MenuScene
         {
             var y = 174 + i * 12;
             var selected = _upgrading && _row == i;
+            var line = new Rectangle(322, y - 2, 296, 12);
+            Clickable(line, "potenzia", i);
             if (selected)
-                p.Rect(batch, new Rectangle(322, y - 2, 296, 12), Gold * 0.14f);
+                p.Rect(batch, line, Gold * 0.14f);
+            else if (unlocked && Under(line))
+                p.Rect(batch, line, Color.White * 0.05f);
 
             UiDraw.Text(batch, Small, labels[i], new Vector2(326, y), selected ? Paper : theme.TextDim);
             var value = values[i];
@@ -375,6 +416,12 @@ public sealed class PokemonSelectScene : MenuScene
             var y = 250 + i * 28;
             var box = new Rectangle(324, y, 292, 24);
             var selected = _upgrading && _row == row;
+            if (row >= 0)
+            {
+                Clickable(box, "potenzia", row);
+                if (!selected && unlocked)
+                    DrawHover(batch, box);
+            }
             p.Rect(batch, box, selected ? Gold * 0.14f : Color.White * 0.05f);
             if (selected)
                 p.Outline(batch, box, Age / 20 % 2 == 0 ? Gold : Color.Lerp(Gold, Color.White, 0.5f), 1);

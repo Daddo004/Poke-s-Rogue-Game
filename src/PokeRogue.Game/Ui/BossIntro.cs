@@ -54,7 +54,7 @@ public sealed class BossIntro(GameServices services)
         var close = Ease(Age / (float)BarTicks) * Ease((Ticks - Age) / (float)BarTicks);
         var bar = (int)(BarHeight * close);
 
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         p.Rect(batch, new Rectangle(0, 0, width, bar), Color.Black);
         p.Rect(batch, new Rectangle(0, height - bar, width, bar), Color.Black);
 

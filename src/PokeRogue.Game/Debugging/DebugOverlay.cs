@@ -18,14 +18,20 @@ public sealed class DebugOverlay(GameServices services)
             return;
 
         var font = services.Fonts.Small(services.Style);
-        var all = new List<string> { $"FPS {stats.Fps}   update {stats.UpdateMs:0.00} ms   draw {stats.DrawMs:0.00} ms   frame max {stats.WorstFrameMs:0} ms" };
+        var pp = services.Device.PresentationParameters;
+        var screen = services.Screen;
+        var all = new List<string>
+        {
+            $"FPS {stats.Fps}   update {stats.UpdateMs:0.00} ms   draw {stats.DrawMs:0.00} ms   frame max {stats.WorstFrameMs:0} ms" +
+            $"   buffer {pp.BackBufferWidth}x{pp.BackBufferHeight}   immagine {screen.Destination.Width}x{screen.Destination.Height} (x{screen.Scale}{(screen.Fill ? " piena" : "")})",
+        };
         all.AddRange(lines);
 
         var width = (int)all.Max(l => UiDraw.Measure(font, l).X) + 8;
         var height = all.Count * 10 + 4;
         var top = services.Screen.Height - height - 2;
 
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         services.Primitives.Rect(batch, new Rectangle(2, top, width, height), Back);
         for (var i = 0; i < all.Count; i++)
             UiDraw.Text(batch, font, all[i], new Vector2(6, top + 3 + i * 10), Text);

@@ -1,0 +1,47 @@
+// Levels in daylight (phase 8.3): driving, E minor and G major. One token per eighth note.
+{
+  "nameIt": "Avventura",
+  "bpm": 144,
+  "stepsPerBeat": 2,
+  "volume": 1.0,
+  "channels": [
+    {
+      "wave": "square", "duty": 0.5, "volume": 0.16, "release": 0.04, "vibrato": 0.08, "cutoff": 2800,
+      "patterns": {
+        "A": "E5 . G5 . B5 . A5 G5 | E5 . . . C5 . E5 . | D5 . G5 . B5 . D6 . | C6 . B5 . A5 . F#5 . | E5 . G5 . B5 . E6 . | D6 . C6 . B5 . G5 . | A5 . B5 . G5 . D5 . | F#5 . . . A5 . . .",
+        "B": "G5 . E5 . C5 . E5 . | F#5 . A5 . D6 . A5 . | B5 . . G5 D5 . G5 . | E5 . . . B4 . E5 . | C6 . B5 . A5 . G5 . | A5 . F#5 . D5 . F#5 . | G5 . . F#5 E5 . B4 . | D5 . E5 . F#5 . A5 .",
+        "C": "E5 . . . G5 . . . | F#5 . . . A5 . . . | B5 . A5 . G5 . F#5 . | E5 . . . . . B4 . | C5 . E5 . G5 . C6 . | D6 . . C6 B5 . A5 . | G5 . F#5 . E5 . D5 . | E5 . . . - - D5 ."
+      },
+      "order": [ "A", "B", "A", "C" ]
+    },
+    {
+      "wave": "square", "duty": 0.125, "volume": 0.06, "release": 0.02, "cutoff": 2500,
+      "patterns": {
+        "Em": "- E4+G4+B4 - E4+G4+B4 - E4+G4+B4 - E4+G4+B4",
+        "C": "- C4+E4+G4 - C4+E4+G4 - C4+E4+G4 - C4+E4+G4",
+        "G": "- D4+G4+B4 - D4+G4+B4 - D4+G4+B4 - D4+G4+B4",
+        "D": "- D4+F#4+A4 - D4+F#4+A4 - D4+F#4+A4 - D4+F#4+A4",
+        "Bm": "- D4+F#4+B4 - D4+F#4+B4 - D4+F#4+B4 - D4+F#4+B4"
+      },
+      "order": [ "Em", "C", "G", "D", "Em", "C", "G", "D", "C", "D", "G", "Em", "C", "D", "Em", "D",
+                 "Em", "C", "G", "D", "Em", "C", "G", "D", "C", "D", "Bm", "Em", "C", "D", "Em", "D" ]
+    },
+    {
+      "wave": "triangle", "volume": 0.32, "release": 0.02,
+      "patterns": {
+        "Em": "E2 E3 E2 E3 E2 E3 E2 E3",
+        "C": "C2 C3 C2 C3 C2 C3 C2 C3",
+        "G": "G2 G3 G2 G3 G2 G3 G2 G3",
+        "D": "D2 D3 D2 D3 D2 D3 D2 D3",
+        "Bm": "B1 B2 B1 B2 B1 B2 B1 B2"
+      },
+      "order": [ "Em", "C", "G", "D", "Em", "C", "G", "D", "C", "D", "G", "Em", "C", "D", "Em", "D",
+                 "Em", "C", "G", "D", "Em", "C", "G", "D", "C", "D", "Bm", "Em", "C", "D", "Em", "D" ]
+    },
+    {
+      "drums": true, "volume": 0.36,
+      "patterns": { "beat": "k h s h k k s h", "fill": "k h s h k s s o" },
+      "order": [ "beat", "beat", "beat", "beat", "beat", "beat", "beat", "fill" ]
+    }
+  ]
+}

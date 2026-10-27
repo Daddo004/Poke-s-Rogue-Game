@@ -1,0 +1,42 @@
+// Title and menus (phase 8.3): calm and adventurous, C major. One token per eighth note.
+{
+  "nameIt": "Titolo",
+  "bpm": 104,
+  "stepsPerBeat": 2,
+  "volume": 1.0,
+  "channels": [
+    {
+      "wave": "square", "duty": 0.25, "volume": 0.2, "release": 0.06, "vibrato": 0.1, "cutoff": 3500,
+      "patterns": {
+        "A": "E5 . . D5 C5 . G4 . | B4 . D5 . G5 . . . | A5 . G5 . E5 . C5 . | D5 . . C5 A4 . . . | E5 . . D5 C5 . E5 . | G5 . . F5 D5 . B4 . | C5 . A4 . F5 . E5 . | D5 . . . - - - -",
+        "B": "C6 . . B5 A5 . E5 . | F5 . . E5 C5 . A4 . | G5 . . F5 E5 . C5 . | D5 . E5 . F5 . G5 . | A5 . . G5 E5 . C5 . | F5 . . G5 A5 . F5 . | G5 . . . F5 . D5 . | B4 . . . D5 . . ."
+      },
+      "order": [ "A", "B" ]
+    },
+    {
+      "wave": "triangle", "volume": 0.11, "attack": 0.02, "release": 0.1,
+      "patterns": {
+        "C": "C4+E4+G4 . . . C4+E4+G4 . . .",
+        "G": "B3+D4+G4 . . . B3+D4+G4 . . .",
+        "Am": "A3+C4+E4 . . . A3+C4+E4 . . .",
+        "F": "A3+C4+F4 . . . A3+C4+F4 . . ."
+      },
+      "order": [ "C", "G", "Am", "F", "C", "G", "F", "G", "Am", "F", "C", "G", "Am", "F", "G", "G" ]
+    },
+    {
+      "wave": "triangle", "volume": 0.32, "release": 0.03,
+      "patterns": {
+        "C": "C3 . G2 . C3 . G2 .",
+        "G": "G2 . D3 . G2 . D3 .",
+        "Am": "A2 . E3 . A2 . E3 .",
+        "F": "F2 . C3 . F2 . C3 ."
+      },
+      "order": [ "C", "G", "Am", "F", "C", "G", "F", "G", "Am", "F", "C", "G", "Am", "F", "G", "G" ]
+    },
+    {
+      "drums": true, "volume": 0.3,
+      "patterns": { "beat": "k - h - s - h -" },
+      "order": [ "beat" ]
+    }
+  ]
+}

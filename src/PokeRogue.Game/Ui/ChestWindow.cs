@@ -60,14 +60,26 @@ public sealed class ChestWindow(GameServices services)
             return;
 
         Age++;
+        PlaySounds();
         if (Age < DoneTick)
             return;
 
         var confirmed = input is null
             ? Age >= DoneTick + AutoCloseTicks
-            : input.Pressed(Keys.Enter) || input.Pressed(Keys.Space) || input.Pressed(Buttons.A);
+            : input.Pressed(Keys.Enter) || input.Pressed(Keys.Space) || input.Pressed(Buttons.A) || input.Click("forziere") is not null;
         if (confirmed)
             Close();
+    }
+
+    /// <summary>The Ball knocks at each wobble, bursts with a fanfare, and each reward chimes as it flies out (phase 8.3).</summary>
+    private void PlaySounds()
+    {
+        if (Age >= DropTicks && Age < DropTicks + WobbleTicks * Wobbles && (Age - DropTicks) % WobbleTicks == 0)
+            services.Sounds.Play("forziere-scuote");
+        if (Age == OpenTick)
+            services.Sounds.Play("forziere-apre");
+        if (Age > OpenTick && (Age - FirstRewardTick) % RewardStagger == 0 && Age < DoneTick - FlyTicks)
+            services.Sounds.Play("oggetto", 0.6f);
     }
 
     public void Draw(SpriteBatch batch)
@@ -80,8 +92,9 @@ public sealed class ChestWindow(GameServices services)
         var ballCenter = new Vector2(centerX, 128);
         var color = RunRenderer.ChestColor(chest.Tier);
 
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         p.Rect(batch, new Rectangle(0, 0, services.Screen.Width, services.Screen.Height), Color.Black * (0.6f * MathHelper.Clamp(Age / 10f, 0f, 1f)));
+        services.Input.Region(new Rectangle(0, 0, services.Screen.Width, services.Screen.Height), "forziere");
 
         var (title, subtitle) = chest.Tier switch
         {
@@ -100,8 +113,8 @@ public sealed class ChestWindow(GameServices services)
         for (var i = 0; i < chest.Rewards.Count; i++)
             DrawReward(batch, chest.Rewards[i], i, chest.Rewards.Count, ballCenter);
 
-        if (Age >= DoneTick && Age / 15 % 2 == 0)
-            UiDraw.TextCentered(batch, Small, "[INVIO] CONTINUA", centerX, 320, Paper, Ink);
+        if (Age >= DoneTick)
+            KeyHints.Draw(batch, services, "[INVIO] CONTINUA", new Vector2(centerX, 320), Age / 15 % 2 == 0 ? Paper : Dim, centered: true, outline: Ink);
         batch.End();
     }
 

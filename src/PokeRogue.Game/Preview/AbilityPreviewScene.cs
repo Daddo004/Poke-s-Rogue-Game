@@ -101,7 +101,7 @@ public sealed class AbilityPreviewScene : Scene
         Services.Device.Clear(new Color(36, 52, 40));
         var body = Services.Fonts.Body(Services.Style);
         var small = Services.Fonts.Small(Services.Style);
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         UiDraw.TextCentered(batch, Services.Fonts.Title(Services.Style), "ABILITÀ NELL'HUD", 320, 14, new Color(248, 208, 72), Ink);
         UiDraw.TextCentered(batch, small, "SOTTO GLI STRUMENTI: NOME, TASTO DELLE ATTIVE, BARRA DI RICARICA O DI ACCUMULO", 320, 50, Dim, Ink);
         for (var i = 0; i < _strips.Count; i++)

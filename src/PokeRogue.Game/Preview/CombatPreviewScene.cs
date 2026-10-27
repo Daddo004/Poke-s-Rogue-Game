@@ -81,7 +81,7 @@ public sealed class CombatPreviewScene : Scene
         var small = Services.Fonts.Small(Services.Style);
         var move = _run.Player.Moves[0];
         var stats = move.Stats;
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         UiDraw.TextOutlined(batch, small, $"{_title}  -  {Move.NameIt.ToUpperInvariant()}  ({Move.Archetype})  LV {move.Level}{(Move.Enabled ? "" : "  [NON ANCORA APPROVATA]")}", new Vector2(8, 8), Paper, Ink);
         UiDraw.TextOutlined(batch, small,
             $"POTENZA {stats.Power:0.#}  RICARICA {stats.Cooldown:0.##}S  QUANTITA {stats.Amount}  PORTATA {stats.Range:0}  RAGGIO {stats.Radius:0}  DURATA {stats.Duration:0.#}S",

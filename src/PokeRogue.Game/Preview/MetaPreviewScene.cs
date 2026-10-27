@@ -38,7 +38,12 @@ public sealed class MetaPreviewScene : Scene
         var pikachu = Services.Characters["pikachu"];
         _inner = _variant switch
         {
-            "menu" => new MainMenuScene(Services),
+            "menu" or "mouse" => new MainMenuScene(Services),
+            // Block 8: the title, the options, the credits, the pause with its options.
+            "titolo" => new TitleScene(Services),
+            "opzioni" => new OptionsScene(Services) { Cursor = 7 },
+            "crediti" => Credits(),
+            "pausa" or "pausa-opzioni" => _game = new GameplayScene(Services, autopilot: true, initialSpawn: 60),
             "pokemon" or "conferma" => new PokemonSelectScene(Services, _pokemon ?? (_variant == "conferma" ? "chikorita" : "pikachu")),
             "potenzia" => Upgrading(),
             "allenatori" => new TrainerSelectScene(Services, pikachu, _pokemon ?? "brock"),
@@ -66,6 +71,13 @@ public sealed class MetaPreviewScene : Scene
         _inner.Enter();
     }
 
+    private CreditsScene Credits()
+    {
+        var scene = new CreditsScene(Services);
+        scene.RollTo(420f);
+        return scene;
+    }
+
     private PokemonSelectScene Upgrading()
     {
         var scene = new PokemonSelectScene(Services, _pokemon ?? "pikachu");
@@ -91,6 +103,16 @@ public sealed class MetaPreviewScene : Scene
             _game!.ForceEnd(RunOutcome.Victory);
         if (_variant == "ultra" && _tick == 2)
             ((LevelSelectScene)_inner).PickChallenge(0);
+        if (_variant == "mouse" && _tick == 2)
+            Services.Input.SimulatedPointer = new Microsoft.Xna.Framework.Vector2(120, 145);
+        if (_variant is "pausa" or "pausa-opzioni" && _tick == 50)
+        {
+            _game!.OpenPause();
+            if (_variant == "pausa-opzioni")
+                _game.Pause.OpenOptions(2);
+            else
+                Services.Input.SimulatedPointer = new Microsoft.Xna.Framework.Vector2(65, 246);
+        }
         _inner.Update();
     }
 

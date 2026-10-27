@@ -153,10 +153,25 @@ public sealed class EvolutionWindow(GameServices services)
         }
 
         if (input.Pressed(Keys.Left) || input.Pressed(Keys.A) || input.Pressed(Buttons.DPadLeft))
+        {
             _selected = (_selected + _options.Count - 1) % _options.Count;
+            services.Sounds.Play("menu-sposta");
+        }
+
         if (input.Pressed(Keys.Right) || input.Pressed(Keys.D) || input.Pressed(Buttons.DPadRight))
+        {
             _selected = (_selected + 1) % _options.Count;
-        if (input.Pressed(Keys.Enter) || input.Pressed(Keys.Space) || input.Pressed(Buttons.A))
+            services.Sounds.Play("menu-sposta");
+        }
+
+        if (input.HoverMoved("evoluzione") is { } pointed)
+            _selected = pointed;
+
+        // A click on an option evolves into it, as [INVIO] on it.
+        var clicked = input.Click("evoluzione");
+        if (clicked is { } option)
+            _selected = option;
+        if (clicked is not null || input.Pressed(Keys.Enter) || input.Pressed(Keys.Space) || input.Pressed(Buttons.A))
         {
             Start(_options[_selected]);
         }
@@ -179,11 +194,14 @@ public sealed class EvolutionWindow(GameServices services)
             return;
         }
 
+        if (Age == FadeTicks)
+            services.Sounds.Play("evoluzione");
         if (Age == FlashTick)
         {
             CharacterEvolution.Evolve(run, _target!);
             _after = Stats.Of(run.Player);
             services.Cries.Play(_target!.Species.Id);
+            services.Sounds.Play("evoluzione-fine");
             for (var i = 0; i < 48; i++)
                 Spawn(new Vector2(services.Screen.Width / 2f, SpriteFeetY - 30), 60f + _random.NextSingle() * 110f, 40 + _random.Next(20));
         }
@@ -198,7 +216,7 @@ public sealed class EvolutionWindow(GameServices services)
 
     private static bool Confirmed(InputState? input, int waited) => input is null
         ? waited >= AutoCloseTicks
-        : input.Pressed(Keys.Enter) || input.Pressed(Keys.Space) || input.Pressed(Buttons.A);
+        : input.Pressed(Keys.Enter) || input.Pressed(Keys.Space) || input.Pressed(Buttons.A) || input.Click("evoluzione-fine") is not null;
 
     private void Start(CharacterStage target)
     {
@@ -217,7 +235,7 @@ public sealed class EvolutionWindow(GameServices services)
 
         var p = services.Primitives;
         var width = services.Screen.Width;
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         // The screen darkens as the window opens; after a choice it is dark already.
         var fade = _state == State.Choosing ? MathHelper.Clamp(Age / 10f, 0f, 1f)
             : _options.Count > 1 || _state == State.Stopped ? 1f
@@ -248,6 +266,7 @@ public sealed class EvolutionWindow(GameServices services)
             var option = _options[i];
             var tile = new Rectangle(left + i * (tileWidth + gap), top, tileWidth, tileHeight);
             var selected = i == _selected;
+            services.Input.Region(tile, "evoluzione", i);
             UiDraw.Frame(batch, p, tile, selected ? Chosen : UiTheme.Dark);
 
             var feet = new Vector2(tile.Center.X, tile.Y + 74 - (selected ? MathF.Abs(MathF.Sin(Age * 0.15f)) * 3f : 0f));
@@ -263,7 +282,7 @@ public sealed class EvolutionWindow(GameServices services)
 
         var preview = Stats.Of(_run!.Player);
         DrawStats(batch, preview, preview.Evolved(_from, _options[_selected].Species), 240);
-        UiDraw.TextCentered(batch, Small, "[FRECCE] SCEGLI     [INVIO] EVOLVI     [ESC] NON ORA", centerX, 330, Paper, Ink);
+        KeyHints.Draw(batch, services, "[FRECCE] SCEGLI     [INVIO] EVOLVI     [ESC] NON ORA", new Vector2(centerX, 330), Paper, centered: true, outline: Ink);
     }
 
     private void DrawEvolution(SpriteBatch batch)
@@ -316,10 +335,15 @@ public sealed class EvolutionWindow(GameServices services)
             DrawStats(batch, _before, _after, 242);
 
         var canClose = stopped ? Age >= StoppedWaitTicks : evolved && Age >= StatsTick;
-        if (canClose && Age / 15 % 2 == 0)
-            UiDraw.TextCentered(batch, Small, "[INVIO] CONTINUA", centerX, 330, Paper, Ink);
+        if (canClose)
+        {
+            services.Input.Region(new Rectangle(0, 0, services.Screen.Width, services.Screen.Height), "evoluzione-fine");
+            KeyHints.Draw(batch, services, "[INVIO] CONTINUA", new Vector2(centerX, 330), Age / 15 % 2 == 0 ? Paper : Dim, centered: true, outline: Ink);
+        }
         else if (!stopped && !evolved && Age >= FadeTicks && Age < SwapEnd)
-            UiDraw.TextCentered(batch, Small, "[ESC] FERMA L'EVOLUZIONE", centerX, 330, Dim, Ink);
+        {
+            KeyHints.Draw(batch, services, "[ESC] FERMA L'EVOLUZIONE", new Vector2(centerX, 330), Dim, centered: true, outline: Ink);
+        }
 
         // The flash: up to full white on the change, then fading out on the new Pokémon.
         if (!stopped && Age >= SwapEnd && Age < FlashEnd)

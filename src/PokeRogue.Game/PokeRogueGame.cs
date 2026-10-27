@@ -24,6 +24,7 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
     private SpriteBatch _batch = null!;
     private GameServices _services = null!;
     private DebugOverlay _overlay = null!;
+    private CursorArt _cursor = null!;
 
     public PokeRogueGame(string[] args)
     {
@@ -114,17 +115,31 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
         };
         if (_services.Settings.FullScreen && !_graphics.IsFullScreen && !_capture.Active)
             ToggleFullScreen();
-        _services.Cries.Muted = _options.CapturePng is not null || _options.CaptureGif is not null || _options.Values.ContainsKey("muto");
+        var muted = _options.CapturePng is not null || _options.CaptureGif is not null || _options.Values.ContainsKey("muto");
+        _services.Cries.Muted = _services.Sounds.Muted = _services.Music.Muted = muted;
+        _services.ApplyVolumes();
+        _services.Input.ToVirtual = screen.ToVirtual;
+        _services.SetFillScreen = on =>
+        {
+            screen.Fill = on;
+            _services.Settings.FillScreen = on;
+            _services.Settings.Save();
+        };
+        screen.Fill = _services.Settings.FillScreen && !_capture.Active;
+        if (_capture.Active)
+            screen.FixedZoom = _options.Scale;
+        _scenes.Switched += _services.Input.ClearRegions;
+        _cursor = new CursorArt(GraphicsDevice);
         _overlay = new DebugOverlay(_services) { Visible = _options.Preview is null || _options.Values.ContainsKey("debug") };
 
-        // The menu (Block 6), unless a run is asked for straight away (playtests: --pokemon, --allenatore, --sfida, --da):
-        // that run still goes into the save and ends back in the menu.
+        // The title screen (phase 8.2), unless a run is asked for straight away (playtests: --pokemon, --allenatore,
+        // --sfida, --da): that run still goes into the save and ends back in the menu.
         var direct = new[] { "pokemon", "allenatore", "sfida", "da", "evoluzioni", "nemici", "oggetti", "livello", "difficolta" }.Any(_options.Values.ContainsKey);
         Scene scene = _options.Preview is { } preview
             ? PreviewRegistry.Create(preview, _services, _options)
                 ?? throw new ArgumentException($"Unknown preview '{preview}'. Available: {string.Join(", ", PreviewRegistry.List.Select(p => p.Id))}")
             : !direct
-                ? new Scenes.Menus.MainMenuScene(_services)
+                ? new Scenes.Menus.TitleScene(_services)
                 : new GameplayScene(_services, _options.Str("pokemon"), trainerId: _options.Str("allenatore"))
                 {
                     PendingEvolutions = _options.Values.ContainsKey("evoluzioni"),
@@ -143,8 +158,13 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
     protected override void Update(GameTime gameTime)
     {
         _stats.BeginUpdate();
+        _services.Input.WindowActive = IsActive;
         _services.Input.Update();
-        if (_services.Input.Pressed(Keys.Escape) && _scenes.Current is not { HandlesEscape: true })
+        _services.Sounds.Update();
+        _services.ApplyVolumes();
+        _services.Music.Update();
+        // The right button is "back" in the menus: it never closes the game.
+        if (_services.Input.Pressed(Keys.Escape) && !_services.Input.RightClicked && _scenes.Current is not { HandlesEscape: true })
             Exit();
         if (_services.Input.Pressed(Keys.F3))
             _overlay.Visible = !_overlay.Visible;
@@ -160,11 +180,16 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
     {
         _stats.BeginDraw();
         _services.Screen.Begin();
+        _services.Fonts.Zoom = _services.Screen.Zoom;
+        _services.Fonts.Smooth = _services.Settings.SmoothText;
+        _services.Input.BeginRegions();
         _scenes.Draw(_batch);
+        _services.Input.EndRegions();
         _overlay.Draw(_batch, _stats, _scenes.Current?.DebugLines ?? []);
+        DrawPointer();
         _services.Screen.End();
 
-        if (_capture.AfterDraw(GraphicsDevice, _services.Screen.Target))
+        if (_capture.AfterDraw(GraphicsDevice, _services.Screen.Target, _services.Screen.Zoom))
             Exit();
 
         _services.Screen.Present(_batch, Letterbox);
@@ -181,6 +206,25 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
         }
 
         base.Draw(gameTime);
+    }
+
+    /// <summary>
+    /// The game's own pointer (phase 8.1) over everything, once the mouse has been used: always in the menus, and while
+    /// playing only for a few seconds after the mouse moves. The system's arrow hides over the picture.
+    /// </summary>
+    private void DrawPointer()
+    {
+        var input = _services.Input;
+        var window = Mouse.GetState().Position;
+        IsMouseVisible = !_services.Screen.Shows(window) || !IsActive;
+        if (input.SimulatedPointer is null && (_capture.Active || !IsActive || !input.PointerEverUsed || !_services.Screen.Shows(window)))
+            return;
+        if (input.SimulatedPointer is null && !input.PointerAwake && _scenes.Current is not { ShowsPointer: true })
+            return;
+
+        _batch.BeginVirtual(samplerState: SamplerState.PointClamp);
+        _cursor.Draw(_batch, input.Pointer, input.OverClickable);
+        _batch.End();
     }
 
     protected override void UnloadContent()

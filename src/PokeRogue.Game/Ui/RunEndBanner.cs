@@ -55,7 +55,7 @@ public sealed class RunEndBanner(GameServices services)
             return false;
 
         return autoContinue || input is not null &&
-            (input.Pressed(Keys.Enter) || input.Pressed(Keys.Space) || input.Pressed(Buttons.A) || input.Pressed(Buttons.Start));
+            (input.Pressed(Keys.Enter) || input.Pressed(Keys.Space) || input.Pressed(Buttons.A) || input.Pressed(Buttons.Start) || input.Click("fine") is not null);
     }
 
     public void Draw(SpriteBatch batch)
@@ -68,7 +68,7 @@ public sealed class RunEndBanner(GameServices services)
         var height = services.Screen.Height;
         var victory = Outcome == RunOutcome.Victory;
 
-        batch.Begin(samplerState: SamplerState.PointClamp);
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
 
         // Defeat fades to a dark red; victory flashes white, then settles on a light veil.
         if (victory)
@@ -107,8 +107,12 @@ public sealed class RunEndBanner(GameServices services)
             UiDraw.TextCentered(batch, services.Fonts.Body(services.Style), _subtitle, width / 2f, 114, Paper * a, Ink * a);
         }
 
-        if (Age >= PromptDelay && Age / 20 % 2 == 0)
-            UiDraw.TextCentered(batch, services.Fonts.Small(services.Style), "[INVIO] RISULTATI", width / 2f, 250, Dim, Ink);
+        if (Age >= PromptDelay)
+        {
+            // A click anywhere goes on to the results.
+            services.Input.Region(new Rectangle(0, 0, width, height), "fine");
+            KeyHints.Draw(batch, services, "[INVIO] RISULTATI", new Vector2(width / 2f, 250), Age / 20 % 2 == 0 ? Dim : Dim * 0.5f, centered: true, outline: Ink);
+        }
 
         batch.End();
     }

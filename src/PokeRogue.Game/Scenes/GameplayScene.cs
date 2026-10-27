@@ -184,7 +184,36 @@ public sealed class GameplayScene : Scene
 
     public override bool HandlesEscape => true;
 
+    /// <summary>While playing the pointer hides when the mouse stops; any window (pause, level-up, chest…) keeps it.</summary>
+    public override bool ShowsPointer =>
+        _phase != Phase.Playing || _levelUp.Active || _chestWindow.IsOpen || _evolution.IsOpen;
+
     public bool IsPauseOpen => _phase == Phase.Paused;
+
+    /// <summary>Previews: the pause, e.g. with its options open.</summary>
+    public PauseMenu Pause => _pause;
+
+    /// <summary>The level's own music (phase 8.3): its track in audio.json, else the dark one in caves and at night.</summary>
+    private string LevelMusic
+    {
+        get
+        {
+            var map = Services.Music.Map;
+            if (map.Levels.TryGetValue(LevelId, out var track))
+                return track;
+            return _run.Spawner.Timeline.Darkness >= 0.4f || _run.IsNight ? map.LevelDark : map.Level;
+        }
+    }
+
+    /// <summary>The music for what is happening: the boss' theme once a boss, legendaries or a trainer are on the field.</summary>
+    private void FollowMusic()
+    {
+        var music = Services.Music;
+        if (_run.Boss is not null || _run.Challenge is not null && _run.Events.Any(e => e.Type == RunEventType.TrainerChallenged))
+            music.Play(music.Map.Boss);
+        else if (music.Wanted != music.Map.Boss)
+            music.Play(LevelMusic);
+    }
 
     public override void Enter() => Restart();
 
@@ -210,6 +239,7 @@ public sealed class GameplayScene : Scene
                 {
                     case PauseChoice.Resume:
                         _pause.Close();
+                        Services.Music.Duck = 1f;
                         _phase = Phase.Playing;
                         break;
                     case PauseChoice.Restart:
@@ -263,7 +293,10 @@ public sealed class GameplayScene : Scene
         if (_special.IsOpen)
         {
             if (_special.Update())
+            {
                 _renderer.Shake.Add(0.45f);
+                Services.Sounds.Play("speciale-impatto");
+            }
             _renderer.Update(_run, paused: true);
             _hud.Update(_run);
             return;
@@ -345,10 +378,13 @@ public sealed class GameplayScene : Scene
                 NoticeMissions();
             _renderer.Update(_run);
             _hud.Update(_run);
+            if (_run.Events.Any(e => e.Type is RunEventType.BossAppeared or RunEventType.TrainerChallenged or RunEventType.NightChanged))
+                FollowMusic();
 
             if (_run.SpecialPending)
             {
                 _special.Open(_run);
+                Services.Sounds.Play("speciale");
                 break;
             }
 
@@ -412,6 +448,7 @@ public sealed class GameplayScene : Scene
             return;
 
         _pause.Open();
+        Services.Music.Duck = 0.4f;
         _phase = Phase.Paused;
     }
 
@@ -440,6 +477,8 @@ public sealed class GameplayScene : Scene
                 : "Hai resistito fino alla fine!";
         _banner.Start(_run.Outcome, subtitle, bossBeaten: _run.Boss?.DefeatedTick is not null);
         _phase = Phase.Ending;
+        var music = Services.Music;
+        music.Play(_run.Outcome == RunOutcome.Victory ? music.Map.Victory : music.Map.Defeat, restart: true);
         RecordRun(abandoned: false);
     }
 
@@ -551,6 +590,11 @@ public sealed class GameplayScene : Scene
         _pause.QuitLabel = BackToMenu is null ? "Esci dal gioco" : "Torna al menu";
         _results.QuitLabel = BackToMenu is null ? "ESCI" : "MENU";
         _phase = Phase.Playing;
+
+        // The level's music from its start, and the boss' theme made ready for when it comes (phase 8.3).
+        Services.Music.Duck = 1f;
+        Services.Music.Play(LevelMusic, restart: true);
+        Services.Music.Prepare(Services.Music.Map.Boss);
 
         // Load sprites up front so the first spawn of a species does not hitch.
         foreach (var stage in _character.Stages)
