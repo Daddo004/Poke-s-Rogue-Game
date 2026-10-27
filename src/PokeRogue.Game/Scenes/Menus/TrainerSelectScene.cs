@@ -12,9 +12,9 @@ namespace PokeRogue.Game.Scenes.Menus;
 
 /// <summary>
 /// The trainer select, after the Pokémon (Block 6): the trainers' heads on the left, locked ones dark; the chosen one on
-/// the right with passive, active ability, grades and challenge team. [INVIO] plays with an unlocked trainer, [S]
-/// challenges one (phase 5.3: beating their team unlocks them), [F] buys a grade (the PowerUps of Vampire Survivors,
-/// dearer the more are owned) and [R] refunds that trainer's grades.
+/// the right with passive, active ability, grades and challenge team. [INVIO] goes on to the level select with an unlocked
+/// trainer, [S] challenges one (phase 5.3: beating their team unlocks them; since Block 7 on their own level at Ultra),
+/// [F] buys a grade (the PowerUps of Vampire Survivors, dearer the more are owned) and [R] refunds that trainer's grades.
 /// </summary>
 public sealed class TrainerSelectScene : MenuScene
 {
@@ -62,7 +62,7 @@ public sealed class TrainerSelectScene : MenuScene
         else if (Confirm())
         {
             if (unlocked)
-                Services.Switch(MainMenuScene.Run(Services, _character, trainer));
+                Services.Switch(new LevelSelectScene(Services, _character, trainer));
             else if (trainer.Team.Count > 0)
                 AskChallenge(trainer);
             else
@@ -95,11 +95,21 @@ public sealed class TrainerSelectScene : MenuScene
         }
     }
 
+    /// <summary>
+    /// A challenge is fought on the trainer's own level at Ultra (Block 7): the level select opens there, with the
+    /// challenge picked, playing with your own trainer.
+    /// </summary>
     private void AskChallenge(TrainerDefinition trainer)
     {
         var own = Own;
-        Ask($"Sfidare {trainer.NameIt}?", $"CON {_character.NameIt.ToUpperInvariant()} E {own.NameIt.ToUpperInvariant()}: ALLA FINE DEL LIVELLO ARRIVA LA SUA SQUADRA",
-            () => Services.Switch(MainMenuScene.Run(Services, _character, own, trainer)));
+        if (Services.Worlds.Value.LevelOfTrainer(trainer.Id) is not { } level)
+        {
+            Notice($"{trainer.NameIt.ToUpperInvariant()} NON SI SFIDA IN NESSUN LIVELLO", Dim);
+            return;
+        }
+
+        Ask($"Sfidare {trainer.NameIt}?", $"A {level.NameIt.ToUpperInvariant()}, DIFFICOLTÀ ULTRA, CON {own.NameIt.ToUpperInvariant()}",
+            () => Services.Switch(new LevelSelectScene(Services, _character, own, challengeId: trainer.Id)));
     }
 
     private void Move(int delta)
@@ -191,8 +201,8 @@ public sealed class TrainerSelectScene : MenuScene
         }
 
         UiDraw.Text(batch, Small, $"BLOCCATO  {trainer.NameIt}", new Vector2(x, panel.Y + 6), Paper);
-        DrawWrapped(batch, trainer.Team.Count > 0
-            ? "SCONFIGGI LA SUA SQUADRA IN UNA SFIDA: ARRIVA ALLA FINE DEL LIVELLO, AL POSTO DEL BOSS."
+        DrawWrapped(batch, trainer.Team.Count > 0 && Services.Worlds.Value.LevelOfTrainer(trainer.Id) is { } level
+            ? $"SCONFIGGI LA SUA SQUADRA A {level.NameIt.ToUpperInvariant()}, A ULTRA: ARRIVA ALLA FINE DEL LIVELLO, AL POSTO DEL BOSS."
             : "SI SBLOCCA CON UNA MISSIONE.", x, panel.Y + 18, panel.Width - 16, 3, Dim);
     }
 
@@ -276,7 +286,8 @@ public sealed class TrainerSelectScene : MenuScene
         }
 
         var defeated = Meta.IsDefeated(trainer);
-        UiDraw.Text(batch, Small, defeated ? "SCONFITTO!" : "DA SCONFIGGERE", new Vector2(326, 312), defeated ? Green : theme.TextDim);
+        var where = Services.Worlds.Value.LevelOfTrainer(trainer.Id) is { } place ? $"  {place.NameIt.ToUpperInvariant()}, ULTRA" : "";
+        UiDraw.Text(batch, Small, (defeated ? "SCONFITTO!" : "DA SCONFIGGERE") + where, new Vector2(326, 312), defeated ? Green : theme.TextDim);
         if (trainer.Team.Count > 0)
             UiDraw.Text(batch, Small, "[S] SFIDA", new Vector2(608 - UiDraw.Measure(Small, "[S] SFIDA").X, 312), Paper);
     }

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace PokeRogue.Core.Meta;
 
-/// <summary>A run's difficulty (the choice arrives with the levels of Block 7; until then every run is Normale).</summary>
+/// <summary>A run's difficulty (phase 7.3): Hard opens once a level is won at Normal, Ultra once it is won at Hard.</summary>
 public enum Difficulty
 {
     Normal,
@@ -149,6 +149,14 @@ public sealed class SaveData
     public string? LastCharacter { get; set; }
 
     public string? LastTrainer { get; set; }
+
+    /// <summary>The last level and difficulty played (phase 7.1), chosen again in the level select.</summary>
+    public string? LastLevel { get; set; }
+
+    public Difficulty LastDifficulty { get; set; }
+
+    /// <summary>Wins on a level at a difficulty.</summary>
+    public int WinsOn(string levelId, Difficulty difficulty) => Levels.GetValueOrDefault($"{levelId}/{difficulty}")?.Wins ?? 0;
 
     public CharacterProgress ProgressOf(string characterId)
     {

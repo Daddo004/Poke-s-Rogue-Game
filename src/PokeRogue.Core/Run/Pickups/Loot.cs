@@ -33,6 +33,9 @@ public enum LootKind : byte
 
     /// <summary>A held item lying on the map or left by a shiny: picked up, it is gained or levelled up (<see cref="Loot.ItemId"/>).</summary>
     HeldItem,
+
+    /// <summary>A fossil or an egg hidden on the level (phase 7.4): <see cref="Loot.ItemId"/> is the character it brings.</summary>
+    Find,
 }
 
 public sealed record BreakableSpec
@@ -217,7 +220,11 @@ public sealed class LootSystem
         {
             _mapPlaced = true;
             foreach (var item in run.Spawner.Timeline.MapItems)
-                Drop(item.Position, item.Kind, item.ItemId);
+            {
+                // A fossil or an egg already found stays home (phase 7.4).
+                if (item.Kind != LootKind.Find || item.ItemId is not { } find || !run.SkipFinds.Contains(find))
+                    Drop(item.Position, item.Kind, item.ItemId);
+            }
         }
 
         // At once on the first tick (and after a time jump), then every few ticks.
@@ -235,6 +242,9 @@ public sealed class LootSystem
         var cell = rules.File.CellSize;
         var player = run.Player.Position;
         var half = run.Spawner.ViewSize / 2f + new Vector2(cell);
+        var map = run.Map;
+        var grassChance = rules.File.Grass.Chance * map.Spec.Grass;
+        var rockChance = rules.File.Rock.Chance * map.Spec.Rock;
 
         // Put away props that are well out of sight.
         var limit = half.Length() * 1.4f;
@@ -268,17 +278,17 @@ public sealed class LootSystem
                     continue;
 
                 var roll = Hash(cx, cy, 0) / (float)int.MaxValue;
-                var kind = roll < rules.File.Grass.Chance ? BreakableKind.Grass
-                    : roll < rules.File.Grass.Chance + rules.File.Rock.Chance ? BreakableKind.Rock
+                var kind = roll < grassChance ? BreakableKind.Grass
+                    : roll < grassChance + rockChance ? BreakableKind.Rock
                     : BreakableKind.None;
                 if (kind == BreakableKind.None)
                     continue;
 
-                // Somewhere inside the cell, away from its edges; never right on top of the player.
+                // Somewhere inside the cell, away from its edges; never right on top of the player, nor in a wall or a tree.
                 var at = new Vector2(
                     (cx + 0.15f + 0.7f * (Hash(cx, cy, 1) / (float)int.MaxValue)) * cell,
                     (cy + 0.15f + 0.7f * (Hash(cx, cy, 2) / (float)int.MaxValue)) * cell);
-                if (Vector2.DistanceSquared(at, player) < 40f * 40f)
+                if (Vector2.DistanceSquared(at, player) < 40f * 40f || map.IsConstrained && (!map.Contains(at, 16f) || map.Blocked(at, 14f)))
                     continue;
 
                 var spec = kind == BreakableKind.Rock ? rules.File.Rock : rules.File.Grass;
@@ -355,6 +365,11 @@ public sealed class LootSystem
                 break;
             case LootKind.HeldItem when loot.ItemId is { } id:
                 GiveItem(run, rules, id);
+                break;
+            case LootKind.Find when loot.ItemId is { } character:
+                // The meta-progression keeps it at the end of the run: a fossil to revive, an egg that hatches.
+                run.Stats.RecordFind(character);
+                run.AddEvent(new RunEvent(RunEventType.FindCollected, loot.Position, 0f, MoveId: character));
                 break;
         }
 

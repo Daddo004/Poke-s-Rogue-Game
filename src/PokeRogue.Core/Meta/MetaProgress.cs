@@ -35,7 +35,13 @@ public sealed record RunReport(
     IReadOnlyList<TrainerDefinition> NewTrainers,
     int NewSpecies)
 {
-    public bool HasNews => Missions.Count > 0 || NewCharacters.Count > 0 || NewTrainers.Count > 0;
+    /// <summary>Fossils found this run (phase 7.4), ready to be revived in the shop.</summary>
+    public IReadOnlyList<CharacterDefinition> Fossils { get; init; } = [];
+
+    /// <summary>Levels and difficulties opened by this run (phase 7.1).</summary>
+    public IReadOnlyList<string> Opened { get; init; } = [];
+
+    public bool HasNews => Missions.Count > 0 || NewCharacters.Count > 0 || NewTrainers.Count > 0 || Fossils.Count > 0 || Opened.Count > 0;
 }
 
 /// <summary>
@@ -50,9 +56,13 @@ public sealed class MetaProgress(
     TrainerLibrary trainers,
     MissionLibrary missions,
     IReadOnlyList<SpeciesData> pokedex,
-    SaveStore? store = null)
+    SaveStore? store = null,
+    Run.Worlds.WorldLibrary? worlds = null)
 {
     public SaveData Data { get; } = data;
+
+    /// <summary>The worlds and their levels (Block 7); null in tests that only look at the shop.</summary>
+    public Run.Worlds.WorldLibrary? Worlds { get; } = worlds;
 
     public ShopRules Shop { get; } = shop;
 
@@ -243,6 +253,38 @@ public sealed class MetaProgress(
         };
     }
 
+    // ---- Levels (Block 7) ----
+
+    /// <summary>
+    /// Whether a level can be played at a difficulty (phase 7.3). Levels open one after another, world after world, each
+    /// once the one before is won; on a level, Difficile opens once it is won at Normale, Ultra once it is won at Difficile.
+    /// </summary>
+    public bool IsUnlocked(Run.Worlds.LevelInfo level, Difficulty difficulty = Difficulty.Normal) => difficulty switch
+    {
+        Difficulty.Normal => Worlds?.Previous(level) is not { } before || IsWon(before),
+        Difficulty.Hard => IsWon(level, Difficulty.Normal),
+        _ => IsWon(level, Difficulty.Hard),
+    };
+
+    /// <summary>Won at least once, at <paramref name="difficulty"/> or, when null, at any.</summary>
+    public bool IsWon(Run.Worlds.LevelInfo level, Difficulty? difficulty = null) =>
+        difficulty is { } d ? Data.WinsOn(level.Id, d) > 0 : Enum.GetValues<Difficulty>().Any(x => Data.WinsOn(level.Id, x) > 0);
+
+    /// <summary>What can be played now, for "levels and difficulties opened" after a run.</summary>
+    private HashSet<string> OpenLevels() =>
+        Worlds is null ? [] : Worlds.Levels.SelectMany(l => Enum.GetValues<Difficulty>().Where(d => IsUnlocked(l, d)).Select(d => $"{l.Id}/{d}")).ToHashSet();
+
+    /// <summary>
+    /// The legendaries of a level that would come at Ultra (phase 7.3): those whose requirements are unlocked. Already
+    /// beaten ones come again, for the fight.
+    /// </summary>
+    public IReadOnlyList<Run.Waves.LegendaryBoss> Legendaries(Run.Waves.WaveTimeline level) =>
+        level.Legendaries.Where(l => l.Requires.All(id => Characters.Find(id) is { } c && IsUnlocked(c))).ToList();
+
+    /// <summary>Characters whose fossil or egg is already found: theirs are not laid on the map again.</summary>
+    public IReadOnlySet<string> FoundFinds() =>
+        Characters.All.Where(c => c.Unlock.Kind is UnlockKind.Fossil or UnlockKind.Egg && (IsUnlocked(c) || Data.Fossils.Contains(c.Id))).Select(c => c.Id).ToHashSet();
+
     // ---- Upgrades ----
 
     public int UpgradeGrade(UpgradeSpec upgrade) => Data.Upgrades.GetValueOrDefault(upgrade.Id);
@@ -339,6 +381,7 @@ public sealed class MetaProgress(
     public RunReport RecordRun(RunRecord run)
     {
         var seenBefore = Data.Pokedex.Count(e => e.Value.Seen > 0);
+        var openBefore = OpenLevels();
         Data.Coins += run.Coins;
 
         var totals = Data.Totals;
@@ -377,6 +420,37 @@ public sealed class MetaProgress(
             Data.ItemsFound.Add(item);
         Data.LastCharacter = run.CharacterId ?? Data.LastCharacter;
         Data.LastTrainer = run.TrainerId ?? Data.LastTrainer;
+        if (Worlds?.Find(run.LevelId) is not null)
+        {
+            Data.LastLevel = run.LevelId;
+            Data.LastDifficulty = run.Difficulty;
+        }
+
+        // What the levels gave (Block 7): a fossil waits in the shop to be revived, an egg hatches at once, a legendary
+        // beaten at Ultra joins.
+        var newCharacters = new List<CharacterDefinition>();
+        var fossils = new List<CharacterDefinition>();
+        foreach (var find in run.Finds.Distinct())
+        {
+            if (Characters.Find(find) is not { } found || IsUnlocked(found))
+                continue;
+            if (found.Unlock.Kind == UnlockKind.Fossil && !Data.Fossils.Contains(find))
+            {
+                Data.Fossils.Add(find);
+                fossils.Add(found);
+            }
+            else if (found.Unlock.Kind == UnlockKind.Egg)
+            {
+                Data.Characters.Add(find);
+                newCharacters.Add(found);
+            }
+        }
+
+        foreach (var legendary in Characters.All.Where(c => c.Unlock.Kind == UnlockKind.Defeat && run.LegendariesDefeated.Contains(c.First.Id) && !IsUnlocked(c)))
+        {
+            Data.Characters.Add(legendary.Id);
+            newCharacters.Add(legendary);
+        }
 
         var newTrainers = new List<TrainerDefinition>();
         if (run.ChallengeWon is { } beaten && Trainers.Find(beaten) is { } trainer)
@@ -389,7 +463,6 @@ public sealed class MetaProgress(
 
         // Missions, until no reward completes another one.
         var completed = new List<MissionSpec>();
-        var newCharacters = new List<CharacterDefinition>();
         var missionCoins = 0;
         bool more;
         do
@@ -419,7 +492,11 @@ public sealed class MetaProgress(
 
         Persist();
         var newSpecies = Data.Pokedex.Count(e => e.Value.Seen > 0) - seenBefore;
-        return new RunReport(run.Coins, missionCoins, Data.Coins, completed, newCharacters, newTrainers, newSpecies);
+        return new RunReport(run.Coins, missionCoins, Data.Coins, completed, newCharacters, newTrainers, newSpecies)
+        {
+            Fossils = fossils,
+            Opened = OpenLevels().Except(openBefore).ToList(),
+        };
     }
 
     private bool Unlock(TrainerDefinition trainer)
@@ -537,8 +614,13 @@ public sealed class MetaProgress(
                 var group = Characters.All.Where(c => mission.Groups.Contains(c.Group) && c.Id != mission.Reward.Character).ToList();
                 return (group.Count(IsUnlocked), group.Count);
 
+            case MissionKind.CompleteRegion:
+                // Every level of the region won, at any difficulty (Block 7).
+                var levels = Worlds?.Worlds.FirstOrDefault(w => w.Region == mission.Region)?.Levels ?? [];
+                var done = levels.Count(l => IsWon(l) || live is { Won: true } && live.LevelId == l.Id);
+                return (done, Math.Max(1, levels.Count));
+
             default:
-                // CompleteRegion: the regions' levels come with Block 7.
                 return (0, 1);
         }
     }

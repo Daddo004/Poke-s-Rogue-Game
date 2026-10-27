@@ -40,7 +40,70 @@ public sealed class Hud
             ".o.o..",
         ], new Dictionary<char, Color> { ['o'] = Ink, ['w'] = Paper });
         _star = PixelArt.FromPatternOutlined(services.Device, ["..y..", ".yyy.", "yyyyy", ".yyy.", ".y.y."], new Dictionary<char, Color> { ['y'] = Gold }, Ink);
+        _skyIcons = SkyIcons(services.Device);
     }
+
+    /// <summary>The weather's pictograms beside the timer (phase 7.2): sun, rain, sand, hail, and the moon at night.</summary>
+    private readonly Dictionary<string, Texture2D> _skyIcons;
+
+    private static Dictionary<string, Texture2D> SkyIcons(GraphicsDevice device)
+    {
+        var palette = new Dictionary<char, Color>
+        {
+            ['y'] = new(255, 214, 72), ['o'] = new(240, 150, 40), ['w'] = new(236, 240, 248), ['g'] = new(160, 170, 190), ['b'] = new(110, 170, 255),
+            ['s'] = new(222, 186, 120), ['d'] = new(170, 130, 70), ['m'] = new(240, 232, 180),
+        };
+        Texture2D Icon(string[] rows) => PixelArt.FromPatternOutlined(device, rows, palette, Ink);
+        return new Dictionary<string, Texture2D>
+        {
+            ["Sun"] = Icon(["y..y..y", ".yyyyy.", ".yoooy.", "yyoooyy", ".yoooy.", ".yyyyy.", "y..y..y"]),
+            ["Rain"] = Icon([".wwww..", "wwwwww.", "gggggg.", ".......", "b.b.b..", ".b.b.b.", "b.b.b.."]),
+            ["Sandstorm"] = Icon(["sssss..", ".......", "..ssssd", ".......", "ssssd..", ".......", "..sssss"]),
+            ["Hail"] = Icon([".wwww..", "wwwwww.", "gggggg.", ".......", "w..w..w", ".......", ".w..w.."]),
+            ["Night"] = Icon(["..mmm..", ".mm....", "mm.....", "mm.....", "mm.....", ".mm..m.", "..mmm.."]),
+        };
+    }
+
+    private readonly Queue<(string Text, Color Color)> _announcements = new();
+
+    /// <summary>A notice under the timer, after the one showing (the level's name, the weather, a find).</summary>
+    public void Announce(string text, Color color)
+    {
+        if (_bannerAge < 0)
+            StartBanner(text, color);
+        else
+            _announcements.Enqueue((text, color));
+    }
+
+    private void StartBanner(string text, Color color)
+    {
+        _banner = text;
+        _bannerColor = color;
+        _bannerAge = 0;
+    }
+
+    /// <summary>The level's name (and its difficulty) as the run begins (phase 7.1).</summary>
+    public void ShowLevel(string name, string? difficulty)
+    {
+        _announcements.Clear();
+        _bannerAge = -1;
+        Announce(difficulty is null ? name.ToUpperInvariant() : $"{name.ToUpperInvariant()}  ({difficulty.ToUpperInvariant()})", Paper);
+    }
+
+    /// <summary>What a change of weather or of the time of day says.</summary>
+    public static (string Text, Color Color)? SkyNotice(RunEvent e) => e.Type switch
+    {
+        RunEventType.WeatherChanged => (Core.Run.Worlds.WeatherKind)(int)e.Value switch
+        {
+            Core.Run.Worlds.WeatherKind.Rain => ("INIZIA A PIOVERE!", new Color(130, 180, 255)),
+            Core.Run.Worlds.WeatherKind.Sun => ("IL SOLE SPLENDE FORTE!", new Color(255, 190, 80)),
+            Core.Run.Worlds.WeatherKind.Sandstorm => ("SI ALZA UNA TEMPESTA DI SABBIA!", new Color(230, 196, 130)),
+            Core.Run.Worlds.WeatherKind.Hail => ("INIZIA A GRANDINARE!", new Color(200, 226, 255)),
+            _ => ("IL CIELO SI RASSERENA", Paper),
+        },
+        RunEventType.NightChanged => e.Value > 0 ? ("CALA LA NOTTE", new Color(170, 160, 240)) : ("SORGE IL SOLE", new Color(255, 200, 140)),
+        _ => null,
+    };
 
     public XpBar XpBar { get; }
 
@@ -55,6 +118,8 @@ public sealed class Hud
 
         if (_bannerAge >= 0 && ++_bannerAge >= BannerTicks)
             _bannerAge = -1;
+        if (_bannerAge < 0 && _announcements.TryDequeue(out var next))
+            StartBanner(next.Text, next.Color);
         UpdateMissions();
 
         if (_trainerCutIn >= 0 && ++_trainerCutIn >= CutInTicks)
@@ -94,6 +159,14 @@ public sealed class Hud
                 _banner = $"UN {shiny.NameIt.ToUpperInvariant()} CROMATICO!";
                 _bannerColor = Vfx.EnemyVfx.ShinyGold;
                 _bannerAge = 0;
+            }
+
+            if (SkyNotice(e) is { } sky)
+                Announce(sky.Text, sky.Color);
+            if (e.Type == RunEventType.FindCollected && e.MoveId is { } find)
+            {
+                Announce(find == "aerodactyl" ? "HAI TROVATO L'AMBRA ANTICA!" : FindArt.IsEgg(find) ? "HAI TROVATO UN UOVO!" : "HAI TROVATO UN FOSSILE!",
+                    Vfx.EnemyVfx.ShinyGold);
             }
         }
     }
@@ -286,6 +359,17 @@ public sealed class Hud
 
         var clock = UiFormat.Clock(run.Ticks);
         UiDraw.TextCentered(batch, numbers, clock, _services.Screen.Width / 2f, 9, Paper, Ink);
+
+        // The sky beside the timer (phase 7.2): the weather, then the moon at night.
+        var sky = new Vector2(_services.Screen.Width / 2f + UiDraw.Measure(numbers, clock).X / 2f + 5, 11);
+        if (run.Weather != Core.Run.Worlds.WeatherKind.Clear && _skyIcons.TryGetValue(run.Weather.ToString(), out var weatherIcon))
+        {
+            batch.Draw(weatherIcon, sky, Color.White);
+            sky.X += weatherIcon.Width + 2;
+        }
+
+        if (run.IsNight)
+            batch.Draw(_skyIcons["Night"], sky, Color.White);
 
         // Coins and KO, right-aligned under the level.
         var right = _services.Screen.Width - 4f;

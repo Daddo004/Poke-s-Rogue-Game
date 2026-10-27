@@ -10,8 +10,9 @@ namespace PokeRogue.Game.Preview;
 /// <summary>
 /// Block 6 previews: the menus and the shop over a demo save in memory (2.340 coins, a few characters and trainers
 /// unlocked, some grades and upgrades bought, part of the Pokédex), never the real one. Variants: menu, pokemon,
-/// potenzia, conferma, allenatori, sfida, potenziamenti, pokedex, mosse, strumenti, missioni, and in a run: missione
-/// (the notice), novita (the results' news) and carte (Fortuna's four cards and the sixth slot).
+/// potenzia, conferma, allenatori, sfida, potenziamenti, pokedex, mosse, strumenti, missioni, the level select of Block 7
+/// (livelli, ultra with a challenge picked, bloccato on a locked level), and in a run: missione (the notice), novita (the
+/// results' news) and carte (Fortuna's four cards and the sixth slot).
 /// </summary>
 public sealed class MetaPreviewScene : Scene
 {
@@ -47,6 +48,10 @@ public sealed class MetaPreviewScene : Scene
             "mosse" => Collection(CollectionScene.Section.Moves, 0),
             "strumenti" => Collection(CollectionScene.Section.Items, 2),
             "missioni" => Collection(CollectionScene.Section.Missions, 0),
+            // Block 7: the level select.
+            "livelli" => new LevelSelectScene(Services, pikachu, Services.Trainers.Value["ash"]),
+            "ultra" => new LevelSelectScene(Services, pikachu, Services.Trainers.Value["ash"], "centrale-elettrica", Difficulty.Ultra),
+            "bloccato" => new LevelSelectScene(Services, pikachu, Services.Trainers.Value["ash"], "bosco-di-lecci"),
             "missione" => _game = new GameplayScene(Services, autopilot: true, initialSpawn: 40) { Meta = Services.Meta },
             "novita" => _game = new GameplayScene(Services, "magikarp", autopilot: true, setup: run => run.AdvanceTime(WaveTimeline.ParseTime("14:20")))
             {
@@ -84,6 +89,8 @@ public sealed class MetaPreviewScene : Scene
             _game!.Hud.ShowMission(Services.Meta.Missions.Find("mille-ko")!);
         if (_variant == "novita" && _tick == 30)
             _game!.ForceEnd(RunOutcome.Victory);
+        if (_variant == "ultra" && _tick == 2)
+            ((LevelSelectScene)_inner).PickChallenge(0);
         _inner.Update();
     }
 
@@ -118,7 +125,7 @@ public sealed class MetaPreviewScene : Scene
         data.CharacterWins["charmander"] = 1;
 
         // The species of Bosco Smeraldo, nearly all defeated; a few others seen in challenges.
-        var waves = WaveTimeline.Load(services.ContentRoot, GameplayScene.LevelId, services.Pokedex.Value.Species, services.Moves.Value);
+        var waves = WaveTimeline.Load(services.ContentRoot, GameplayScene.DefaultLevelId, services.Pokedex.Value.Species, services.Moves.Value);
         var i = 0;
         foreach (var id in waves.SpeciesIds.Append(25).Append(4).Append(1).Append(7).Append(74).Append(95).Append(120).Append(121))
         {
@@ -131,9 +138,30 @@ public sealed class MetaPreviewScene : Scene
         var moves = services.Moves.Value;
         data.MovesFound = moves.Enabled.Take(16).Select(m => m.Id).Append("thunder").Append("flamethrower").Distinct().ToList();
         data.ItemsFound = services.Items.Value.Enabled.Take(9).Select(it => it.Id).ToList();
-        data.LevelOf(GameplayScene.LevelId, Difficulty.Normal).Runs = 12;
+        // Block 7: Bosco Smeraldo won at every difficulty, the next three Kanto levels at Normale, the Power Plant at Difficile too.
+        void Won(string level, Difficulty difficulty, int runs, int minutes, int kills)
+        {
+            var record = data.LevelOf(level, difficulty);
+            record.Runs = runs;
+            record.Wins = 1;
+            record.BestTicks = RunClock.TicksPerSecond * 60 * minutes;
+            record.BestKills = kills;
+        }
 
+        Won(GameplayScene.DefaultLevelId, Difficulty.Normal, 12, 16, 4512);
+        Won(GameplayScene.DefaultLevelId, Difficulty.Hard, 3, 16, 5980);
+        Won(GameplayScene.DefaultLevelId, Difficulty.Ultra, 2, 16, 7012);
+        Won("monte-luna", Difficulty.Normal, 4, 16, 4210);
+        Won("torre-pokemon", Difficulty.Normal, 2, 16, 3990);
+        Won("centrale-elettrica", Difficulty.Normal, 2, 16, 4120);
+        Won("centrale-elettrica", Difficulty.Hard, 1, 16, 5233);
+        data.Missions.AddRange(["bosco-normale", "bosco-difficile", "bosco-ultra", "monte-luna-normale", "torre-pokemon-normale", "centrale-elettrica-normale", "centrale-elettrica-difficile"]);
+        data.Fossils.Add("omanyte");
+        data.LastLevel = "monte-luna";
+        data.LastDifficulty = Difficulty.Hard;
+
+        var worlds = services.Worlds.Value;
         return new MetaProgress(data, services.Shop.Value, services.Characters, services.Trainers.Value,
-            MissionLibrary.Load(services.ContentRoot, services.Characters, services.Trainers.Value), services.Pokedex.Value.Species);
+            MissionLibrary.Load(services.ContentRoot, services.Characters, services.Trainers.Value, worlds), services.Pokedex.Value.Species, worlds: worlds);
     }
 }

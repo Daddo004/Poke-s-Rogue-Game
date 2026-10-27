@@ -241,6 +241,48 @@ public sealed class RunState
 
     public Spawner Spawner { get; }
 
+    /// <summary>The level's walls and obstacles (phase 7.2).</summary>
+    public Worlds.LevelMap Map => Spawner.Timeline.Map;
+
+    /// <summary>The weather now (phase 7.2), set every tick by <see cref="Worlds.WeatherSystem"/>.</summary>
+    public Worlds.WeatherKind Weather { get; internal set; }
+
+    /// <summary>Night has fallen on the level: the waves send their night species.</summary>
+    public bool IsNight { get; internal set; }
+
+    /// <summary>The difficulty played (phase 7.3), for the records and the missions.</summary>
+    public Meta.Difficulty Difficulty { get; init; }
+
+    /// <summary>Characters whose fossil or egg the player already has: theirs are not laid on the map (phase 7.4).</summary>
+    public IReadOnlySet<string> SkipFinds { get; init; } = new HashSet<string>();
+
+    private readonly Queue<BossDefinition> _legendaries = new();
+
+    /// <summary>
+    /// At Ultra the level's legendaries come instead of its boss when the time runs out (phase 7.3), one after another;
+    /// beating each unlocks it. Call before the run starts.
+    /// </summary>
+    public void UseLegendaries(IEnumerable<BossDefinition> legendaries)
+    {
+        _legendaries.Clear();
+        foreach (var legendary in legendaries)
+            _legendaries.Enqueue(legendary);
+        LegendaryEncounter = _legendaries.Count > 0;
+    }
+
+    /// <summary>This run ends with the level's legendaries rather than its boss.</summary>
+    public bool LegendaryEncounter { get; private set; }
+
+    /// <summary>Legendaries still to come after the one fighting.</summary>
+    public int LegendariesLeft => _legendaries.Count;
+
+    private BossFight SpawnLegendary(BossDefinition legendary)
+    {
+        var fight = BossAi.Spawn(this, legendary, Spawner.Timeline.HpMultiplier(Ticks));
+        fight.IsLegendary = true;
+        return fight;
+    }
+
     public int Ticks { get; private set; }
 
     public TimeSpan Elapsed => TimeSpan.FromSeconds(Ticks / (double)RunClock.TicksPerSecond);
@@ -265,7 +307,15 @@ public sealed class RunState
         Ticks++;
 
         Player.Move(input.Move);
+        if (Map.IsConstrained)
+        {
+            var position = Player.Position;
+            Map.Resolve(ref position, Player.Radius * 0.6f);
+            Player.Position = position;
+        }
+
         Player.Tick();
+        Worlds.WeatherSystem.Tick(this);
         AbilitySystem.Tick(this, input.UseAbility);
         TrainerSystem.Tick(this, input.UseTrainer);
 
@@ -309,7 +359,7 @@ public sealed class RunState
     /// <summary>Gives coins, more with Monetamuleto.</summary>
     public void AddCoins(int amount)
     {
-        var gained = (int)MathF.Round(amount * Player.CoinMultiplier * TrainerSystem.GainMultiplier(this));
+        var gained = (int)MathF.Round(amount * Player.CoinMultiplier * TrainerSystem.GainMultiplier(this) * Spawner.Timeline.Difficulty.Coins);
         Player.Coins += gained;
         Stats.RecordCoins(gained);
     }
@@ -349,12 +399,21 @@ public sealed class RunState
         else if (Challenge is { Started: true } challenge)
             CheckChallenge(challenge);
         else if (Boss?.DefeatedTick is { } defeated && Ticks >= defeated + BossAi.VictoryDelayTicks)
-            End(RunOutcome.Victory);
+        {
+            // The next legendary steps in (phase 7.3), or the level is won.
+            if (_legendaries.TryDequeue(out var next))
+                Boss = SpawnLegendary(next);
+            else
+                End(RunOutcome.Victory);
+        }
         else if (TimeLimitTicks is { } limit && Ticks >= limit && Boss is null)
         {
-            // Time is up: the challenged trainer steps in, or the level's boss arrives, or, without one, the level is won.
+            // Time is up: the challenged trainer steps in, or the legendaries of Ultra, or the level's boss arrives, or,
+            // without one, the level is won.
             if (Challenge is { } trainer)
                 trainer.Begin(this);
+            else if (_legendaries.TryDequeue(out var legendary))
+                Boss = SpawnLegendary(legendary);
             else if (Spawner.Timeline.Boss is { } boss)
                 Boss = BossAi.Spawn(this, boss, Spawner.Timeline.HpMultiplier(Ticks));
             else
@@ -392,6 +451,8 @@ public sealed class RunState
     {
         if (Challenge is { Started: false } challenge)
             challenge.Begin(this);
+        else if (Boss is null && Challenge is null && _legendaries.TryDequeue(out var legendary))
+            Boss = SpawnLegendary(legendary);
         else if (Boss is null && Challenge is null && Spawner.Timeline.Boss is { } boss)
             Boss = BossAi.Spawn(this, boss, Spawner.Timeline.HpMultiplier(Ticks));
     }
@@ -488,7 +549,7 @@ public sealed class RunState
         var definition = move.Definition;
         var defender = new DefenderProfile(e.Type1, e.Type2, e.Defense, e.SpDefense);
         var power = move.Stats.Power * Player.PowerMultiplier(definition.Category) * AbilitySystem.DamageMultiplier(this, move)
-            * TrainerSystem.DamageMultiplier(this, move);
+            * TrainerSystem.DamageMultiplier(this, move) * Worlds.WeatherSystem.DamageMultiplier(this, definition.Type);
         var attacker = AbilitySystem.Attacker(this, Player.Attacker);
         if (definition.CritBonus > 0f)
             attacker = attacker with { CritChance = attacker.CritChance + definition.CritBonus };
@@ -601,6 +662,8 @@ public sealed class RunState
             if (e.Rank == EnemyRank.Boss && Boss is { DefeatedTick: null } fight)
             {
                 fight.DefeatedTick = Ticks;
+                if (fight.IsLegendary)
+                    Stats.RecordLegendary(e.SpeciesId);
                 Hazards.Clear();
                 _events.Add(new RunEvent(RunEventType.BossDefeated, e.Position, 0f, e.SpeciesId));
             }
@@ -649,6 +712,7 @@ public sealed class RunState
         var items = Enemies.Items;
         var playerPosition = Player.Position;
         var slow = TrainerSystem.EnemySpeed(this);
+        var map = Map;
 
         for (var i = 0; i < items.Length; i++)
         {
@@ -696,11 +760,47 @@ public sealed class RunState
             var separation = new SeparationState(i, e.Position, e.Radius, items);
             Grid.Query(e.Position, e.Radius * 2f, ref separation, AccumulateSeparation);
             e.Position += separation.Push.ClampLength(e.Radius * 0.5f) * SeparationStrength;
+            if (map.IsConstrained)
+                KeepOnMap(map, ref e, desired, i);
 
             var reach = e.Radius + Player.Radius;
             if (contactDamage > 0f && Vector2.DistanceSquared(e.Position, playerPosition) < reach * reach)
                 HurtPlayer(new Hurt(HurtKind.Contact, contactDamage, e.HitsSpecially, e.SpeciesId, e.Type1, i));
         }
+    }
+
+    /// <summary>
+    /// Walls and obstacles (phase 7.2). A walker pressed against an obstacle slides around it, so a horde flows past a tree
+    /// instead of piling up behind it. Travellers (swarms, stampedes) fly over obstacles; at a wall on their way out they leave.
+    /// </summary>
+    private void KeepOnMap(Worlds.LevelMap map, ref Enemy e, Vector2 desired, int index)
+    {
+        if (e.Behavior == EnemyBehavior.Straight)
+        {
+            if (!map.IsBounded)
+                return;
+
+            var inside = map.Clamp(e.Position, e.Radius * 0.6f);
+            if (inside != e.Position && Vector2.Dot(inside - e.Position, e.Heading) < 0f)
+                e.ExpiresAtTick = Ticks;
+            e.Position = inside;
+            return;
+        }
+
+        var push = map.Resolve(ref e.Position, e.Radius * 0.6f);
+        if (push == Vector2.Zero || desired == Vector2.Zero)
+            return;
+
+        var normal = Vector2.Normalize(push);
+        if (Vector2.Dot(desired, normal) >= 0f)
+            return;
+
+        // Sideways along the obstacle, on the side it was already heading (a fixed side when it walks straight into it).
+        var tangent = new Vector2(-normal.Y, normal.X);
+        var along = Vector2.Dot(tangent, desired);
+        var speed = desired.Length();
+        var side = MathF.Abs(along) > speed * 0.15f ? MathF.Sign(along) : (index & 1) == 0 ? 1f : -1f;
+        e.Position += tangent * (side * speed * 0.7f * RunClock.Dt);
     }
 
     private ref struct SeparationState(int self, Vector2 position, float radius, Span<Enemy> items)

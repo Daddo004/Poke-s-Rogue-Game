@@ -127,6 +127,15 @@ public enum RunEventType
 
     /// <summary>The trainer's last Pokémon fainted: the trainer is beaten. MoveId = their id.</summary>
     TrainerDefeated,
+
+    /// <summary>The weather changed (phase 7.2): Value = (int)WeatherKind, Target.X = the one before.</summary>
+    WeatherChanged,
+
+    /// <summary>Night fell (Value = 1) or day broke (Value = 0) on the level (phase 7.2).</summary>
+    NightChanged,
+
+    /// <summary>A fossil or an egg was picked up (phase 7.4): MoveId = the character it brings.</summary>
+    FindCollected,
 }
 
 /// <summary>Something the renderer or audio may react to; the list is cleared at the start of every tick.</summary>

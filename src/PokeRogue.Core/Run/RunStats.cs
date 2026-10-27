@@ -63,6 +63,19 @@ public sealed class RunStats
 
     public void RecordChest() => ChestsOpened++;
 
+    private readonly List<string> _finds = [];
+    private readonly List<int> _legendaries = [];
+
+    /// <summary>Fossils and eggs picked up (phase 7.4), by the character they bring.</summary>
+    public IReadOnlyList<string> Finds => _finds;
+
+    /// <summary>Legendaries beaten at Ultra (phase 7.3), by species id: the meta-progression unlocks them.</summary>
+    public IReadOnlyList<int> LegendariesDefeated => _legendaries;
+
+    public void RecordFind(string characterId) => _finds.Add(characterId);
+
+    public void RecordLegendary(int speciesId) => _legendaries.Add(speciesId);
+
     /// <summary>Most defeated species first.</summary>
     public IReadOnlyList<(int SpeciesId, int Count)> TopKills(int count) =>
         _killsBySpecies.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key).Take(count).Select(kv => (kv.Key, kv.Value)).ToList();

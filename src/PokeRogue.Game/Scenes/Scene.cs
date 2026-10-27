@@ -9,6 +9,9 @@ public abstract class Scene(GameServices services)
 
     public virtual void Enter() { }
 
+    /// <summary>Another scene takes over: free what this one made (render targets).</summary>
+    public virtual void OnLeave() { }
+
     public abstract void Update();
 
     public abstract void Draw(SpriteBatch batch);

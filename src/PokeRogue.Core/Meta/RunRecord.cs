@@ -58,10 +58,19 @@ public sealed record RunRecord
 
     public IReadOnlyList<string> Items { get; init; } = [];
 
-    public static RunRecord From(RunState run, string levelId, Difficulty difficulty = Difficulty.Normal) => new()
+    /// <summary>Fossils and eggs picked up (phase 7.4), by the character they bring.</summary>
+    public IReadOnlyList<string> Finds { get; init; } = [];
+
+    /// <summary>Legendaries beaten at Ultra (phase 7.3), by species id.</summary>
+    public IReadOnlyList<int> LegendariesDefeated { get; init; } = [];
+
+    /// <param name="difficulty">The run's own (<see cref="RunState.Difficulty"/>) when null.</param>
+    public static RunRecord From(RunState run, string levelId, Difficulty? difficulty = null) => new()
     {
         LevelId = levelId,
-        Difficulty = difficulty,
+        Difficulty = difficulty ?? run.Difficulty,
+        Finds = run.Stats.Finds.ToList(),
+        LegendariesDefeated = run.Stats.LegendariesDefeated.ToList(),
         CharacterId = run.Character?.Id,
         TrainerId = run.Trainer?.Id,
         Over = run.IsOver,

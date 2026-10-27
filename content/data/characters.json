@@ -128,15 +128,15 @@
       "ability": { "id": "shell-armor", "nameIt": "Guscioscudo", "descriptionIt": "I danni da contatto sono ridotti del 15%." },
       "mainMove": "water-gun", "secondaryMove": "rock-tomb", "special": "Rock",
       "modifiers": { "areaPercent": 0.1 },
-      "unlock": { "kind": "Fossil", "price": 1200, "hintIt": "Trova il Fossilelica in un livello di Kanto." }
+      "unlock": { "kind": "Fossil", "price": 1200, "hintIt": "Trova il Fossilelica sul Monte Luna." }
     },
     {
       "id": "kabuto", "group": "Fossil",
       "species": [ { "key": "kabuto" }, { "key": "kabutops", "level": 36 } ],
-      "ability": { "id": "swift-swim", "nameIt": "Nuotovelox", "descriptionIt": "Con la pioggia corri il 30% più veloce (meteo del Blocco 7); fino ad allora il 5%." },
+      "ability": { "id": "swift-swim", "nameIt": "Nuotovelox", "descriptionIt": "Con la pioggia corri il 30% più veloce; senza, il 5%." },
       "mainMove": "x-scissor", "secondaryMove": "bubble", "special": "Rock",
       "modifiers": { "critChance": 0.05 },
-      "unlock": { "kind": "Fossil", "price": 1200, "hintIt": "Trova il Fossildome in un livello di Kanto." }
+      "unlock": { "kind": "Fossil", "price": 1200, "hintIt": "Trova il Fossildome sul Monte Luna." }
     },
     {
       "id": "aerodactyl", "group": "Fossil",
@@ -144,7 +144,7 @@
       "ability": { "id": "pressure", "nameIt": "Pressione", "descriptionIt": "I nemici vicini a te si muovono il 15% più lentamente." },
       "mainMove": "rock-slide", "secondaryMove": "aerial-ace", "special": "Flying",
       "modifiers": { "growthPercent": -0.15 },
-      "unlock": { "kind": "Fossil", "price": 2000, "hintIt": "Trova l'Ambra Antica in un livello di Kanto." }
+      "unlock": { "kind": "Fossil", "price": 2000, "hintIt": "Trova l'Ambra Antica sulla Via Vittoria." }
     },
     {
       "id": "lileep", "group": "Fossil",
@@ -152,7 +152,7 @@
       "ability": { "id": "suction-cups", "nameIt": "Ventose", "descriptionIt": "I nemici che ti toccano restano attaccati alle ventose: vanno a metà velocità per 2 secondi." },
       "mainMove": "rock-tomb", "secondaryMove": "leech-life", "special": "Grass",
       "modifiers": { "maxHpPercent": 0.25, "regenPerSecond": 0.1 },
-      "unlock": { "kind": "Fossil", "price": 1200, "hintIt": "Trova il Fossilradice in un livello di Hoenn." }
+      "unlock": { "kind": "Fossil", "price": 1200, "hintIt": "Trova il Fossilradice nel Deserto." }
     },
     {
       "id": "anorith", "group": "Fossil",
@@ -160,7 +160,7 @@
       "ability": { "id": "battle-armor", "nameIt": "Lottascudo", "descriptionIt": "I danni da contatto sono ridotti del 15%." },
       "mainMove": "rock-slide", "secondaryMove": "x-scissor", "special": "Bug",
       "modifiers": { "physicalPowerPercent": 0.1 },
-      "unlock": { "kind": "Fossil", "price": 1200, "hintIt": "Trova il Fossilunghia in un livello di Hoenn." }
+      "unlock": { "kind": "Fossil", "price": 1200, "hintIt": "Trova il Fossilunghia nel Deserto." }
     },
     {
       "id": "cranidos", "group": "Fossil",
@@ -168,7 +168,7 @@
       "ability": { "id": "mold-breaker", "nameIt": "Rompiforma", "descriptionIt": "Le tue mosse ignorano le resistenze di tipo: niente più danni ×0,5 o ×0,25." },
       "mainMove": "rock-slide", "secondaryMove": "bite", "special": "Rock",
       "modifiers": { "physicalPowerPercent": 0.05, "physicalResistPercent": -0.1 },
-      "unlock": { "kind": "Fossil", "price": 1200, "hintIt": "Trova il Fossilcranio in un livello di Sinnoh." }
+      "unlock": { "kind": "Fossil", "price": 1200, "hintIt": "Trova il Fossilcranio sul Monte Corona." }
     },
     {
       "id": "shieldon", "group": "Fossil",
@@ -176,7 +176,7 @@
       "ability": { "id": "sturdy", "nameIt": "Vigore", "descriptionIt": "Una volta per partita, un colpo che ti manderebbe KO ti lascia con 1 PS." },
       "mainMove": "rock-tomb", "secondaryMove": "flash-cannon", "special": "Steel",
       "modifiers": { "physicalResistPercent": 0.1, "specialResistPercent": 0.1 },
-      "unlock": { "kind": "Fossil", "price": 1200, "hintIt": "Trova il Fossilscudo in un livello di Sinnoh." }
+      "unlock": { "kind": "Fossil", "price": 1200, "hintIt": "Trova il Fossilscudo sul Monte Corona." }
     },
 
     // --- The user's list ---
@@ -234,7 +234,7 @@
         // Gyarados changes ability, as in the games.
         { "key": "gyarados", "level": 18, "ability": { "id": "intimidate", "nameIt": "Prepotenza", "descriptionIt": "I nemici vicini fanno il 15% di danni in meno." } }
       ],
-      "ability": { "id": "swift-swim", "nameIt": "Nuotovelox", "descriptionIt": "Con la pioggia corri il 30% più veloce (meteo del Blocco 7); fino ad allora il 5%." },
+      "ability": { "id": "swift-swim", "nameIt": "Nuotovelox", "descriptionIt": "Con la pioggia corri il 30% più veloce; senza, il 5%." },
       "mainMove": "bubble", "secondaryMove": "bite", "special": "Water",
       "modifiers": { "growthPercent": 0.3 },
       "unlock": { "kind": "Shop", "price": 500, "hintIt": "Il venditore di Magikarp del Monte Luna te lo cede per 500 monete." }
@@ -279,7 +279,7 @@
       "ability": { "id": "serene-grace", "nameIt": "Leggiadro", "descriptionIt": "Le probabilità di stato delle tue mosse raddoppiano." },
       "mainMove": "swift", "secondaryMove": "aerial-ace", "special": "Flying",
       "modifiers": { "coinPercent": 0.2 },
-      "unlock": { "kind": "Egg", "hintIt": "Trova l'Uovo di Togepi nascosto in un livello di Johto." }
+      "unlock": { "kind": "Egg", "hintIt": "Trova l'Uovo di Togepi nascosto nel Bosco di Lecci." }
     },
     {
       "id": "porygon", "group": "Other",
@@ -299,7 +299,7 @@
     {
       "id": "seedot", "group": "Other",
       "species": [ { "key": "seedot" }, { "key": "nuzleaf", "level": 13 }, { "key": "shiftry", "item": "leaf-stone" } ],
-      "ability": { "id": "chlorophyll", "nameIt": "Clorofilla", "descriptionIt": "Col sole corri il 30% più veloce (meteo del Blocco 7); fino ad allora il 5%." },
+      "ability": { "id": "chlorophyll", "nameIt": "Clorofilla", "descriptionIt": "Col sole corri il 30% più veloce; senza, il 5%." },
       "mainMove": "razor-leaf", "secondaryMove": "dark-pulse", "special": "Dark",
       "modifiers": { "growthPercent": 0.1 },
       "unlock": { "kind": "Shop", "price": 600 }
@@ -388,12 +388,12 @@
       "species": [ { "key": "riolu" }, { "key": "lucario", "level": 16 } ],
       "ability": { "id": "steadfast", "nameIt": "Cuordeciso", "descriptionIt": "Ogni colpo subito ti fa correre il 5% più veloce per 5 secondi, fino al 25%." },
       "mainMove": "aura-sphere", "secondaryMove": "karate-chop", "special": "Fighting",
-      "unlock": { "kind": "Egg", "hintIt": "Trova l'Uovo di Riolu nascosto in un livello di Sinnoh." }
+      "unlock": { "kind": "Egg", "hintIt": "Trova l'Uovo di Riolu nascosto nel Bosco Evopoli." }
     },
     {
       "id": "snover", "group": "Other",
       "species": [ { "key": "snover" }, { "key": "abomasnow", "level": 36 } ],
-      "ability": { "id": "snow-warning", "nameIt": "Scendineve", "descriptionIt": "Porta la grandine (meteo del Blocco 7); fino ad allora le mosse Ghiaccio congelano il doppio." },
+      "ability": { "id": "snow-warning", "nameIt": "Scendineve", "descriptionIt": "Porta la grandine per tutta la partita: le mosse Ghiaccio fanno il 20% in più e chi non è Ghiaccio si consuma." },
       "mainMove": "ice-shard", "secondaryMove": "razor-leaf", "special": "Ice",
       "unlock": { "kind": "Shop", "price": 800 }
     },
@@ -478,7 +478,7 @@
       "ability": { "id": "sturdy", "nameIt": "Vigore", "descriptionIt": "Una volta per partita, un colpo che ti manderebbe KO ti lascia con 1 PS." },
       "mainMove": "rock-tomb", "secondaryMove": "rock-slide", "special": "Rock",
       "modifiers": { "growthPercent": -0.25, "moveSpeedPercent": -0.1 },
-      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nella Grotta Desertica, a difficoltà Ultra." }
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nel Deserto, a difficoltà Ultra." }
     },
     {
       "id": "regice", "group": "Legendary",
@@ -486,7 +486,7 @@
       "ability": { "id": "ice-body", "nameIt": "Corpogelo", "descriptionIt": "Rigeneri 1 PS al secondo (il triplo con la grandine)." },
       "mainMove": "ice-shard", "secondaryMove": "aurora-beam", "special": "Ice",
       "modifiers": { "growthPercent": -0.25, "moveSpeedPercent": -0.1 },
-      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nell'Antro Insulare, a difficoltà Ultra." }
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nel Deserto, dopo Regirock, a difficoltà Ultra." }
     },
     {
       "id": "registeel", "group": "Legendary",
@@ -494,7 +494,7 @@
       "ability": { "id": "clear-body", "nameIt": "Corpochiaro", "descriptionIt": "I proiettili dei nemici ti fanno il 30% di danni in meno." },
       "mainMove": "gyro-ball", "secondaryMove": "flash-cannon", "special": "Steel",
       "modifiers": { "growthPercent": -0.25, "moveSpeedPercent": -0.1 },
-      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nella Tomba Antica, a difficoltà Ultra." }
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nel Deserto, dopo Regirock e Regice, a difficoltà Ultra." }
     },
     {
       "id": "latias", "group": "Legendary",
@@ -515,7 +515,7 @@
     {
       "id": "kyogre", "group": "Legendary",
       "species": [ { "key": "kyogre" } ],
-      "ability": { "id": "drizzle", "nameIt": "Piovischio", "descriptionIt": "Porta la pioggia (meteo del Blocco 7); fino ad allora le mosse Acqua fanno il 20% di danni in più." },
+      "ability": { "id": "drizzle", "nameIt": "Piovischio", "descriptionIt": "Porta la pioggia per tutta la partita: le mosse Acqua fanno il 30% in più, quelle Fuoco il 30% in meno." },
       "mainMove": "water-gun", "secondaryMove": "bubble", "special": "Water",
       "modifiers": { "growthPercent": -0.3 },
       "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nella Grotta dei Tempi, a difficoltà Ultra." }
@@ -523,7 +523,7 @@
     {
       "id": "groudon", "group": "Legendary",
       "species": [ { "key": "groudon" } ],
-      "ability": { "id": "drought", "nameIt": "Siccità", "descriptionIt": "Porta il sole (meteo del Blocco 7); fino ad allora le mosse Fuoco e Terra fanno il 10% di danni in più." },
+      "ability": { "id": "drought", "nameIt": "Siccità", "descriptionIt": "Porta il sole per tutta la partita: le mosse Fuoco fanno il 30% in più, quelle Acqua il 30% in meno." },
       "mainMove": "earthquake", "secondaryMove": "rock-slide", "special": "Ground",
       "modifiers": { "growthPercent": -0.3 },
       "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nella Grotta dei Tempi, a difficoltà Ultra." }
@@ -542,7 +542,7 @@
       "ability": { "id": "levitate", "nameIt": "Levitazione", "descriptionIt": "Le mosse Terra, le pozze e le rocce che cadono non ti colpiscono." },
       "mainMove": "hypnosis", "secondaryMove": "confusion", "special": "Psychic",
       "modifiers": { "growthPercent": -0.2, "physicalResistPercent": 0.1, "specialResistPercent": 0.1 },
-      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo al Lago Arguzia, a difficoltà Ultra." }
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo al Lago Verità, a difficoltà Ultra." }
     },
     {
       "id": "mesprit", "group": "Legendary",
@@ -550,7 +550,7 @@
       "ability": { "id": "levitate", "nameIt": "Levitazione", "descriptionIt": "Le mosse Terra, le pozze e le rocce che cadono non ti colpiscono." },
       "mainMove": "confusion", "secondaryMove": "swift", "special": "Psychic",
       "modifiers": { "growthPercent": -0.2 },
-      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo al Lago Verità, a difficoltà Ultra." }
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo al Lago Verità, dopo Uxie, a difficoltà Ultra." }
     },
     {
       "id": "azelf", "group": "Legendary",
@@ -558,7 +558,7 @@
       "ability": { "id": "levitate", "nameIt": "Levitazione", "descriptionIt": "Le mosse Terra, le pozze e le rocce che cadono non ti colpiscono." },
       "mainMove": "confusion", "secondaryMove": "aura-sphere", "special": "Psychic",
       "modifiers": { "growthPercent": -0.2, "physicalPowerPercent": 0.05, "specialPowerPercent": 0.05 },
-      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo al Lago Valore, a difficoltà Ultra." }
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo al Lago Verità, dopo Uxie e Mesprit, a difficoltà Ultra." }
     },
     {
       "id": "dialga", "group": "Legendary",
@@ -582,7 +582,7 @@
       "ability": { "id": "flash-fire", "nameIt": "Fuocardore", "descriptionIt": "Ogni KO con una mossa Fuoco aggiunge l'1% ai danni Fuoco, fino al 25%; un colpo subito lo azzera." },
       "mainMove": "ember", "secondaryMove": "flash-cannon", "special": "Fire",
       "modifiers": { "growthPercent": -0.25 },
-      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo alla Grotta Ritorno del Monte Corona, a difficoltà Ultra." }
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo sul Monte Corona, a difficoltà Ultra." }
     },
     {
       "id": "regigigas", "group": "Legendary",
@@ -590,7 +590,7 @@
       "ability": { "id": "slow-start", "nameIt": "Lentoinizio", "descriptionIt": "Nei primi 3 minuti fai metà danni e corri il 20% più piano; poi i danni crescono del 20%." },
       "mainMove": "hyper-voice", "secondaryMove": "earthquake", "special": "Normal",
       "modifiers": { "growthPercent": -0.2 },
-      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo al Tempio Nevoso dopo aver battuto Regirock, Regice e Registeel." }
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo al Tempio Nevoso, a difficoltà Ultra: compare solo dopo aver sbloccato Regirock, Regice e Registeel." }
     },
     {
       "id": "giratina", "group": "Legendary",
@@ -598,7 +598,7 @@
       "ability": { "id": "pressure", "nameIt": "Pressione", "descriptionIt": "I nemici vicini a te si muovono il 15% più lentamente." },
       "mainMove": "shadow-ball", "secondaryMove": "draco-meteor", "special": "Ghost",
       "modifiers": { "growthPercent": -0.3, "maxHpPercent": 0.1 },
-      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo nel Mondo Distorto, a difficoltà Ultra." }
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo sulla Vetta Lancia, dopo Dialga e Palkia, a difficoltà Ultra." }
     },
     {
       "id": "cresselia", "group": "Legendary",
@@ -606,7 +606,7 @@
       "ability": { "id": "levitate", "nameIt": "Levitazione", "descriptionIt": "Le mosse Terra, le pozze e le rocce che cadono non ti colpiscono." },
       "mainMove": "confusion", "secondaryMove": "aurora-beam", "special": "Psychic",
       "modifiers": { "growthPercent": -0.2, "regenPerSecond": 0.3 },
-      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggila sull'Isola Lunapiena, a difficoltà Ultra." }
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggila nel Bosco Evopoli, a difficoltà Ultra." }
     },
 
     // --- Mythicals, Gen 1–4 (added by the user on 2026-10-26). Darkrai is also the reaper of the endless mode. ---
@@ -640,12 +640,12 @@
       "ability": { "id": "pressure", "nameIt": "Pressione", "descriptionIt": "I nemici vicini a te si muovono il 15% più lentamente." },
       "mainMove": "aura-sphere", "secondaryMove": "confusion", "special": "Psychic",
       "modifiers": { "growthPercent": -0.3, "physicalPowerPercent": 0.1, "specialPowerPercent": 0.1, "maxHpPercent": -0.2 },
-      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo sull'Isola Cumulo, a difficoltà Ultra." }
+      "unlock": { "kind": "Defeat", "hintIt": "Sconfiggilo sulla Torre dei Cieli, dopo Rayquaza, a difficoltà Ultra." }
     },
     {
       "id": "phione", "group": "Mythical",
       "species": [ { "key": "phione" } ],
-      "ability": { "id": "hydration", "nameIt": "Idratazione", "descriptionIt": "Con la pioggia rigeneri 1 PS al secondo (meteo del Blocco 7); fino ad allora 0,3." },
+      "ability": { "id": "hydration", "nameIt": "Idratazione", "descriptionIt": "Con la pioggia rigeneri 1 PS al secondo; senza, 0,3." },
       "mainMove": "bubble", "secondaryMove": "water-gun", "special": "Water",
       "modifiers": { "growthPercent": -0.2 },
       "unlock": { "kind": "Mission", "hintIt": "Vinci una partita con Manaphy." }
@@ -653,10 +653,10 @@
     {
       "id": "manaphy", "group": "Mythical",
       "species": [ { "key": "manaphy" } ],
-      "ability": { "id": "hydration", "nameIt": "Idratazione", "descriptionIt": "Con la pioggia rigeneri 1 PS al secondo (meteo del Blocco 7); fino ad allora 0,3." },
+      "ability": { "id": "hydration", "nameIt": "Idratazione", "descriptionIt": "Con la pioggia rigeneri 1 PS al secondo; senza, 0,3." },
       "mainMove": "water-gun", "secondaryMove": "bubble", "special": "Water",
       "modifiers": { "growthPercent": -0.3 },
-      "unlock": { "kind": "Egg", "hintIt": "Trova l'Uovo di Manaphy nascosto in un livello di Sinnoh." }
+      "unlock": { "kind": "Egg", "hintIt": "Trova l'Uovo di Manaphy nascosto al Lago Verità." }
     },
     {
       "id": "darkrai", "group": "Mythical",

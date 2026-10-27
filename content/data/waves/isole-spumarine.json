@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "id": "isole-spumarine",
+  "nameIt": "Isole Spumarine",
+  "descriptionIt": "Un corridoio di grotte ghiacciate a pelo d'acqua. Grandina sempre, e nel gelo si nasconde un uccello leggendario.",
+  "minutes": 15, "hpPerMinute": 0.65, "damagePerMinute": 0.13, "crowd": 0.85,
+  "map": { "tileset": "ghiaccio", "shape": "Corridor", "axis": "Horizontal", "width": 420, "obstacles": 0.18, "obstacleRadius": 12, "seed": 5, "grass": 0, "rock": 0.6 },
+  "weather": [ { "at": "0:00", "kind": "Hail" } ],
+  "darkness": 0.25,
+  "waves": [
+    { "species": [ "seel:3", "shellder:2" ] },
+    { "species": [ "seel:2", "shellder:2", "horsea:2", "zubat:2" ] },
+    { "species": [ "krabby:1", "horsea:2", "psyduck:2", "shellder:2" ] },
+    { "species": [ "slowpoke:2", "seel:2", "krabby:2", "golbat:1" ] },
+    { "species": [ "psyduck:2", "shellder:3", "zubat:2", "staryu:2" ] },
+    { "species": [ "seel:3", "horsea:2", "golbat:2", "krabby:2" ] },
+    { "species": [ "dewgong:2", "seadra:2", "golbat:2", "slowpoke:2" ] },
+    { "species": [ "kingler:2", "cloyster:1", "golduck:2", "golbat:2" ] },
+    { "species": [ "dewgong:3", "seadra:2", "jynx:1" ] },
+    { "species": [ "golduck:2", "slowbro:2", "kingler:2", "golbat:2" ] },
+    { "species": [ "cloyster:2", "dewgong:3", "jynx:2" ] },
+    { "species": [ "seadra:3", "kingler:2", "slowbro:2" ] },
+    { "species": [ "jynx:2", "cloyster:2", "dewgong:3", "golbat:2" ] },
+    { "species": [ "golduck:3", "kingler:2", "seadra:2", "jynx:2" ] },
+    { "species": [ "dewgong:3", "cloyster:3", "slowbro:2", "jynx:2" ] }
+  ],
+  "cast": { "swarm": "zubat", "ring": "shellder", "stampede": "seel",
+    "dominant1": "seel", "dominant2": "golduck", "dominant3": "slowbro", "dominant4": "cloyster", "dominant5": "jynx" },
+  "boss": { "pokemon": "lapras", "titleIt": "Canto delle Onde", "hp": 60 },
+  "legendaries": [ { "pokemon": "articuno", "titleIt": "Signore del Gelo" } ]
+}

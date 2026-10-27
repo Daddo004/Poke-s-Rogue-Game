@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "id": "lago-verita",
+  "nameIt": "Lago Verità",
+  "descriptionIt": "Le rive di un lago sotto la pioggia, fra canneti e pozze. Nelle sue acque dormono gli spiriti della sapienza, dell'emozione e della volontà.",
+  "minutes": 15, "hpPerMinute": 0.95, "damagePerMinute": 0.19,
+  "map": { "tileset": "lago", "obstacles": 0.1, "obstacleRadius": 12, "seed": 22, "grass": 1.2 },
+  "weather": [ { "at": "0:00", "kind": "Rain" } ],
+  "waves": [
+    { "species": [ "bidoof:3", "starly:2", "shellos:2" ] },
+    { "species": [ "bidoof:2", "shellos:2", "psyduck:2", "buizel:2" ] },
+    { "species": [ "magikarp:3", "shinx:2", "starly:2", "buizel:2" ] },
+    { "species": [ "bibarel:1", "shellos:2", "wingull:2", "luxio:1" ] },
+    { "species": [ "psyduck:2", "buizel:2", "staravia:2", "gastrodon:1" ] },
+    { "species": [ "golduck:1", "floatzel:1", "bibarel:2", "luxio:2" ] },
+    { "species": [ "gastrodon:2", "staravia:2", "floatzel:2" ] },
+    { "species": [ "golduck:2", "luxio:2", "bibarel:2", "pelipper:1" ] },
+    { "species": [ "floatzel:2", "gastrodon:2", "staraptor:1", "luxio:2" ] },
+    { "species": [ "golduck:2", "pelipper:2", "bibarel:2", "gyarados:1" ] },
+    { "species": [ "luxray:1", "floatzel:2", "gastrodon:2", "staraptor:1" ] },
+    { "species": [ "golduck:2", "gyarados:1", "luxio:2", "pelipper:2" ] },
+    { "species": [ "luxray:2", "floatzel:2", "staraptor:2" ] },
+    { "species": [ "gastrodon:3", "gyarados:1", "golduck:2" ] },
+    { "species": [ "luxray:2", "gyarados:2", "staraptor:2", "floatzel:2" ] }
+  ],
+  "cast": { "swarm": "starly", "ring": "shellos", "stampede": "bidoof",
+    "dominant1": "bibarel", "dominant2": "luxio", "dominant3": "golduck", "dominant4": "floatzel", "dominant5": "luxray" },
+  "boss": { "pokemon": "gyarados", "titleIt": "Furia del Lago", "hp": 60 },
+  "legendaries": [
+    { "pokemon": "uxie", "titleIt": "Il Pokémon Sapienza", "hp": 0.4 },
+    { "pokemon": "mesprit", "titleIt": "Il Pokémon Emozione", "hp": 0.45 },
+    { "pokemon": "azelf", "titleIt": "Il Pokémon Volontà", "hp": 0.5 }
+  ],
+  "finds": [ { "find": "manaphy", "x": -1500, "y": -1200 } ]
+}

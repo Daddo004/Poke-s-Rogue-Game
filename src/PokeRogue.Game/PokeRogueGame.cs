@@ -119,7 +119,7 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
 
         // The menu (Block 6), unless a run is asked for straight away (playtests: --pokemon, --allenatore, --sfida, --da):
         // that run still goes into the save and ends back in the menu.
-        var direct = new[] { "pokemon", "allenatore", "sfida", "da", "evoluzioni", "nemici", "oggetti" }.Any(_options.Values.ContainsKey);
+        var direct = new[] { "pokemon", "allenatore", "sfida", "da", "evoluzioni", "nemici", "oggetti", "livello", "difficolta" }.Any(_options.Values.ContainsKey);
         Scene scene = _options.Preview is { } preview
             ? PreviewRegistry.Create(preview, _services, _options)
                 ?? throw new ArgumentException($"Unknown preview '{preview}'. Available: {string.Join(", ", PreviewRegistry.List.Select(p => p.Id))}")
@@ -132,6 +132,8 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
                     PendingLoot = _options.Values.ContainsKey("oggetti"),
                     ChallengeId = _options.Str("sfida"),
                     StartTicks = _options.Str("da") is { } start ? Core.Run.Waves.WaveTimeline.ParseTime(start) : 0,
+                    LevelId = _options.Str("livello") ?? GameplayScene.DefaultLevelId,
+                    Difficulty = GameplayScene.ParseDifficulty(_options.Str("difficolta")),
                     Meta = _services.Meta,
                     BackToMenu = () => new Scenes.Menus.MainMenuScene(_services),
                 };

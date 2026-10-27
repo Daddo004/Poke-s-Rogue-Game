@@ -20,7 +20,7 @@ public sealed class ChallengePreviewScene : Scene
     public ChallengePreviewScene(GameServices services, string variant, string trainerId) : base(services)
     {
         _variant = variant.ToLowerInvariant();
-        var waves = Core.Run.Waves.WaveTimeline.Load(services.ContentRoot, GameplayScene.LevelId, services.Pokedex.Value.Species, services.Moves.Value);
+        var waves = Core.Run.Waves.WaveTimeline.Load(services.ContentRoot, GameplayScene.DefaultLevelId, services.Pokedex.Value.Species, services.Moves.Value);
         _game = new GameplayScene(services, "pikachu", autopilot: true)
         {
             ChallengeId = trainerId,

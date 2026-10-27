@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "id": "grotta-dei-tempi",
+  "nameIt": "Grotta dei Tempi",
+  "descriptionIt": "La grotta dove la terra e il mare si contendono il mondo: il cielo passa dalla pioggia al sole cocente e torna alla pioggia.",
+  "minutes": 15, "hpPerMinute": 0.85, "damagePerMinute": 0.17,
+  "map": { "tileset": "abisso", "shape": "Arena", "width": 1800, "height": 1400, "obstacles": 0.2, "obstacleRadius": 13, "seed": 18, "grass": 0, "rock": 1 },
+  "weather": [ { "at": "0:00", "kind": "Rain" }, { "at": "5:00", "kind": "Sun" }, { "at": "10:00", "kind": "Rain" } ],
+  "darkness": 0.5,
+  "waves": [
+    { "species": [ "barboach:3", "spheal:2" ] },
+    { "species": [ "barboach:2", "spheal:2", "shuppet:1", "zubat:1" ] },
+    { "species": [ "sableye:1", "golbat:2", "spheal:2", "carvanha:2" ] },
+    { "species": [ "duskull:2", "shuppet:2", "mawile:1", "barboach:2" ] },
+    { "species": [ "whiscash:1", "sealeo:2", "golbat:2", "sableye:2" ] },
+    { "species": [ "banette:1", "dusclops:1", "mawile:2", "chimecho:2" ] },
+    { "species": [ "whiscash:2", "sealeo:2", "banette:2", "golbat:2" ] },
+    { "species": [ "dusclops:2", "sableye:2", "mawile:2", "wailmer:2" ] },
+    { "species": [ "sealeo:2", "whiscash:2", "banette:2", "sharpedo:1" ] },
+    { "species": [ "dusclops:2", "golbat:3", "mawile:2", "wailmer:2" ] },
+    { "species": [ "walrein:1", "banette:2", "sableye:2", "whiscash:2" ] },
+    { "species": [ "dusclops:2", "sealeo:3", "sharpedo:2" ] },
+    { "species": [ "walrein:2", "banette:2", "mawile:2" ] },
+    { "species": [ "dusclops:3", "whiscash:2", "sharpedo:2" ] },
+    { "species": [ "walrein:2", "dusclops:3", "banette:2", "sharpedo:2" ] }
+  ],
+  "cast": { "swarm": "golbat", "ring": "shuppet", "stampede": "wailmer",
+    "dominant1": "sableye", "dominant2": "mawile", "dominant3": "whiscash", "dominant4": "dusclops", "dominant5": "walrein" },
+  "boss": { "pokemon": "milotic", "titleIt": "Bellezza degli Abissi", "hp": 60 },
+  "legendaries": [
+    { "pokemon": "kyogre", "titleIt": "Signore degli Oceani", "hp": 0.6 },
+    { "pokemon": "groudon", "titleIt": "Signore dei Continenti", "hp": 0.6 }
+  ]
+}

@@ -43,6 +43,9 @@ switch (command)
     case "meta":
         SimulateMeta();
         break;
+    case "livelli":
+        SimulateLevels();
+        break;
     default:
         Console.WriteLine("""
             Usage: dotnet run --project tools/PokeRogue.DataTool -- <command> [options]
@@ -60,6 +63,9 @@ switch (command)
                         writes previews/5.3/simulazione-sfide.md
               meta      Careers from an empty save (Block 6): --carriere N (default 8) --partite N (default 20),
                         writes previews/6.2/simulazione-meta.md
+              livelli   Every level at every difficulty (Block 7): --runs N per character (default 1), --solo id,id
+                        characters (default pikachu, charmander, squirtle, bulbasaur), --livello id for one level,
+                        writes previews/7.3/simulazione-livelli.md (or --out PATH)
 
             Options:
               --force       Re-download files that are already cached
@@ -128,6 +134,22 @@ void SimulateMeta()
     File.WriteAllText(report, new PokeRogue.DataTool.Balance.MetaSimulation(contentRoot)
         .Report(ReadIntOption("--carriere") ?? 8, ReadIntOption("--partite") ?? 20, Console.WriteLine));
     Console.WriteLine($"Wrote {report}");
+}
+
+void SimulateLevels()
+{
+    var soloIndex = Array.IndexOf(args, "--solo");
+    var characters = soloIndex >= 0 && soloIndex + 1 < args.Length ? args[soloIndex + 1].Split(',') : PokeRogue.DataTool.Balance.LevelSimulation.DefaultCharacters;
+    var levelIndex = Array.IndexOf(args, "--livello");
+    var level = levelIndex >= 0 && levelIndex + 1 < args.Length ? args[levelIndex + 1] : null;
+    var report = new PokeRogue.DataTool.Balance.LevelSimulation(contentRoot).Report(ReadIntOption("--runs") ?? 1, characters, level, Console.WriteLine);
+    var outIndex = Array.IndexOf(args, "--out");
+    var output = outIndex >= 0 && outIndex + 1 < args.Length
+        ? args[outIndex + 1]
+        : Path.Combine(Path.GetDirectoryName(contentRoot)!, "previews", "7.3", "simulazione-livelli.md");
+    Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output))!);
+    File.WriteAllText(output, report);
+    Console.WriteLine($"Wrote {output}");
 }
 
 void BenchMoves() => WriteReport(new PokeRogue.DataTool.Balance.MoveBench(contentRoot).Report(Console.WriteLine), "banco-di-prova.md");

@@ -87,6 +87,9 @@ public sealed class Player
     /// <summary>Speed from abilities of the moment (Acceleratore, Agiltecnica, Lentoinizio…), on top of <see cref="MoveSpeed"/>.</summary>
     public float AbilitySpeedMultiplier { get; set; } = 1f;
 
+    /// <summary>Sandstorm and hail slow a player that does not stand them (phase 7.2).</summary>
+    public float WeatherSpeedMultiplier { get; set; } = 1f;
+
     /// <summary>Cooldowns from abilities of the moment (Acceleratore), on top of <see cref="CooldownMultiplier"/>.</summary>
     public float AbilityCooldownMultiplier { get; set; } = 1f;
 
@@ -195,7 +198,7 @@ public sealed class Player
     /// <summary>Moves with the given input (length ≤ 1, screen space).</summary>
     public void Move(Vector2 input)
     {
-        Velocity = input.ClampLength(1f) * MoveSpeed * AbilitySpeedMultiplier * TrainerSpeedMultiplier;
+        Velocity = input.ClampLength(1f) * MoveSpeed * AbilitySpeedMultiplier * TrainerSpeedMultiplier * WeatherSpeedMultiplier;
         Position += Velocity * RunClock.Dt;
         Facing = Direction8Extensions.FromVector(input, Facing);
     }

@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "id": "monte-camino",
+  "nameIt": "Monte Camino",
+  "descriptionIt": "Il vulcano di Hoenn, fra cenere e rocce laviche, sotto un sole che brucia: le mosse Fuoco ardono, quelle Acqua evaporano.",
+  "minutes": 15, "hpPerMinute": 0.85, "damagePerMinute": 0.17,
+  "map": { "tileset": "vulcano", "obstacles": 0.22, "obstacleRadius": 13, "seed": 15, "grass": 0, "rock": 1.4 },
+  "weather": [ { "at": "0:00", "kind": "Sun" } ],
+  "waves": [
+    { "species": [ "numel:3", "slugma:2" ] },
+    { "species": [ "numel:2", "slugma:2", "spoink:2", "machop:2" ] },
+    { "species": [ "torkoal:1", "numel:2", "swablu:2", "spoink:2" ] },
+    { "species": [ "zangoose:1", "seviper:1", "slugma:2", "numel:2" ] },
+    { "species": [ "machop:2", "magcargo:1", "spoink:2", "swablu:2" ] },
+    { "species": [ "camerupt:1", "torkoal:2", "machoke:2" ] },
+    { "species": [ "grumpig:2", "magcargo:2", "altaria:1", "numel:2" ] },
+    { "species": [ "camerupt:2", "zangoose:2", "seviper:2" ] },
+    { "species": [ "torkoal:2", "machoke:2", "magcargo:2", "grumpig:2" ] },
+    { "species": [ "camerupt:2", "altaria:2", "seviper:2" ] },
+    { "species": [ "machamp:1", "torkoal:2", "magcargo:2", "zangoose:2" ] },
+    { "species": [ "camerupt:3", "grumpig:2", "altaria:2" ] },
+    { "species": [ "magcargo:2", "torkoal:2", "machamp:2", "seviper:2" ] },
+    { "species": [ "camerupt:3", "altaria:2", "zangoose:2" ] },
+    { "species": [ "camerupt:3", "torkoal:3", "machamp:2", "magcargo:2" ] }
+  ],
+  "cast": { "swarm": "swablu", "ring": "slugma", "stampede": "numel",
+    "dominant1": "grumpig", "dominant2": "zangoose", "dominant3": "seviper", "dominant4": "torkoal", "dominant5": "machamp" },
+  "boss": { "pokemon": "camerupt", "titleIt": "Cuore del Vulcano", "hp": 60 }
+}

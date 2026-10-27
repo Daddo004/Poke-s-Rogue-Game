@@ -2,9 +2,19 @@
   "version": 1,
   "id": "bosco-smeraldo",
   "nameIt": "Bosco Smeraldo",
+  "descriptionIt": "Un bosco fitto pieno di Pokémon Coleottero. Chi si perde fra gli alberi incontra il Signore del Bosco.",
 
   // Phase 3.1: the level lasts this long; when the timer runs out the boss comes (phase 3.4).
   "minutes": 15,
+
+  // Phase 7.2: the map. "tileset" is the floor's look (Game/Graphics/Floor/FloorStyle); "shape" Open (endless), Corridor
+  // ("axis" and "width") or Arena ("width" and "height"); "obstacles" the chance that a cell of the obstacle grid holds
+  // one (trees here), "obstacleRadius" their body; "grass" and "rock" multiply loot.json's breakables.
+  "map": { "tileset": "bosco", "obstacles": 0.1, "obstacleRadius": 12, "seed": 1 },
+
+  // Phase 7.4: the other levels start their enemies frailer for a few minutes (worlds.json "warmUp"); this one opens
+  // with Caterpie and Weedle and keeps its own pace.
+  "warmUp": { "minutes": 0 },
 
   // Every minute enemies gain this share of their HP, and their gems this share of their experience.
   // Later waves also bring sturdier species (evolved forms), which grow on top of this.

@@ -15,6 +15,7 @@ public sealed class SceneManager
     {
         if (_pending is not null)
         {
+            Current?.OnLeave();
             Current = _pending;
             _pending = null;
             Current.Enter();

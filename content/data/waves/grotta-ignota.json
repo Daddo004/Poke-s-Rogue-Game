@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "id": "grotta-ignota",
+  "nameIt": "Grotta Ignota",
+  "descriptionIt": "La grotta proibita vicino a Celestopoli: cristalli nel buio e Pokémon fortissimi. Qualcuno dice che vi si nasconda un Pokémon creato dall'uomo.",
+  "minutes": 15, "hpPerMinute": 0.7, "damagePerMinute": 0.14,
+  "map": { "tileset": "cristalli", "obstacles": 0.26, "obstacleRadius": 12, "seed": 7, "grass": 0, "rock": 1.4 },
+  "darkness": 0.6,
+  "waves": [
+    { "species": [ "golbat:3", "parasect:2" ] },
+    { "species": [ "golbat:3", "parasect:2", "kadabra:1" ] },
+    { "species": [ "magneton:2", "golbat:3", "graveler:2" ] },
+    { "species": [ "kadabra:2", "sandslash:2", "arbok:2", "golbat:2" ] },
+    { "species": [ "venomoth:2", "dodrio:2", "magneton:2", "ditto:1" ] },
+    { "species": [ "hypno:2", "raichu:2", "electrode:2", "golbat:2" ] },
+    { "species": [ "rhydon:1", "marowak:2", "sandslash:2", "kadabra:2" ] },
+    { "species": [ "wigglytuff:2", "chansey:1", "golbat:3", "ditto:1" ] },
+    { "species": [ "rhydon:2", "golem:1", "arbok:2", "venomoth:2" ] },
+    { "species": [ "electrode:2", "raichu:2", "magneton:2", "hypno:2" ] },
+    { "species": [ "dodrio:2", "marowak:2", "rhydon:2", "ditto:1" ] },
+    { "species": [ "golem:2", "sandslash:2", "golbat:3", "kadabra:2" ] },
+    { "species": [ "chansey:1", "wigglytuff:2", "rhydon:2", "electrode:2" ] },
+    { "species": [ "hypno:2", "venomoth:2", "golem:2", "raichu:2" ] },
+    { "species": [ "rhydon:3", "golem:2", "golbat:3", "ditto:2" ] }
+  ],
+  "cast": { "swarm": "golbat", "ring": "ditto", "stampede": "dodrio",
+    "dominant1": "kadabra", "dominant2": "ditto", "dominant3": "chansey", "dominant4": "rhydon", "dominant5": "golem" },
+  "boss": { "pokemon": "rhydon", "titleIt": "Guardiano della Grotta", "hp": 65 },
+  "legendaries": [ { "pokemon": "mewtwo", "titleIt": "Il Pokémon Genetico", "hp": 1.2 } ]
+}

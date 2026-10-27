@@ -10,9 +10,11 @@ public static class PreviewRegistry
         new(StringComparer.OrdinalIgnoreCase)
         {
             ["sprites"] = ("Sprite Viewer: --species N --anim Walk", (s, o) => new SpriteViewerScene(s, o.Int("species", 25), o.Str("anim"))),
-            ["run"] = ("Gameplay on autopilot: --pokemon id (characters.json) --allenatore id (trainers.json) --stress N (enemies spawned at start, player invincible) --speed N --da m:ss (start later) [--evoluzioni] [--nemici]",
+            ["run"] = ("Gameplay on autopilot: --pokemon id (characters.json) --allenatore id (trainers.json) --livello id (worlds.json) --difficolta normale|difficile|ultra --stress N (enemies spawned at start, player invincible) --speed N --da m:ss (start later) [--evoluzioni] [--nemici]",
                 (s, o) => new GameplayScene(s, o.Str("pokemon"), initialSpawn: o.Int("stress", 0), autopilot: true, trainerId: o.Str("allenatore"))
                 {
+                    LevelId = o.Str("livello") ?? GameplayScene.DefaultLevelId,
+                    Difficulty = GameplayScene.ParseDifficulty(o.Str("difficolta")),
                     Speed = System.Math.Max(1, o.Int("speed", 1)),
                     PendingEvolutions = o.Values.ContainsKey("evoluzioni"),
                     PendingEnemies = o.Values.ContainsKey("nemici"),
@@ -43,8 +45,9 @@ public static class PreviewRegistry
                     o.Values.ContainsKey("soloeffetto"))),
             ["allenatori"] = ("Trainers (5.1/5.2): --variant scheda|album|<archetype: scudo|cura|onda|tempo|intangibile|tipo|fortuna|frenesia|stato|scatto> [--allenatore id] [--pagina N]",
                 (s, o) => new TrainerPreviewScene(s, o.Str("variant") ?? "scheda", o.Str("allenatore"), o.Int("pagina", 1))),
-            ["negozio"] = ("Meta-progression (Block 6) on a demo save: --variant menu|pokemon|potenzia|conferma|allenatori|sfida|potenziamenti|pokedex|mosse|strumenti|missioni|missione|novita|carte [--pokemon id]",
+            ["negozio"] = ("Meta-progression (Blocks 6 and 7) on a demo save: --variant menu|pokemon|potenzia|conferma|allenatori|sfida|livelli|ultra|bloccato|potenziamenti|pokedex|mosse|strumenti|missioni|missione|novita|carte [--pokemon id]",
                 (s, o) => new MetaPreviewScene(s, o.Str("variant") ?? "menu", o.Str("pokemon"))),
+            ["mappe"] = ("Album of the levels' maps (7.2): --pagina N, six to a page", (s, o) => new LevelAlbumScene(s, o.Int("pagina", 1))),
             ["personaggi"] =("Album of the playable characters (4.5): --pagina N, nine to a page", (s, o) => new CharacterAlbumScene(s, o.Int("pagina", 1))),
             ["rinascita"] = ("Focalnastro (2.5): Pikachu is knocked out and stands back up", (s, _) => new RevivePreviewScene(s)),
             ["stati"] = ("Status conditions (2.3): --variant vetrina|icone|orda [--icone simbolo|riquadro|nessuna] [--stress N] [--mosse a,b,c]",

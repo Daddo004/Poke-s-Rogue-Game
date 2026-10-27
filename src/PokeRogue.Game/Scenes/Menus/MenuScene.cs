@@ -80,6 +80,7 @@ public abstract class MenuScene(GameServices services) : Scene(services)
 
     public sealed override void Draw(SpriteBatch batch)
     {
+        BeforeDraw(batch);
         Services.Device.Clear(Background);
         batch.Begin(samplerState: SamplerState.PointClamp);
         for (var x = -360; x < Services.Screen.Width; x += 16)
@@ -93,6 +94,9 @@ public abstract class MenuScene(GameServices services) : Scene(services)
 
     /// <summary>Draws the screen inside an open batch (point sampling).</summary>
     protected abstract void DrawMenu(SpriteBatch batch);
+
+    /// <summary>Before the screen is drawn, with no batch open: a scene may render into its own targets here (then restore the screen's).</summary>
+    protected virtual void BeforeDraw(SpriteBatch batch) { }
 
     // ---- Input ----
 

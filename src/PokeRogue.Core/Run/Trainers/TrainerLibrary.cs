@@ -256,14 +256,7 @@ public sealed class TrainerLibrary
                 throw new InvalidDataException($"{FileName}, '{spec.Id}': '{spec.Team[i]}' is not a Pokémon key.");
 
             var pattern = i == spec.Team.Count - 1 ? rules.Ace : rules.Member;
-            var shot = rules.Shots.GetValueOrDefault(species.Types[0]);
-            var phases = pattern.Phases.Select(phase => phase with
-            {
-                Attacks = phase.Attacks.Select(attack => attack.Kind != BossAttackKind.Volley ? attack
-                    : shot is not null ? attack with { Move = shot }
-                    : new BossAttackSpec { Kind = BossAttackKind.Rockfall, WindUp = attack.WindUp, Count = Math.Max(3, attack.Count / 2), Damage = 2f, Delay = 1f }).ToList(),
-            }).ToList();
-            var boss = pattern with { Pokemon = species.Key, TitleIt = spec.NameIt, Phases = phases };
+            var boss = BossPattern.Apply(pattern, species, rules.Shots) with { TitleIt = spec.NameIt };
             team.Add(BossDefinition.From(boss, species.Id, moves, FileName));
         }
 

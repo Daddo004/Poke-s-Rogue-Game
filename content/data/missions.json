@@ -1,8 +1,9 @@
 {
   // Missions (phase 6.3). "kind" says what is asked (MissionKind in Core/Meta/MissionLibrary.cs), "count" how much;
   // "oneRun": true counts within a single run, otherwise across every run. "level" + "difficulty" make it a mission of
-  // that level at that difficulty (difficulties arrive with Block 7: until then every run is Normal). "reward": coins,
-  // a character ("character") or a trainer ("trainer"). Each character unlocked by a mission has exactly one here.
+  // that level at that difficulty. "reward": coins, a character ("character") or a trainer ("trainer"). Each character
+  // unlocked by a mission has exactly one here. Since Block 7 every level of worlds.json also gets "win it" at each
+  // difficulty ("<level>-normale", "-difficile", "-ultra") unless this file writes that mission itself (Bosco Smeraldo).
   "version": 1,
   "missions": [
     // --- First steps ---

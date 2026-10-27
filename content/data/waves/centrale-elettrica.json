@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "id": "centrale-elettrica",
+  "nameIt": "Centrale Elettrica",
+  "descriptionIt": "Una centrale abbandonata fra generatori ancora carichi. A metà livello scoppia un temporale.",
+  "minutes": 15, "hpPerMinute": 0.65, "damagePerMinute": 0.13,
+  "map": { "tileset": "centrale", "shape": "Arena", "width": 1800, "height": 1300, "obstacles": 0.2, "obstacleRadius": 12, "seed": 4, "grass": 0, "rock": 0.5 },
+  "weather": [ { "at": "7:00", "kind": "Rain" } ],
+  "darkness": 0.2,
+  "waves": [
+    { "species": [ "magnemite:3", "grimer:2" ] },
+    { "species": [ "magnemite:3", "pikachu:2", "grimer:2" ] },
+    { "species": [ "grimer:2", "magnemite:3", "pikachu:2" ] },
+    { "species": [ "pikachu:2", "grimer:2", "magnemite:2", "voltorb:1" ] },
+    { "species": [ "electabuzz:1", "magnemite:3", "grimer:2", "voltorb:1" ] },
+    { "species": [ "magneton:2", "pikachu:3", "grimer:2" ] },
+    { "species": [ "magneton:3", "electabuzz:2", "muk:1" ] },
+    { "species": [ "raichu:2", "magneton:2", "electrode:2", "grimer:2" ] },
+    { "species": [ "electabuzz:3", "muk:2", "magneton:2" ] },
+    { "species": [ "electrode:3", "raichu:2", "magneton:2" ] },
+    { "species": [ "muk:2", "electabuzz:3", "magneton:3" ] },
+    { "species": [ "raichu:3", "electrode:2", "muk:2" ] },
+    { "species": [ "electabuzz:3", "magneton:3", "electrode:2" ] },
+    { "species": [ "raichu:3", "muk:2", "electabuzz:2", "electrode:2" ] },
+    { "species": [ "electabuzz:3", "magneton:3", "raichu:2", "muk:2" ] }
+  ],
+  "cast": { "swarm": "magnemite", "ring": "magnemite", "stampede": "electrode",
+    "dominant1": "pikachu", "dominant2": "magneton", "dominant3": "muk", "dominant4": "electrode", "dominant5": "raichu" },
+  "boss": { "pokemon": "electabuzz", "titleIt": "Guardiano della Centrale", "hp": 60 },
+  "legendaries": [ { "pokemon": "zapdos", "titleIt": "Signore del Tuono" } ]
+}

@@ -4,6 +4,7 @@ using PokeRogue.Core.Data;
 using PokeRogue.Core.Geometry;
 using PokeRogue.Core.Run.Moves;
 using PokeRogue.Core.Run.Pickups;
+using PokeRogue.Core.Run.Worlds;
 
 namespace PokeRogue.Core.Run.Abilities;
 
@@ -181,10 +182,10 @@ public static class AbilitySystem
 
                 break;
             case "ice-body":
-                player.Heal(1f * RunClock.Dt);
+                player.Heal((run.Weather == WeatherKind.Hail ? 3f : 1f) * RunClock.Dt);
                 break;
             case "hydration":
-                player.Heal(0.3f * RunClock.Dt);
+                player.Heal((run.Weather == WeatherKind.Rain ? 1f : 0.3f) * RunClock.Dt);
                 break;
             case "bad-dreams" when run.Ticks % RunClock.TicksPerSecond == 0:
                 Nightmares(run);
@@ -220,7 +221,9 @@ public static class AbilitySystem
             "unburden" when state.BoostTicks > 0 => 1.4f,
             "motor-drive" => 1f + 0.01f * state.ChargeStacks,
             "steadfast" => 1f + 0.05f * state.ChargeStacks,
-            "swift-swim" or "chlorophyll" => 1.05f,
+            // Phase 7.2: the weather they wait for (5% without it, as before Block 7).
+            "swift-swim" => run.Weather == WeatherKind.Rain ? 1.3f : 1.05f,
+            "chlorophyll" => run.Weather == WeatherKind.Sun ? 1.3f : 1.05f,
             // Phase 4.5: was half speed; Regigigas fell in the second minute.
             "slow-start" when !state.Awake => 0.8f,
             _ => 1f,
@@ -253,8 +256,6 @@ public static class AbilitySystem
             "guts" when physical && player.Hp < player.MaxHp / 2f => 1.3f,
             "pure-power" when physical => 1.4f,
             "flash-fire" when definition.Type == PokemonType.Fire => 1f + 0.01f * run.Ability.FireStacks,
-            "drizzle" when definition.Type == PokemonType.Water => 1.2f,
-            "drought" when definition.Type is PokemonType.Fire or PokemonType.Ground => 1.1f,
             "slow-start" => run.Ability.Awake ? 1.2f : 0.5f,
             "download" when run.Ability.Downloaded == definition.Category => 1.2f,
             _ => 1f,
@@ -277,12 +278,24 @@ public static class AbilitySystem
         }
     }
 
-    /// <summary>Multiplier on a move's chance to inflict its status: Leggiadro doubles every chance, Scendineve the freezes.</summary>
+    /// <summary>Multiplier on a move's chance to inflict its status: Leggiadro doubles every chance.</summary>
     public static float StatusChanceMultiplier(RunState run, MoveDefinition move) => Id(run) switch
     {
         "serene-grace" => 2f,
-        "snow-warning" when move.Status == StatusKind.Freeze => 2f,
         _ => 1f,
+    };
+
+    /// <summary>
+    /// The weather an ability brings for the whole run (phase 7.2): Piovischio the rain, Siccità the sun, Scendineve the
+    /// hail; Riparo clears the sky. Null leaves the level's weather.
+    /// </summary>
+    public static WeatherKind? WeatherOverride(RunState run) => Id(run) switch
+    {
+        "drizzle" => WeatherKind.Rain,
+        "drought" => WeatherKind.Sun,
+        "snow-warning" => WeatherKind.Hail,
+        "air-lock" => WeatherKind.Clear,
+        _ => null,
     };
 
     /// <summary>Sincronismo: a status the player inflicts also hits the two enemies nearest to the first.</summary>
@@ -337,7 +350,7 @@ public static class AbilitySystem
             case "damp" when hurt.Kind == HurtKind.Blast:
                 Trigger(run, AbilityEffect.Immune);
                 return 0f;
-            case "snow-cloak" when run.Random.NextSingle() < 0.15f:
+            case "snow-cloak" when run.Random.NextSingle() < (run.Weather == WeatherKind.Hail ? 0.3f : 0.15f):
                 player.Shrug();
                 Trigger(run, AbilityEffect.Dodged);
                 return 0f;
@@ -462,7 +475,8 @@ public static class AbilitySystem
         var player = run.Player;
         var direction = player.IsMoving ? Vector2.Normalize(player.Velocity) : player.Facing.ToVector();
         var from = player.Position;
-        player.Position += direction * TeleportDistance;
+        // Never into a wall or a tree (phase 7.2).
+        player.Position = run.Map.FreePoint(player.Position + direction * TeleportDistance, player.Radius * 0.6f);
         player.Blink(20);
         run.Ability.CooldownTicks = RunClock.Seconds(TeleportCooldownSeconds * player.CooldownMultiplier);
         run.AddEvent(new RunEvent(RunEventType.AbilityTriggered, from, (int)AbilityEffect.Teleported, Target: player.Position, MoveId: "teleport"));

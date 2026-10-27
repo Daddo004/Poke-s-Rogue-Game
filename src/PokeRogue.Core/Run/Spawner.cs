@@ -82,8 +82,31 @@ public sealed class Spawner
         return wave is null ? -1 : SpawnOne(run, wave);
     }
 
-    /// <summary>Uniform point on the rectangle just outside the visible area.</summary>
+    /// <summary>
+    /// A point just outside the visible area, inside the map's walls and clear of its obstacles (phase 7.2). In a corridor
+    /// the sides beyond the walls are skipped, so enemies come from its open ends.
+    /// </summary>
     public Vector2 OffscreenPoint(Random random, Vector2 center)
+    {
+        var map = Timeline.Map;
+        if (!map.IsConstrained)
+            return RawOffscreenPoint(random, center);
+
+        var half = ViewSize / 2f;
+        var point = center;
+        for (var attempt = 0; attempt < 8; attempt++)
+        {
+            point = map.Clamp(RawOffscreenPoint(random, center), 16f);
+            var offset = point - center;
+            if (MathF.Abs(offset.X) > half.X || MathF.Abs(offset.Y) > half.Y)
+                break;
+        }
+
+        return map.FreePoint(point, 12f);
+    }
+
+    /// <summary>Uniform point on the rectangle just outside the visible area.</summary>
+    private Vector2 RawOffscreenPoint(Random random, Vector2 center)
     {
         var half = ViewSize / 2f + new Vector2(SpawnMargin);
         var perimeter = 4f * (half.X + half.Y);
@@ -131,8 +154,8 @@ public sealed class Spawner
     /// <summary>One enemy of the wave just off screen; now and then a shiny one (phase 3.5).</summary>
     private int SpawnOne(RunState run, Wave wave)
     {
-        var index = Spawn(run, PickSpecies(run.Random, wave), OffscreenPoint(run.Random, run.Player.Position));
-        if (index >= 0 && run.LootRules is { } loot && run.Random.NextSingle() < loot.File.ShinyChance)
+        var index = Spawn(run, PickSpecies(run.Random, wave, run.IsNight), OffscreenPoint(run.Random, run.Player.Position));
+        if (index >= 0 && run.LootRules is { } loot && run.Random.NextSingle() < loot.File.ShinyChance * Timeline.Difficulty.Shiny)
             MakeShiny(run, index);
         return index;
     }
@@ -158,7 +181,11 @@ public sealed class Spawner
     {
         var index = run.SpawnEnemy(speciesId, position, Timeline.HpMultiplier(run.Ticks) * hpMultiplier, Timeline.XpMultiplier(run.Ticks));
         if (index >= 0)
+        {
             run.Enemies[index].ContactDamage *= Timeline.DamageMultiplier(run.Ticks);
+            run.Enemies[index].Speed *= Timeline.Difficulty.Speed;
+        }
+
         return index;
     }
 
@@ -225,10 +252,14 @@ public sealed class Spawner
     {
         var center = run.Player.Position;
         var start = run.Random.NextSingle() * MathF.Tau;
+        var map = Timeline.Map;
         for (var k = 0; k < e.Count; k++)
         {
             var angle = start + k * MathF.Tau / e.Count;
-            var index = Spawn(run, e.SpeciesId, center + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * e.Radius, e.Hp);
+            var at = center + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * e.Radius;
+            if (map.IsConstrained)
+                at = map.FreePoint(at, 10f);
+            var index = Spawn(run, e.SpeciesId, at, e.Hp);
             if (index < 0)
                 break;
 
@@ -250,6 +281,14 @@ public sealed class Spawner
         var random = run.Random;
         var angle = random.NextSingle() * MathF.Tau;
         var heading = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
+        // In a corridor they run along it, from one open end to the other (phase 7.2).
+        var map = Timeline.Map;
+        if (map.Spec.Shape == Worlds.MapShape.Corridor)
+        {
+            var sign = random.Next(2) == 0 ? -1f : 1f;
+            heading = map.Spec.Axis == Worlds.CorridorAxis.Horizontal ? new Vector2(sign, 0f) : new Vector2(0f, sign);
+        }
+
         var across = new Vector2(-heading.Y, heading.X);
         var lane = run.Player.Position + across * ((random.NextSingle() - 0.5f) * 2f * LaneSpread);
         var entry = lane - heading * (EdgeDistance(heading) + SpawnMargin);
@@ -262,7 +301,10 @@ public sealed class Spawner
             var offset = e.Kind == WaveEventKind.Swarm
                 ? -heading * (random.NextSingle() * SwarmLength) + across * ((random.NextSingle() - 0.5f) * SwarmWidth)
                 : across * ((k - (e.Count - 1) / 2f) * spacing) - heading * (random.NextSingle() * 8f);
-            var index = Spawn(run, e.SpeciesId, entry + offset, e.Hp);
+            var at = entry + offset;
+            if (map.IsBounded)
+                at = map.Clamp(at, 12f);
+            var index = Spawn(run, e.SpeciesId, at, e.Hp);
             if (index < 0)
                 break;
 
@@ -326,16 +368,23 @@ public sealed class Spawner
             var heading = run.Player.Velocity.NormalizedOrZero();
             var point = OffscreenPoint(run.Random, player);
             if (heading != Vector2.Zero && Vector2.Dot(point - player, heading) < 0f)
-                point = player - (point - player);
+            {
+                var ahead = player - (point - player);
+                if (!Timeline.Map.IsConstrained || Timeline.Map.Contains(ahead, 16f) && !Timeline.Map.Blocked(ahead, 12f))
+                    point = ahead;
+            }
+
             e.Position = point;
             e.Knockback = Vector2.Zero;
         }
     }
 
-    private static int PickSpecies(Random random, Wave wave)
+    /// <summary>A species of the wave by weight; at night from its night list, when it has one (phase 7.2).</summary>
+    private static int PickSpecies(Random random, Wave wave, bool night = false)
     {
-        var roll = random.Next(wave.TotalWeight);
-        foreach (var entry in wave.Species)
+        var (species, total) = night && wave.NightSpecies is { } nightSpecies ? (nightSpecies, wave.NightWeight) : (wave.Species, wave.TotalWeight);
+        var roll = random.Next(total);
+        foreach (var entry in species)
         {
             if ((roll -= entry.Weight) < 0)
                 return entry.SpeciesId;

@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "id": "vetta-lancia",
+  "nameIt": "Vetta Lancia",
+  "descriptionIt": "Le rovine in cima al Monte Corona, fra colonne spezzate sopra le nuvole. Qui il tempo e lo spazio si incontrano, e il loro rivale aspetta nell'ombra.",
+  "minutes": 15, "hpPerMinute": 1.0, "damagePerMinute": 0.2,
+  "map": { "tileset": "vetta", "shape": "Arena", "width": 1600, "height": 1600, "obstacles": 0.16, "obstacleRadius": 12, "seed": 25, "grass": 0, "rock": 0.8 },
+  "darkness": 0.15,
+  "waves": [
+    { "species": [ "bronzor:3", "zubat:2" ] },
+    { "species": [ "bronzor:2", "chingling:2", "zubat:2", "duskull:1" ] },
+    { "species": [ "graveler:2", "machoke:2", "bronzor:2", "dusclops:1" ] },
+    { "species": [ "absol:2", "chingling:2", "bronzong:1", "golbat:2" ] },
+    { "species": [ "dusclops:2", "gabite:1", "graveler:2", "absol:2" ] },
+    { "species": [ "bronzong:2", "machoke:2", "banette:2" ] },
+    { "species": [ "absol:3", "dusclops:2", "gabite:2" ] },
+    { "species": [ "bronzong:2", "golem:1", "machamp:1", "banette:2" ] },
+    { "species": [ "dusknoir:1", "absol:2", "gabite:2", "bronzong:2" ] },
+    { "species": [ "golem:2", "machamp:2", "dusclops:2" ] },
+    { "species": [ "garchomp:1", "dusknoir:1", "absol:2", "bronzong:2" ] },
+    { "species": [ "machamp:2", "golem:2", "banette:2", "gabite:2" ] },
+    { "species": [ "dusknoir:2", "garchomp:1", "bronzong:2", "absol:2" ] },
+    { "species": [ "garchomp:2", "machamp:2", "dusknoir:2" ] },
+    { "species": [ "garchomp:2", "dusknoir:2", "bronzong:3", "absol:2" ] }
+  ],
+  "cast": { "swarm": "golbat", "ring": "bronzor", "stampede": "absol",
+    "dominant1": "banette", "dominant2": "absol", "dominant3": "bronzong", "dominant4": "machamp", "dominant5": "garchomp" },
+  "boss": { "pokemon": "dusknoir", "titleIt": "Ombra della Vetta", "hp": 60 },
+  "legendaries": [
+    { "pokemon": "dialga", "titleIt": "Signore del Tempo", "hp": 0.45 },
+    { "pokemon": "palkia", "titleIt": "Signore dello Spazio", "hp": 0.45 },
+    { "pokemon": "giratina", "titleIt": "Signore del Mondo Distorto", "hp": 0.45 }
+  ]
+}

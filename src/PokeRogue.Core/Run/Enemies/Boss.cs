@@ -76,7 +76,29 @@ public sealed record BossSpec
 
     public float Speed { get; set; } = 1f;
 
+    /// <summary>Without phases of its own (phase 7.4): the move its volleys look like; by default its type's (worlds.json "shots").</summary>
+    public string? Shot { get; set; }
+
     public IReadOnlyList<BossPhaseSpec> Phases { get; set; } = [];
+}
+
+/// <summary>
+/// A shared way of fighting given to a Pokémon (trainers' teams in phase 5.3, levels' bosses and legendaries in Block 7):
+/// its volleys shoot <c>shot</c>, or the move of its first type; a type without one throws rocks instead.
+/// </summary>
+public static class BossPattern
+{
+    public static BossSpec Apply(BossSpec pattern, Data.SpeciesData species, IReadOnlyDictionary<Data.PokemonType, string> shots, string? shot = null)
+    {
+        var move = shot ?? shots.GetValueOrDefault(species.Types[0]);
+        var phases = pattern.Phases.Select(phase => phase with
+        {
+            Attacks = phase.Attacks.Select(attack => attack.Kind != BossAttackKind.Volley ? attack
+                : move is not null ? attack with { Move = move }
+                : new BossAttackSpec { Kind = BossAttackKind.Rockfall, WindUp = attack.WindUp, Count = Math.Max(3, attack.Count / 2), Damage = 2f, Delay = 1f }).ToList(),
+        }).ToList();
+        return pattern with { Pokemon = species.Key, Phases = phases, Shot = null };
+    }
 }
 
 public sealed record BossAttack(BossAttackSpec Spec, MoveDefinition? Move)
@@ -152,4 +174,7 @@ public sealed class BossFight(BossDefinition definition, int index, int serial)
 
     /// <summary>Tick it was defeated; the level is won a moment later.</summary>
     public int? DefeatedTick { get; set; }
+
+    /// <summary>A legendary of Ultra (phase 7.3): beating it unlocks it.</summary>
+    public bool IsLegendary { get; set; }
 }

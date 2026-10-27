@@ -57,18 +57,46 @@ public sealed class RunRenderer
     private int _tick;
 
     public RunRenderer(GameServices services, FloorStyle floorStyle)
+        : this(services, Tileset.Forest with { Floor = floorStyle })
+    {
+    }
+
+    public RunRenderer(GameServices services, Tileset tileset)
     {
         _services = services;
-        Floor = new FloorRenderer(services.Device, floorStyle);
         Camera = new Camera2D(services.Screen.Width, services.Screen.Height);
         _vfx = new MoveVfx(services);
         _statusVfx = new StatusVfx(services);
         _enemyVfx = new EnemyVfx(services, _vfx.Shake);
         _abilityVfx = new AbilityVfx(services);
         _trainerVfx = new TrainerVfx(services);
+        _conditions = new ConditionsVfx(services);
+        UseTileset(tileset);
     }
 
-    public FloorRenderer Floor { get; }
+    public FloorRenderer Floor { get; private set; } = null!;
+
+    /// <summary>The level's look (phase 7.2): floor, obstacles, walls, the colour of its dark.</summary>
+    public Tileset Tileset { get; private set; } = null!;
+
+    private ObstacleArt _obstacleArt = null!;
+    private EdgeRenderer _edges = null!;
+    private readonly ConditionsVfx _conditions;
+    private readonly List<Core.Run.Worlds.Obstacle> _obstacles = [];
+
+    /// <summary>Switches to another level's look; the same one keeps its cached floor.</summary>
+    public void UseTileset(Tileset tileset)
+    {
+        if (Tileset is not null && Tileset.Id == tileset.Id && Tileset.Floor == tileset.Floor)
+            return;
+
+        Floor?.Dispose();
+        _obstacleArt?.Dispose();
+        Tileset = tileset;
+        Floor = new FloorRenderer(_services.Device, tileset.Floor);
+        _obstacleArt = new ObstacleArt(_services.Device, tileset);
+        _edges = new EdgeRenderer(_services.Primitives, tileset);
+    }
 
     public Camera2D Camera { get; }
 
@@ -100,6 +128,7 @@ public sealed class RunRenderer
         _enemyVfx.Reset();
         _abilityVfx.Reset();
         _trainerVfx.Reset();
+        _conditions.Reset();
         _levelBursts.Clear();
         _bossEntrance = -1;
         _sendOutAge = -1;
@@ -130,6 +159,8 @@ public sealed class RunRenderer
         _statusVfx.Update(run, paused, Cull());
         _enemyVfx.Update(run, paused);
         _trainerVfx.Update(run, _playerAnimator.Anim, _playerAnimator.Frame, run.Player.Facing, paused);
+        if (!paused)
+            _conditions.Update(run, run.Player.Position.ToXna());
         if (paused)
             return;
 
@@ -344,6 +375,7 @@ public sealed class RunRenderer
 
         batch.Begin(samplerState: SamplerState.PointClamp, transformMatrix: Camera.Transform);
         Floor.Draw(batch, view);
+        _edges.Draw(batch, run.Map, view, _tick);
         _vfx.DrawGround(batch, run);
         _enemyVfx.DrawGround(batch, run, cull);
         _trainerVfx.DrawGround(batch, run);
@@ -435,6 +467,13 @@ public sealed class RunRenderer
         }
 
         _particles.Draw(batch, p);
+        batch.End();
+
+        // The level's dark and weather (phase 7.2), under the numbers and bars so those stay readable.
+        batch.Begin(samplerState: SamplerState.PointClamp);
+        var screenFeet = Vector2.Transform(feet, Camera.Transform);
+        _conditions.DrawDarkness(batch, run, screenFeet + new Vector2(0, -10), Tileset);
+        _conditions.DrawWeather(batch, screenFeet);
         batch.End();
 
         batch.Begin(samplerState: SamplerState.PointClamp, transformMatrix: Camera.Transform);
@@ -713,6 +752,18 @@ public sealed class RunRenderer
                 continue;
             }
 
+            // A fossil or an egg (phase 7.4): its own picture on a gold ring, with a glint that comes and goes.
+            if (loot.Kind == Core.Run.Pickups.LootKind.Find && loot.ItemId is { } find)
+            {
+                var beat = 0.55f + 0.3f * MathF.Sin((_tick + loot.Serial * 5) * 0.08f);
+                p.Ring(batch, ground, 13f, 6f, EnemyVfx.ShinyGold * beat, 2);
+                var art = _services.Finds.Icon(find);
+                batch.Draw(art, new Vector2(MathF.Round(ground.X - art.Width / 2f), MathF.Round(ground.Y - art.Height - 4 - hop)), Color.White);
+                if ((_tick + loot.Serial * 13) % 50 < 6)
+                    p.Rect(batch, new Rectangle((int)ground.X + 4, (int)(ground.Y - art.Height - hop), 2, 2), Color.White);
+                continue;
+            }
+
             // A held item (phase 3.6) stands on a slowly beating gold ring, so it reads as a lasting find.
             if (loot.Kind == Core.Run.Pickups.LootKind.HeldItem)
             {
@@ -763,9 +814,15 @@ public sealed class RunRenderer
     {
         _drawList.Clear();
         _props.Clear();
-        _props.AddRange(Floor.Props(cull));
+        _props.AddRange(Floor.Props(cull).Where(prop => !run.Map.IsConstrained || run.Map.Contains(prop.Feet.ToNumerics(), 8f) && !run.Map.Blocked(prop.Feet.ToNumerics(), 10f)));
         for (var i = 0; i < _props.Count; i++)
             _drawList.Add(new DrawItem(_props[i].Feet.Y, DrawKind.Prop, i));
+
+        // The map's obstacles (phase 7.2), with some room below for the tall ones.
+        _obstacles.Clear();
+        _obstacles.AddRange(run.Map.ObstaclesIn(cull.Left, cull.Top, cull.Right, cull.Bottom + 40));
+        for (var i = 0; i < _obstacles.Count; i++)
+            _drawList.Add(new DrawItem(_obstacles[i].Position.Y, DrawKind.Obstacle, i));
 
         var items = run.Enemies.Items;
         for (var i = 0; i < items.Length; i++)
@@ -787,6 +844,9 @@ public sealed class RunRenderer
             {
                 case DrawKind.Prop:
                     _services.Primitives.Ellipse(batch, _props[item.Index].Feet, _props[item.Index].ShadowWidth, 4, Color.Black * 0.3f);
+                    break;
+                case DrawKind.Obstacle:
+                    _obstacleArt.DrawShadow(batch, _services.Primitives, _obstacles[item.Index]);
                     break;
                 case DrawKind.Enemy when run.Enemies[item.Index].Rank == EnemyRank.Prop:
                     _services.Primitives.Ellipse(batch, run.Enemies[item.Index].Position.ToXna() + new Vector2(0, 1),
@@ -821,6 +881,9 @@ public sealed class RunRenderer
                 batch.Draw(prop.Texture, prop.Feet - new Vector2(prop.Texture.Width / 2f, prop.Texture.Height - 1), Color.White);
                 break;
             }
+            case DrawKind.Obstacle:
+                _obstacleArt.Draw(batch, _obstacles[item.Index]);
+                break;
             case DrawKind.Enemy when run.Enemies[item.Index].Rank == EnemyRank.Prop:
                 DrawProp(batch, run.Enemies[item.Index]);
                 break;
@@ -1027,6 +1090,13 @@ public sealed class RunRenderer
 
         foreach (var chest in run.Pickups.Chests)
             EdgeArrow(batch, view, run.Player.Position.ToXna(), chest.Position.ToXna(), ChestColor(chest.Tier), ChestIcon(chest.Tier));
+
+        // A fossil or an egg within reach shows the way to it (phase 7.4).
+        foreach (var loot in run.Loot.Items)
+        {
+            if (loot.Kind == Core.Run.Pickups.LootKind.Find && Vector2.DistanceSquared(loot.Position.ToXna(), run.Player.Position.ToXna()) < 700f * 700f)
+                EdgeArrow(batch, view, run.Player.Position.ToXna(), loot.Position.ToXna(), EnemyVfx.ShinyGold, null);
+        }
     }
 
     private void EdgeArrow(SpriteBatch batch, Rectangle view, Vector2 from, Vector2 target, Color color, string? icon)
@@ -1077,6 +1147,7 @@ public sealed class RunRenderer
         Prop,
         Enemy,
         Player,
+        Obstacle,
     }
 
     private readonly record struct DrawItem(float Y, DrawKind Kind, int Index);

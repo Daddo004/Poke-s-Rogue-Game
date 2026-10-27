@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "id": "giardino-fiorito",
+  "nameIt": "Giardino Fiorito",
+  "descriptionIt": "Un prato di fiori sotto il sole, pieno di api e di polline. Fra i fiori si nasconde un piccolo Pokémon riconoscente.",
+  "minutes": 15, "hpPerMinute": 0.95, "damagePerMinute": 0.19,
+  "map": { "tileset": "fiori", "obstacles": 0.14, "obstacleRadius": 12, "seed": 23, "grass": 1.4, "rock": 0.4 },
+  "weather": [ { "at": "0:00", "kind": "Sun" } ],
+  "waves": [
+    { "species": [ "combee:3", "budew:2", "cherubi:2" ] },
+    { "species": [ "cherubi:2", "combee:2", "pachirisu:2", "hoppip:2" ] },
+    { "species": [ "budew:2", "sunkern:2", "buneary:2", "mareep:2" ] },
+    { "species": [ "skiploom:2", "cherubi:2", "roselia:1", "flaaffy:1" ] },
+    { "species": [ "beautifly:2", "butterfree:2", "pachirisu:2", "combee:2" ] },
+    { "species": [ "cherrim:1", "roselia:2", "sunflora:1", "skiploom:2" ] },
+    { "species": [ "vespiquen:1", "flaaffy:2", "lopunny:1", "cherrim:2" ] },
+    { "species": [ "jumpluff:2", "roselia:2", "sunflora:2" ] },
+    { "species": [ "bellossom:1", "cherrim:2", "vespiquen:1", "ampharos:1" ] },
+    { "species": [ "jumpluff:2", "lopunny:2", "roselia:2" ] },
+    { "species": [ "roserade:1", "sunflora:2", "ampharos:1", "bellossom:2" ] },
+    { "species": [ "vespiquen:2", "jumpluff:2", "cherrim:2" ] },
+    { "species": [ "roserade:2", "ampharos:2", "lopunny:2" ] },
+    { "species": [ "bellossom:2", "vespiquen:2", "roserade:2" ] },
+    { "species": [ "roserade:3", "ampharos:2", "vespiquen:2", "jumpluff:2" ] }
+  ],
+  "cast": { "swarm": "hoppip", "ring": "cherubi", "stampede": "mareep",
+    "dominant1": "pachirisu", "dominant2": "sunflora", "dominant3": "lopunny", "dominant4": "ampharos", "dominant5": "vespiquen" },
+  "boss": { "pokemon": "roserade", "titleIt": "Regina dei Fiori", "hp": 60 },
+  "legendaries": [ { "pokemon": "shaymin", "titleIt": "Il Pokémon Gratitudine", "hp": 0.8 } ]
+}

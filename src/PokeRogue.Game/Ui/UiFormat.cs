@@ -11,6 +11,14 @@ public static class UiFormat
     public static string Decimal(float value, int decimals = 1) =>
         value.ToString("0." + new string('0', decimals), CultureInfo.InvariantCulture).Replace('.', ',');
 
+    /// <summary>"A", "A e B", "A, B e C".</summary>
+    public static string List(IReadOnlyList<string> items) => items.Count switch
+    {
+        0 => "",
+        1 => items[0],
+        _ => string.Join(", ", items.Take(items.Count - 1)) + " e " + items[^1],
+    };
+
     /// <summary>Run time as mm:ss (hours roll into minutes).</summary>
     public static string Clock(int ticks)
     {

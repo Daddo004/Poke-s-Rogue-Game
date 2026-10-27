@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "id": "deserto",
+  "nameIt": "Deserto",
+  "descriptionIt": "Le dune del Percorso 111 in una tempesta di sabbia senza fine. Sotto la sabbia ci sono fossili e rovine dove dormono tre colossi.",
+  "minutes": 15, "hpPerMinute": 0.85, "damagePerMinute": 0.17,
+  "map": { "tileset": "deserto", "obstacles": 0.12, "obstacleRadius": 12, "seed": 16, "grass": 0, "rock": 1.2 },
+  "weather": [ { "at": "0:00", "kind": "Sandstorm" } ],
+  "waves": [
+    { "species": [ "sandshrew:3", "trapinch:2" ] },
+    { "species": [ "sandshrew:2", "trapinch:2", "cacnea:2", "baltoy:2" ] },
+    { "species": [ "geodude:2", "cacnea:2", "trapinch:2", "nosepass:1" ] },
+    { "species": [ "baltoy:2", "cacnea:2", "sandshrew:2", "vibrava:1" ] },
+    { "species": [ "sandslash:2", "trapinch:2", "graveler:2", "baltoy:2" ] },
+    { "species": [ "cacturne:1", "vibrava:2", "sandslash:2" ] },
+    { "species": [ "claydol:1", "cacturne:2", "graveler:2", "vibrava:2" ] },
+    { "species": [ "sandslash:2", "claydol:2", "nosepass:2" ] },
+    { "species": [ "flygon:1", "vibrava:2", "cacturne:2", "graveler:2" ] },
+    { "species": [ "claydol:2", "sandslash:2", "cacturne:2" ] },
+    { "species": [ "flygon:2", "graveler:2", "claydol:2" ] },
+    { "species": [ "cacturne:3", "vibrava:2", "golem:1" ] },
+    { "species": [ "flygon:2", "claydol:2", "sandslash:2", "golem:1" ] },
+    { "species": [ "cacturne:3", "flygon:2", "claydol:2" ] },
+    { "species": [ "flygon:3", "golem:2", "cacturne:2", "claydol:2" ] }
+  ],
+  "cast": { "swarm": "vibrava", "ring": "trapinch", "stampede": "sandslash",
+    "dominant1": "nosepass", "dominant2": "sandslash", "dominant3": "cacturne", "dominant4": "claydol", "dominant5": "golem" },
+  "boss": { "pokemon": "flygon", "titleIt": "Spirito del Deserto", "hp": 60 },
+  "legendaries": [
+    { "pokemon": "regirock", "titleIt": "Il Colosso di Roccia", "hp": 0.6 },
+    { "pokemon": "regice", "titleIt": "Il Colosso di Ghiaccio", "hp": 0.6 },
+    { "pokemon": "registeel", "titleIt": "Il Colosso d'Acciaio", "hp": 0.6 }
+  ],
+  "finds": [ { "find": "lileep", "x": 1500, "y": -800 }, { "find": "anorith", "x": -1300, "y": 1200 } ]
+}

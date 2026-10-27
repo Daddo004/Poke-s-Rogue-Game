@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "id": "isola-meridionale",
+  "nameIt": "Isola Meridionale",
+  "descriptionIt": "Una spiaggia lontana fra le palme. Quando cala la notte arrivano i Lunatone, e due Pokémon Eone sorvolano l'isola.",
+  "minutes": 15, "hpPerMinute": 0.85, "damagePerMinute": 0.17,
+  "map": { "tileset": "spiaggia", "obstacles": 0.1, "obstacleRadius": 12, "seed": 17, "grass": 0.3, "rock": 0.6 },
+  "night": { "from": "7:00", "to": "12:00" },
+  "waves": [
+    { "species": [ "wingull:3", "corphish:2" ] },
+    { "species": [ "wingull:2", "corphish:2", "carvanha:2", "spheal:1" ] },
+    { "species": [ "carvanha:2", "wailmer:2", "wingull:2", "luvdisc:2" ] },
+    { "species": [ "corphish:2", "chimecho:1", "wailmer:2", "clamperl:2" ] },
+    { "species": [ "pelipper:1", "carvanha:2", "swablu:2", "luvdisc:2" ] },
+    { "species": [ "crawdaunt:1", "wailmer:2", "pelipper:2", "sharpedo:1" ] },
+    { "species": [ "altaria:1", "crawdaunt:2", "sharpedo:2", "spheal:2" ] },
+    { "species": [ "pelipper:2", "sharpedo:2", "wailmer:2", "solrock:1" ], "night": [ "lunatone:2", "chimecho:2", "sharpedo:2", "crawdaunt:2" ] },
+    { "species": [ "crawdaunt:2", "altaria:2", "sealeo:2" ], "night": [ "lunatone:3", "sealeo:2", "crawdaunt:2" ] },
+    { "species": [ "sharpedo:2", "pelipper:2", "wailord:1", "solrock:1" ], "night": [ "lunatone:2", "chimecho:2", "sharpedo:2", "sealeo:2" ] },
+    { "species": [ "altaria:2", "crawdaunt:2", "sealeo:2" ], "night": [ "lunatone:3", "crawdaunt:2", "altaria:2" ] },
+    { "species": [ "sharpedo:3", "wailord:1", "pelipper:2" ], "night": [ "lunatone:2", "sharpedo:3", "chimecho:2" ] },
+    { "species": [ "altaria:2", "crawdaunt:2", "sealeo:2", "solrock:2" ] },
+    { "species": [ "sharpedo:3", "wailord:1", "altaria:2", "solrock:2" ] },
+    { "species": [ "wailord:2", "sharpedo:3", "crawdaunt:2", "altaria:2" ] }
+  ],
+  "cast": { "swarm": "wingull", "ring": "corphish", "stampede": "spheal",
+    "dominant1": "pelipper", "dominant2": "crawdaunt", "dominant3": "sealeo", "dominant4": "sharpedo", "dominant5": "altaria" },
+  "boss": { "pokemon": "wailord", "titleIt": "Gigante del Mare", "hp": 60 },
+  "legendaries": [
+    { "pokemon": "latias", "titleIt": "Ali di Rubino", "hp": 0.6 },
+    { "pokemon": "latios", "titleIt": "Ali di Zaffiro", "hp": 0.6 }
+  ]
+}

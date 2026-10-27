@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "id": "bosco-evopoli",
+  "nameIt": "Bosco Evopoli",
+  "descriptionIt": "Un bosco fitto e antico vicino a Evopoli. Di notte i Pokémon Spettro escono dagli alberi, e la luna porta un'ospite rara.",
+  "minutes": 15, "hpPerMinute": 0.95, "damagePerMinute": 0.19,
+  "map": { "tileset": "evopoli", "obstacles": 0.24, "obstacleRadius": 13, "seed": 20 },
+  "night": { "from": "5:00", "to": "10:00" },
+  "waves": [
+    { "species": [ "kricketot:3", "bidoof:2", "starly:2" ] },
+    { "species": [ "kricketot:2", "budew:2", "wurmple:2", "buneary:2" ] },
+    { "species": [ "silcoon:2", "cascoon:2", "budew:2", "starly:2" ] },
+    { "species": [ "kricketune:1", "cherubi:2", "combee:2", "bidoof:2" ] },
+    { "species": [ "beautifly:2", "dustox:2", "staravia:2", "buneary:2" ] },
+    { "species": [ "roselia:2", "kricketune:2", "staravia:2" ], "night": [ "hoothoot:2", "murkrow:2", "gastly:2", "misdreavus:1" ] },
+    { "species": [ "mothim:1", "wormadam:1", "beautifly:2", "roselia:2" ], "night": [ "noctowl:2", "murkrow:2", "haunter:2", "misdreavus:2" ] },
+    { "species": [ "kricketune:2", "staravia:2", "roselia:2", "bibarel:1" ], "night": [ "noctowl:2", "haunter:2", "misdreavus:2", "kricketune:2" ] },
+    { "species": [ "lopunny:1", "mothim:2", "staravia:2", "roselia:2" ], "night": [ "noctowl:2", "murkrow:2", "haunter:2", "mismagius:1" ] },
+    { "species": [ "vespiquen:1", "kricketune:2", "staravia:2", "wormadam:1" ], "night": [ "noctowl:2", "haunter:2", "mismagius:1", "kricketune:2" ] },
+    { "species": [ "vespiquen:1", "roselia:2", "staraptor:1", "lopunny:1" ], "night": [ "noctowl:2", "haunter:2", "mismagius:2" ] },
+    { "species": [ "vespiquen:1", "staraptor:2", "kricketune:2", "roselia:2" ] },
+    { "species": [ "roserade:1", "staraptor:2", "mothim:2", "lopunny:2" ] },
+    { "species": [ "vespiquen:2", "roserade:1", "staraptor:2", "bibarel:2" ] },
+    { "species": [ "staraptor:3", "roserade:2", "vespiquen:2", "lopunny:2" ] }
+  ],
+  "cast": { "swarm": "starly", "ring": "kricketot", "stampede": "buneary",
+    "dominant1": "kricketune", "dominant2": "lopunny", "dominant3": "wormadam", "dominant4": "staraptor", "dominant5": "roserade" },
+  "boss": { "pokemon": "vespiquen", "titleIt": "Regina del Bosco", "hp": 60 },
+  "legendaries": [ { "pokemon": "cresselia", "titleIt": "Il Pokémon Lunare" } ],
+  "finds": [ { "find": "riolu", "x": 1400, "y": 1100 } ]
+}

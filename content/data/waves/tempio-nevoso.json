@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "id": "tempio-nevoso",
+  "nameIt": "Tempio Nevoso",
+  "descriptionIt": "Le sale di ghiaccio sotto Nevepoli, fra colonne gelate e grandine. Nel cuore del tempio dorme il colosso che trascinò i continenti.",
+  "minutes": 15, "hpPerMinute": 0.95, "damagePerMinute": 0.19,
+  "map": { "tileset": "tempio", "shape": "Arena", "width": 1500, "height": 1300, "obstacles": 0.18, "obstacleRadius": 11, "seed": 24, "grass": 0, "rock": 0.6 },
+  "weather": [ { "at": "0:00", "kind": "Hail" } ],
+  "darkness": 0.3,
+  "waves": [
+    { "species": [ "snover:3", "spheal:2" ] },
+    { "species": [ "snover:2", "snorunt:2", "spheal:2", "swinub:1" ] },
+    { "species": [ "bronzor:2", "snorunt:2", "spheal:2", "swinub:2" ] },
+    { "species": [ "sneasel:2", "snover:2", "golbat:2", "sealeo:1" ] },
+    { "species": [ "piloswine:1", "glalie:1", "snover:2", "bronzor:2" ] },
+    { "species": [ "abomasnow:1", "sneasel:2", "sealeo:2", "piloswine:1" ] },
+    { "species": [ "froslass:1", "glalie:2", "bronzong:1", "swinub:2" ] },
+    { "species": [ "weavile:1", "abomasnow:2", "piloswine:2" ] },
+    { "species": [ "froslass:2", "sealeo:2", "bronzong:2", "sneasel:2" ] },
+    { "species": [ "glalie:2", "weavile:2", "abomasnow:2" ] },
+    { "species": [ "mamoswine:1", "froslass:2", "piloswine:2", "bronzong:2" ] },
+    { "species": [ "abomasnow:2", "weavile:2", "glalie:2" ] },
+    { "species": [ "mamoswine:2", "froslass:2", "walrein:1", "weavile:2" ] },
+    { "species": [ "abomasnow:3", "glalie:2", "bronzong:2" ] },
+    { "species": [ "mamoswine:2", "weavile:3", "froslass:2", "abomasnow:2" ] }
+  ],
+  "cast": { "swarm": "golbat", "ring": "snorunt", "stampede": "swinub",
+    "dominant1": "sneasel", "dominant2": "glalie", "dominant3": "froslass", "dominant4": "weavile", "dominant5": "abomasnow" },
+  "boss": { "pokemon": "mamoswine", "titleIt": "Gigante di Ghiaccio", "hp": 60 },
+  "legendaries": [ { "pokemon": "regigigas", "titleIt": "Il Pokémon Colossale", "hp": 1.3, "requires": [ "regirock", "regice", "registeel" ] } ]
+}

@@ -140,9 +140,10 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
         var numbers = services.Fonts.Get(services.Style.NumberFont, services.Style.NumberFontSize / 2f);
         p.Rect(batch, new Rectangle(0, 0, services.Screen.Width, services.Screen.Height), Color.Black * 0.6f);
 
-        var unlocks = report.NewCharacters.Count + report.NewTrainers.Count;
+        var unlocks = report.NewCharacters.Count + report.NewTrainers.Count + report.Fossils.Count;
         var rows = Math.Min(report.Missions.Count, 6);
-        var height = 52 + rows * 26 + (unlocks > 0 ? 70 : 0);
+        var opened = OpenedText(report);
+        var height = 52 + rows * 26 + (unlocks > 0 ? 70 : 0) + (opened is null ? 0 : 30);
         var panel = new Rectangle(140, Math.Max(16, 180 - height / 2), 360, height);
         UiDraw.Frame(batch, p, panel, hud.EvolvedTheme);
         UiDraw.TextCentered(batch, services.Fonts.Title(services.Style), "NOVITÀ!", panel.Center.X, panel.Y + 4, Gold, Ink);
@@ -183,9 +184,42 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
                     batch.Draw(sprite, new Rectangle(frame.X + 4, frame.Y + 4, 36, 36), services.TrainerPortraits.Head(trainer), Color.White);
                 x += 48;
             }
+
+            // A fossil found (phase 7.4): its stone, to revive in the shop.
+            foreach (var fossil in report.Fossils.Take(7))
+            {
+                var frame = new Rectangle(x, y + 16, 44, 44);
+                UiDraw.Frame(batch, p, frame, services.Style.Theme);
+                var art = services.Finds.Icon(fossil.Id);
+                batch.Draw(art, new Rectangle(frame.Center.X - art.Width, frame.Center.Y - art.Height, art.Width * 2, art.Height * 2), Color.White);
+                UiDraw.TextCentered(batch, small, "FOSSILE", frame.Center.X, frame.Bottom + 1, Gold, Ink);
+                x += 48;
+            }
+
+            y += 70;
         }
 
+        if (opened is not null)
+            UiDraw.Text(batch, small, opened, new Vector2(panel.X + 16, y + 6), Paper);
+
         UiDraw.TextCentered(batch, small, "[INVIO] CONTINUA", panel.Center.X, panel.Bottom + 6, Dim, Ink);
+    }
+
+    /// <summary>"SI APRE: MONTE LUNA, BOSCO SMERALDO A DIFFICILE" (Block 7); null when nothing opened.</summary>
+    private string? OpenedText(Core.Meta.RunReport report)
+    {
+        if (report.Opened.Count == 0)
+            return null;
+
+        var worlds = services.Worlds.Value;
+        var names = report.Opened.Select(key =>
+        {
+            var parts = key.Split('/');
+            var name = worlds.Find(parts[0])?.NameIt.ToUpperInvariant() ?? parts[0];
+            return parts[1] == nameof(Core.Meta.Difficulty.Normal) ? name
+                : $"{name} A {worlds.Difficulty(Enum.Parse<Core.Meta.Difficulty>(parts[1])).NameIt.ToUpperInvariant()}";
+        }).Take(3).ToList();
+        return $"SI APRE: {string.Join(", ", names)}";
     }
 
     private void DrawPokemon(SpriteBatch batch, RunState run, Rectangle panel)

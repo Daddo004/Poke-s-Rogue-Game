@@ -27,6 +27,12 @@ public sealed class GameServices(GraphicsDevice device, string contentRoot, Virt
 
     public BreakableArt Breakables { get; } = new(device);
 
+    /// <summary>The fossils and eggs hidden on the levels (phase 7.4).</summary>
+    public FindArt Finds { get; } = new(device);
+
+    /// <summary>The worlds, their levels and the difficulties (Block 7).</summary>
+    public Lazy<Core.Run.Worlds.WorldLibrary> Worlds { get; } = new(() => Core.Run.Worlds.WorldLibrary.Load(contentRoot));
+
     public SpriteLibrary Sprites { get; } = new(device, contentRoot);
 
     private ItemIcons? _itemIcons;
@@ -100,7 +106,7 @@ public sealed class GameServices(GraphicsDevice device, string contentRoot, Virt
     public Core.Meta.MetaProgress Meta
     {
         get => _meta ??= new Core.Meta.MetaProgress(SaveStore?.Load() ?? new Core.Meta.SaveData(), Shop.Value, Characters, Trainers.Value,
-            Core.Meta.MissionLibrary.Load(ContentRoot, Characters, Trainers.Value), Pokedex.Value.Species, SaveStore);
+            Core.Meta.MissionLibrary.Load(ContentRoot, Characters, Trainers.Value, Worlds.Value), Pokedex.Value.Species, SaveStore, Worlds.Value);
         set => _meta = value;
     }
 

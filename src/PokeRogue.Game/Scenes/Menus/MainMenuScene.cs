@@ -24,11 +24,14 @@ public sealed class MainMenuScene : MenuScene
         _cursor = cursor;
     }
 
-    /// <summary>A run from the menus: played with the meta-progression, and back to this menu at the end.</summary>
-    public static GameplayScene Run(GameServices services, CharacterDefinition character, TrainerDefinition trainer, TrainerDefinition? challenge = null) =>
+    /// <summary>A run from the menus on a level at a difficulty (Block 7): played with the meta-progression, and back to this menu at the end.</summary>
+    public static GameplayScene Run(GameServices services, CharacterDefinition character, TrainerDefinition trainer, string levelId,
+        Core.Meta.Difficulty difficulty, TrainerDefinition? challenge = null) =>
         new(services, character.Id, trainerId: trainer.Id)
         {
             Meta = services.Meta,
+            LevelId = levelId,
+            Difficulty = difficulty,
             ChallengeId = challenge?.Id,
             BackToMenu = () => new MainMenuScene(services),
         };

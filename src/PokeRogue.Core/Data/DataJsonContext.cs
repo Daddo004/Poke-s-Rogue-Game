@@ -24,4 +24,5 @@ namespace PokeRogue.Core.Data;
 [JsonSerializable(typeof(PokeRogue.Core.Run.Trainers.TrainerFile))]
 [JsonSerializable(typeof(PokeRogue.Core.Meta.ShopFile))]
 [JsonSerializable(typeof(PokeRogue.Core.Meta.MissionFile))]
+[JsonSerializable(typeof(PokeRogue.Core.Run.Worlds.WorldsFile))]
 public sealed partial class DataJsonContext : JsonSerializerContext;

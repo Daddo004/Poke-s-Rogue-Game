@@ -75,12 +75,16 @@ public sealed class RosterSimulation
 
     /// <param name="trainer">The run's trainer: Ash when omitted, none with <paramref name="noTrainer"/>.</param>
     /// <param name="challenge">A challenge run (phase 5.3): this trainer's team replaces the level's boss, and the boss time is the whole team's.</param>
+    /// <param name="level">Block 7: another level (built for its difficulty) instead of Bosco Smeraldo; at Ultra its legendaries come instead of the boss.</param>
     public RunResult Play(CharacterDefinition character, int seed, bool mortal, TrainerDefinition? trainer = null, bool noTrainer = false,
-        TrainerDefinition? challenge = null, RunLoadout? loadout = null)
+        TrainerDefinition? challenge = null, RunLoadout? loadout = null, WaveTimeline? level = null,
+        PokeRogue.Core.Meta.Difficulty difficulty = PokeRogue.Core.Meta.Difficulty.Normal)
     {
-        var run = new RunState(_pokedex.Species, _typeChart, character.First.Id, _waves, new Vector2(640, 360), seed)
+        var waves = level ?? _waves;
+        var run = new RunState(_pokedex.Species, _typeChart, character.First.Id, waves, new Vector2(640, 360), seed)
         {
-            TimeLimitTicks = _waves.DurationTicks,
+            Difficulty = difficulty,
+            TimeLimitTicks = waves.DurationTicks,
             MovePool = _moves.Enabled,
             ItemPool = _items.Enabled,
             LevelUpRules = _levelUpRules,
@@ -95,12 +99,14 @@ public sealed class RosterSimulation
             run.UseTrainer(trainer ?? Trainers[TrainerLibrary.DefaultId]);
         if (challenge is not null)
             run.ChallengeTrainer(challenge, Trainers.Challenge!);
+        else if (difficulty == PokeRogue.Core.Meta.Difficulty.Ultra)
+            run.UseLegendaries(waves.Legendaries.Where(l => l.Requires.Count == 0).Select(l => l.Boss));
         run.Player.Invincible = !mortal;
 
         var evolutions = new List<(string, int)>();
         int? bossArrived = null;
         float? bossSeconds = null;
-        while (!run.IsOver && run.Ticks < _waves.DurationTicks + TicksPerMinute * 10)
+        while (!run.IsOver && run.Ticks < waves.DurationTicks + TicksPerMinute * 10)
         {
             if (run.SpecialPending)
             {
@@ -123,9 +129,10 @@ public sealed class RosterSimulation
             run.Tick(new PlayerInput(AutoPilot.Input(run), AbilitySystem.CanUse(run), run.Special.IsFull, AutoPilot.UseTrainer(run)));
             foreach (var e in run.Events)
             {
+                // The first boss (or trainer) to arrive starts the clock; the last legendary's fall stops it.
                 if (e.Type is RunEventType.BossAppeared or RunEventType.TrainerChallenged)
-                    bossArrived = run.Ticks;
-                if ((e.Type == RunEventType.BossDefeated && challenge is null || e.Type == RunEventType.TrainerDefeated) && bossArrived is { } arrived)
+                    bossArrived ??= run.Ticks;
+                if ((e.Type == RunEventType.BossDefeated && challenge is null && run.LegendariesLeft == 0 || e.Type == RunEventType.TrainerDefeated) && bossArrived is { } arrived)
                     bossSeconds = (run.Ticks - arrived) / (float)RunClock.TicksPerSecond;
             }
         }
@@ -135,7 +142,7 @@ public sealed class RosterSimulation
         return new RunResult(run.Player.Level, run.Stats.Kills, run.Outcome, run.Ticks, bossSeconds, run.Player.Species.NameIt, evolutions,
             run.Special.Uses, total > 0f ? run.Special.DamageDealt / total : 0f, run.TrainerState.Uses)
         {
-            Record = PokeRogue.Core.Meta.RunRecord.From(run, LevelId),
+            Record = PokeRogue.Core.Meta.RunRecord.From(run, waves.Id),
         };
     }
 

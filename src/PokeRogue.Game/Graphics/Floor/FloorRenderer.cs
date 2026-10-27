@@ -36,7 +36,12 @@ public sealed class FloorRenderer : IDisposable
         _device = device;
         Style = style;
         _tallGrassTile = BuildTallGrassTile();
-        _props = [FloorProps.Rock(device), FloorProps.Bush(device), FloorProps.Stump(device)];
+        _props = style.Props.Select(kind => kind switch
+        {
+            "bush" => FloorProps.Bush(device),
+            "stump" => FloorProps.Stump(device),
+            _ => FloorProps.Rock(device),
+        }).ToArray();
     }
 
     public FloorStyle Style { get; }
@@ -95,7 +100,7 @@ public sealed class FloorRenderer : IDisposable
     /// <summary>Raised decorations whose base lies inside <paramref name="area"/>.</summary>
     public IEnumerable<FloorProp> Props(Rectangle area)
     {
-        if (Style.PropChance <= 0f)
+        if (Style.PropChance <= 0f || _props.Length == 0)
             yield break;
 
         for (var gy = FloorDiv(area.Top, PropCell); gy <= FloorDiv(area.Bottom, PropCell); gy++)
@@ -175,9 +180,47 @@ public sealed class FloorRenderer : IDisposable
                     continue;
                 }
 
+                // Pools of water (phase 7.2): a lighter rim, then the water.
+                if (s.PoolThreshold > 0f)
+                {
+                    var pool = Fbm(wx / 70f, wy / 70f, s.Seed + 404);
+                    if (pool > s.PoolThreshold)
+                    {
+                        pixels[i] = pool > s.PoolThreshold + 0.025f + dither * 0.1f ? s.PoolTones[0] : s.PoolTones[1];
+                        if (pool > s.PoolThreshold + 0.06f && ((wx + wy * 3) & 31) < 3 && (wy & 3) == 0)
+                            pixels[i] = s.PoolTones[1];
+                        covered[i] = true;
+                        continue;
+                    }
+                }
+
                 var n = Fbm(wx / s.PatchScale, wy / s.PatchScale, s.Seed) + dither;
-                pixels[i] = s.BaseTones[n < 0.4f ? 0 : n < 0.62f ? 1 : 2];
+                pixels[i] = s.TileWidth > 0 ? TileFloor(wx, wy, n) : s.BaseTones[n < 0.4f ? 0 : n < 0.62f ? 1 : 2];
             }
+        }
+
+        if (s.Speckles.Length > 0)
+        {
+            Scatter(pixels, covered, ox, oy, cell: 12, s.SpeckleDensity, s.Seed + 37, (set, wx, wy, h) =>
+                set(wx, wy, s.Speckles[h / 7 % s.Speckles.Length]));
+        }
+
+        if (s.Crack is { } crack)
+        {
+            // A short crooked line; lava cracks glow at their heart.
+            Scatter(pixels, covered, ox, oy, cell: 40, s.CrackDensity, s.Seed + 41, (set, wx, wy, h) =>
+            {
+                var length = 4 + h % 6;
+                for (var k = 0; k < length; k++)
+                {
+                    set(wx, wy, k > 0 && k < length - 1 && s.CrackGlow is { } glow ? glow : crack);
+                    if (s.CrackGlow is not null)
+                        set(wx, wy + 1, crack);
+                    wx += (h >> (k + 3) & 1) == 0 ? 1 : 0;
+                    wy += (h >> (k + 9) & 1) == 0 ? 1 : -1;
+                    wx += 1;
+                }
+            });
         }
 
         Scatter(pixels, covered, ox, oy, cell: 15, s.TuftDensity, s.Seed + 11, (set, wx, wy, h) =>
@@ -238,6 +281,32 @@ public sealed class FloorRenderer : IDisposable
                 mark(Set, gx * cell + h / 1000 % cell, gy * cell + h / 97 % cell, h);
             }
         }
+    }
+
+    /// <summary>
+    /// A tiled floor (phase 7.2): stone slabs, planks or metal plates, each a tone of its own, lit on its top edge and
+    /// shaded on its bottom one, grout between them, rivets on metal.
+    /// </summary>
+    private Color TileFloor(int wx, int wy, float noise)
+    {
+        var s = Style;
+        var row = FloorDiv(wy, s.TileHeight);
+        var shifted = wx + (s.TileStagger && (row & 1) == 1 ? s.TileWidth / 2 : 0);
+        var column = FloorDiv(shifted, s.TileWidth);
+        var lx = shifted - column * s.TileWidth;
+        var ly = wy - row * s.TileHeight;
+        if (lx == 0 || ly == 0)
+            return s.Grout;
+
+        var h = Hash(column, row, s.Seed + 505);
+        var tone = s.BaseTones[(h % 3 + (noise > 0.66f ? 1 : noise < 0.34f ? -1 : 0) + 3) % 3];
+        if (s.Rivets is { } rivet && (lx == 3 || lx == s.TileWidth - 3) && (ly == 3 || ly == s.TileHeight - 3))
+            return rivet;
+        if (ly == 1)
+            return Color.Lerp(tone, Color.White, 0.12f);
+        if (ly == s.TileHeight - 1 || lx == s.TileWidth - 1)
+            return Color.Lerp(tone, s.Grout, 0.35f);
+        return tone;
     }
 
     private bool IsPath(int wx, int wy) => Style.PathWidth > 0f && PathDistance(wx, wy) < Style.PathWidth + 2f;

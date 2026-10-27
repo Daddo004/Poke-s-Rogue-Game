@@ -245,6 +245,28 @@ public sealed class PauseMenu(GameServices services, Hud hud)
                 p.Rect(batch, new Rectangle(area.X, my, area.Width, 1), MapGrid * 0.35f);
         }
 
+        // Phase 7.2: past the walls of a corridor or an arena, dark.
+        var map = run.Map;
+        if (map.IsBounded)
+        {
+            var corner0 = ToMap(new System.Numerics.Vector2(MathF.Max(map.Min.X, centre.X - 1e5f), MathF.Max(map.Min.Y, centre.Y - 1e5f)));
+            var corner1 = ToMap(new System.Numerics.Vector2(MathF.Min(map.Max.X, centre.X + 1e5f), MathF.Min(map.Max.Y, centre.Y + 1e5f)));
+            var inside = Rectangle.Intersect(area, new Rectangle((int)corner0.X, (int)corner0.Y, (int)(corner1.X - corner0.X), (int)(corner1.Y - corner0.Y)));
+            var wall = new Color(20, 16, 30);
+            p.Rect(batch, new Rectangle(area.X, area.Y, area.Width, Math.Max(0, inside.Top - area.Top)), wall);
+            p.Rect(batch, new Rectangle(area.X, inside.Bottom, area.Width, Math.Max(0, area.Bottom - inside.Bottom)), wall);
+            p.Rect(batch, new Rectangle(area.X, inside.Top, Math.Max(0, inside.Left - area.Left), inside.Height), wall);
+            p.Rect(batch, new Rectangle(inside.Right, inside.Top, Math.Max(0, area.Right - inside.Right), inside.Height), wall);
+            p.Outline(batch, inside, MapGrid * 0.8f);
+        }
+
+        // Fossils and eggs (phase 7.4): gold stars, so they can be found.
+        foreach (var loot in run.Loot.Items)
+        {
+            if (loot.Kind == LootKind.Find)
+                Marker(batch, area, ToMap(loot.Position), EnemyVfx.ShinyGold, MarkerShape.Star);
+        }
+
         // The start.
         var start = ToMap(System.Numerics.Vector2.Zero);
         if (area.Contains(start))
@@ -255,7 +277,7 @@ public sealed class PauseMenu(GameServices services, Hud hud)
 
         foreach (var loot in run.Loot.Items)
         {
-            if (loot.Kind is LootKind.Coin or LootKind.Nugget)
+            if (loot.Kind is LootKind.Coin or LootKind.Nugget or LootKind.Find)
                 continue;
             if (loot.Kind == LootKind.HeldItem)
                 Marker(batch, area, ToMap(loot.Position), EnemyVfx.ShinyGold, MarkerShape.Diamond);

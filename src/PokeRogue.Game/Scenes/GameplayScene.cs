@@ -15,8 +15,22 @@ namespace PokeRogue.Game.Scenes;
 /// <summary>A run in progress: the Core simulation, renderer, HUD, pause, level-ups, end of run and results.</summary>
 public sealed class GameplayScene : Scene
 {
-    /// <summary>The only level until worlds arrive in Block 7: its waves are content/data/waves/bosco-smeraldo.json.</summary>
-    public const string LevelId = "bosco-smeraldo";
+    /// <summary>The level played when none is chosen (previews, tests): content/data/waves/bosco-smeraldo.json, the first one.</summary>
+    public const string DefaultLevelId = "bosco-smeraldo";
+
+    /// <summary>The level played (Block 7): a waves file, content/data/waves/&lt;id&gt;.json.</summary>
+    public string LevelId { get; init; } = DefaultLevelId;
+
+    /// <summary>The difficulty played (phase 7.3).</summary>
+    public Core.Meta.Difficulty Difficulty { get; init; }
+
+    /// <summary>"normale", "difficile" or "ultra" (also the enum's names) to a difficulty; Normale when unknown.</summary>
+    public static Core.Meta.Difficulty ParseDifficulty(string? text) => text?.ToLowerInvariant() switch
+    {
+        "difficile" or "hard" => Core.Meta.Difficulty.Hard,
+        "ultra" => Core.Meta.Difficulty.Ultra,
+        _ => Core.Meta.Difficulty.Normal,
+    };
 
     /// <summary>Pikachu's main move (characters.json): previews that build a run by hand give it more levels.</summary>
     public const string StartingMoveId = "thundershock";
@@ -60,7 +74,7 @@ public sealed class GameplayScene : Scene
         _initialSpawn = initialSpawn;
         _setup = setup;
         Autopilot = autopilot;
-        _renderer = new RunRenderer(services, FloorStyle.MeadowDecorated);
+        _renderer = new RunRenderer(services, Tileset.Forest);
         _hud = new Hud(services);
         _levelUpWindow = new LevelUpWindow(services);
         _pause = new PauseMenu(services, _hud);
@@ -176,7 +190,8 @@ public sealed class GameplayScene : Scene
 
     public override IReadOnlyList<string> DebugLines =>
     [
-        $"tempo {_run.Elapsed:mm\\:ss}   nemici {_run.Enemies.AliveCount} (slot {_run.Enemies.HighWater})   proiettili {_run.MoveSystem.Projectiles.ActiveCount}   particelle {_renderer.ParticleCount}   chunk {_renderer.Floor.CachedChunks}",
+        $"tempo {_run.Elapsed:mm\\:ss}   nemici {_run.Enemies.AliveCount} (slot {_run.Enemies.HighWater})   proiettili {_run.MoveSystem.Projectiles.ActiveCount}   particelle {_renderer.ParticleCount}   chunk {_renderer.Floor.CachedChunks}" +
+            $"   {LevelId} {Difficulty} {_run.Weather}{(_run.IsNight ? " notte" : "")}",
         $"PS {_run.Player.Hp:0}/{_run.Player.MaxHp:0}   pos {_run.Player.Position.X:0},{_run.Player.Position.Y:0}   vel {_run.Player.MoveSpeed:0} px/s" +
             $"{(_run.Player.Invincible ? "   [INVINCIBILE]" : "")}{(_run.Spawner.Enabled ? "" : "   [SPAWN OFF]")}" +
             (_run.Spawner.Timeline.WaveAt(_run.Ticks) is { } wave ? $"   ondata {wave.FromTick / (RunClock.TicksPerSecond * 60)}' min {wave.MinAlive} max {wave.MaxAlive}" : ""),
@@ -413,10 +428,13 @@ public sealed class GameplayScene : Scene
             return;
 
         // No digits here: the body font's 5 reads as an S; the time is on the results screen.
+        var legendaries = _run.Stats.LegendariesDefeated.Select(id => Services.Species(id)?.NameIt ?? "").ToList();
         var subtitle = _run.Outcome != RunOutcome.Victory
             ? $"{_run.Player.Species.NameIt} non può più lottare!"
             : _run.Challenge is { Won: true } challenge
                 ? $"Hai sconfitto {challenge.Trainer.NameIt}! Ora può essere il tuo allenatore."
+            : legendaries.Count > 0
+                ? $"Hai sconfitto {UiFormat.List(legendaries)}!"
             : _run.Boss is { DefeatedTick: not null } fight && Services.Species(fight.Definition.SpeciesId) is { } boss
                 ? $"Hai sconfitto {boss.NameIt}!"
                 : "Hai resistito fino alla fine!";
@@ -466,11 +484,16 @@ public sealed class GameplayScene : Scene
         var view = new System.Numerics.Vector2(Services.Screen.Width, Services.Screen.Height);
 
         // Read again at every restart, so waves and enemies can be retuned while the game is open.
-        var waves = WaveTimeline.Load(Services.ContentRoot, LevelId, pokedex, Services.Moves.Value);
+        // Block 7: the level as the difficulty makes it, with worlds.json's pace and patterns for what its file leaves out.
+        var worlds = Services.Worlds.Value;
+        var waves = WaveTimeline.Load(Services.ContentRoot, LevelId, pokedex, Services.Moves.Value, worlds.Defaults, worlds.Difficulty(Difficulty));
         var enemies = EnemyLibrary.Load(Services.ContentRoot, pokedex, Services.Moves.Value);
         var loot = Core.Run.Pickups.LootRules.Load(Services.ContentRoot);
+        _renderer.UseTileset(Tileset.ById(waves.Map.Spec.Tileset));
         _run = new RunState(pokedex, Services.TypeChart.Value, _character.First.Id, waves, view, seed: Environment.TickCount)
         {
+            Difficulty = Difficulty,
+            SkipFinds = Meta?.FoundFinds() ?? new HashSet<string>(),
             TimeLimitTicks = waves.DurationTicks,
             MovePool = Services.Moves.Value.Enabled,
             Evolutions = PendingEvolutions
@@ -492,6 +515,12 @@ public sealed class GameplayScene : Scene
             _run.ChallengeTrainer(challenged, Services.Trainers.Value.Challenge!);
             foreach (var member in challenged.Team)
                 Services.Sprites.Get(member.SpeciesId);
+        }
+        else if (Difficulty == Core.Meta.Difficulty.Ultra)
+        {
+            // At Ultra the level's legendaries come instead of its boss (phase 7.3), those whose requirements are met.
+            var legendaries = Meta?.Legendaries(waves) ?? waves.Legendaries.Where(l => l.Requires.Count == 0).ToList();
+            _run.UseLegendaries(legendaries.Select(l => l.Boss));
         }
 
         if (StartTicks > 0)
@@ -518,6 +547,7 @@ public sealed class GameplayScene : Scene
         _report = null;
         _noticed.Clear();
         _hud.ClearMissions();
+        _hud.ShowLevel(waves.NameIt, Difficulty == Core.Meta.Difficulty.Normal ? null : worlds.Difficulty(Difficulty).NameIt);
         _pause.QuitLabel = BackToMenu is null ? "Esci dal gioco" : "Torna al menu";
         _results.QuitLabel = BackToMenu is null ? "ESCI" : "MENU";
         _phase = Phase.Playing;

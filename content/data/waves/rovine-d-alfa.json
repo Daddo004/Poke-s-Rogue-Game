@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "id": "rovine-d-alfa",
+  "nameIt": "Rovine d'Alfa",
+  "descriptionIt": "Una sala di pietra fra colonne millenarie, coperta di simboli. Gli Unown escono dai muri a centinaia.",
+  "minutes": 15, "hpPerMinute": 0.75, "damagePerMinute": 0.15,
+  "map": { "tileset": "rovine", "shape": "Arena", "width": 1700, "height": 1300, "obstacles": 0.2, "obstacleRadius": 11, "seed": 9, "grass": 0.4, "rock": 0.8 },
+  "darkness": 0.2,
+  "waves": [
+    { "species": [ "wooper:3", "unown:2" ] },
+    { "species": [ "unown:2", "natu:1", "geodude:2", "wooper:2" ] },
+    { "species": [ "unown:3", "sandshrew:2", "smeargle:1", "natu:2" ] },
+    { "species": [ "unown:3", "wooper:2", "geodude:2", "natu:2" ] },
+    { "species": [ "unown:3", "xatu:1", "sandshrew:2", "quagsire:1" ] },
+    { "species": [ "unown:4", "graveler:2", "smeargle:2" ] },
+    { "species": [ "xatu:2", "unown:3", "quagsire:2", "girafarig:1" ] },
+    { "species": [ "unown:4", "wobbuffet:1", "graveler:2", "sandslash:2" ] },
+    { "species": [ "xatu:2", "girafarig:2", "unown:3" ] },
+    { "species": [ "unown:4", "quagsire:2", "wobbuffet:1", "graveler:2" ] },
+    { "species": [ "xatu:3", "unown:3", "sandslash:2", "girafarig:1" ] },
+    { "species": [ "unown:4", "smeargle:2", "golem:1", "wobbuffet:1" ] },
+    { "species": [ "xatu:3", "girafarig:2", "unown:3", "quagsire:2" ] },
+    { "species": [ "unown:4", "golem:2", "xatu:2", "wobbuffet:2" ] },
+    { "species": [ "unown:5", "xatu:3", "girafarig:2", "golem:2" ] }
+  ],
+  "cast": { "swarm": "natu", "ring": "unown", "stampede": "girafarig",
+    "dominant1": "smeargle", "dominant2": "quagsire", "dominant3": "wobbuffet", "dominant4": "girafarig", "dominant5": "golem" },
+  "boss": { "pokemon": "xatu", "titleIt": "Veggente delle Rovine", "hp": 60 }
+}

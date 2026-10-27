@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "id": "bosco-petalo",
+  "nameIt": "Bosco Petalo",
+  "descriptionIt": "Una foresta tropicale umida, piena di funghi e di Wurmple. Verso metà livello arriva un acquazzone.",
+  "minutes": 15, "hpPerMinute": 0.85, "damagePerMinute": 0.17,
+  "map": { "tileset": "giungla", "obstacles": 0.2, "obstacleRadius": 13, "seed": 14, "grass": 1.3 },
+  "weather": [ { "at": "8:00", "kind": "Rain" } ],
+  "waves": [
+    { "species": [ "wurmple:4", "zigzagoon:2" ] },
+    { "species": [ "wurmple:3", "zigzagoon:2", "taillow:2", "seedot:2" ] },
+    { "species": [ "silcoon:2", "cascoon:2", "shroomish:2", "taillow:2" ] },
+    { "species": [ "shroomish:3", "slakoth:2", "seedot:2", "lotad:2" ] },
+    { "species": [ "beautifly:2", "dustox:2", "zigzagoon:2", "nuzleaf:1" ] },
+    { "species": [ "linoone:2", "breloom:1", "lombre:2", "taillow:2" ] },
+    { "species": [ "swellow:2", "nuzleaf:2", "vigoroth:1", "breloom:2" ] },
+    { "species": [ "beautifly:2", "dustox:2", "linoone:2", "lombre:2" ] },
+    { "species": [ "breloom:2", "vigoroth:2", "swellow:2", "nuzleaf:2" ] },
+    { "species": [ "shiftry:1", "breloom:2", "ludicolo:1", "linoone:2" ] },
+    { "species": [ "vigoroth:2", "swellow:2", "beautifly:2", "dustox:2" ] },
+    { "species": [ "shiftry:2", "breloom:2", "ludicolo:2" ] },
+    { "species": [ "slaking:1", "vigoroth:2", "swellow:2", "shiftry:2" ] },
+    { "species": [ "breloom:3", "ludicolo:2", "shiftry:2" ] },
+    { "species": [ "slaking:2", "breloom:3", "shiftry:2", "swellow:2" ] }
+  ],
+  "cast": { "swarm": "taillow", "ring": "shroomish", "stampede": "zigzagoon",
+    "dominant1": "nuzleaf", "dominant2": "linoone", "dominant3": "breloom", "dominant4": "ludicolo", "dominant5": "shiftry" },
+  "boss": { "pokemon": "slaking", "titleIt": "Pigro Gigante", "hp": 65 }
+}

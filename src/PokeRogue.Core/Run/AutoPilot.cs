@@ -114,7 +114,7 @@ public static class AutoPilot
 
         // An invincible player (previews, simulations) has nothing to fear: it walks through the crowd to the gems.
         if (nearest < PersonalSpace && crowd != Vector2.Zero && !run.Player.Invincible)
-            return Vector2.Normalize(-crowd);
+            return AlongWalls(run, Vector2.Normalize(-crowd));
 
         // A Dominante's chest is worth a detour.
         foreach (var chest in run.Pickups.Chests)
@@ -143,6 +143,27 @@ public static class AutoPilot
         if (target == Vector2.Zero)
             target = NearestGem(run, player, FarGemReach);
         return target == Vector2.Zero ? Vector2.Zero : Vector2.Normalize(target);
+    }
+
+    /// <summary>
+    /// Fleeing into a wall or a tree (phase 7.2) gets the pilot cornered: it runs along the wall instead, and a little away
+    /// from it, as a player would.
+    /// </summary>
+    private static Vector2 AlongWalls(RunState run, Vector2 flee)
+    {
+        if (!run.Map.IsConstrained)
+            return flee;
+
+        var ahead = run.Player.Position + flee * 48f;
+        var push = run.Map.Resolve(ref ahead, run.Player.Radius);
+        if (push == Vector2.Zero)
+            return flee;
+
+        var inward = Vector2.Normalize(push);
+        var along = flee - inward * Vector2.Dot(flee, inward);
+        if (along.LengthSquared() < 0.04f)
+            along = new Vector2(-inward.Y, inward.X);
+        return Vector2.Normalize(Vector2.Normalize(along) + inward * 0.6f);
     }
 
     /// <summary>Offset to the nearest gem within <paramref name="reach"/> that is not already flying in; zero when none.</summary>

@@ -1,0 +1,165 @@
+{
+  // Block 7: the worlds (the four regions), their levels in the order they open, the three difficulties, and what level
+  // files share. A level is content/data/waves/<id>.json; each opens once the one before it is won (any difficulty), and
+  // on a level Difficile opens once it is won at Normale, Ultra once it is won at Difficile. "trainers" are challenged on
+  // that level at Ultra (phase 5.3): beating their team unlocks them.
+  "version": 1,
+
+  // Phase 7.3. Multipliers on the level: enemy PS and damage (the boss' too), "crowd" (the waves' minimum, flow and cap,
+  // and the size of swarms, rings and stampedes), enemy speed, the Dominanti's PS on top, "extraDominants" (each Dominante
+  // comes back this many more times, 40 s apart, with a Poké Ball), the boss' PS and its rest between attacks, the coins
+  // picked up, the chance of a shiny, and the coins of the mission "win this level" ("missionCoins", a quarter more for
+  // each world further on).
+  // The first try had the boss at ×1.5 and ×2.2 on top of "hp" (×2.4 and ×5.3 in all at Ultra): in the simulation the
+  // legendaries of Ultra outlasted ten minutes of the invincible pilot.
+  "difficulties": {
+    "Normal": { "nameIt": "Normale", "missionCoins": 500 },
+    "Hard": { "nameIt": "Difficile", "hp": 1.6, "damage": 1.4, "crowd": 1.2, "speed": 1.08, "extraDominants": 1,
+      "bossRest": 0.85, "coins": 1.25, "shiny": 1.25, "missionCoins": 1000 },
+    "Ultra": { "nameIt": "Ultra", "hp": 2.2, "damage": 1.8, "crowd": 1.4, "speed": 1.15, "dominantHp": 1.1, "extraDominants": 2,
+      "bossHp": 1.1, "bossRest": 0.7, "coins": 1.6, "shiny": 1.5, "missionCoins": 1500 }
+  },
+
+  // An ordinary level's pace, minute by minute (Bosco Smeraldo's, phases 3.1 and 3.6): a wave without numbers of its own
+  // takes those of its minute, times the level's "crowd".
+  "pacing": [
+    { "minAlive": 12, "spawnsPerSecond": 1.5, "maxAlive": 60 },
+    { "minAlive": 18, "spawnsPerSecond": 2.2, "maxAlive": 100 },
+    { "minAlive": 24, "spawnsPerSecond": 2.8, "maxAlive": 140 },
+    { "minAlive": 30, "spawnsPerSecond": 3.4, "maxAlive": 180 },
+    { "minAlive": 38, "spawnsPerSecond": 4.4, "maxAlive": 200 },
+    { "minAlive": 46, "spawnsPerSecond": 5.4, "maxAlive": 220 },
+    { "minAlive": 60, "spawnsPerSecond": 6.8, "maxAlive": 240 },
+    { "minAlive": 85, "spawnsPerSecond": 8.5, "maxAlive": 260 },
+    { "minAlive": 105, "spawnsPerSecond": 9.5, "maxAlive": 280 },
+    { "minAlive": 120, "spawnsPerSecond": 10.5, "maxAlive": 300 },
+    { "minAlive": 150, "spawnsPerSecond": 11.5, "maxAlive": 320 },
+    { "minAlive": 175, "spawnsPerSecond": 12.5, "maxAlive": 340 },
+    { "minAlive": 200, "spawnsPerSecond": 13.5, "maxAlive": 360 },
+    { "minAlive": 225, "spawnsPerSecond": 14.5, "maxAlive": 380 },
+    { "minAlive": 260, "spawnsPerSecond": 16, "maxAlive": 400 }
+  ],
+
+  // Phase 7.4: in an ordinary level's first minutes the enemies start with "hp" of their PS and reach their full PS
+  // after "minutes". Bosco Smeraldo opens with the frailest Pokémon (Caterpie, Weedle) and does without; the other
+  // levels open with sturdier ones (Shellder, Koffing, Spheal…) that a level-one character could not clear in time:
+  // in the simulations its pilot fell in the first minute.
+  "warmUp": { "minutes": 4, "hp": 0.4 },
+
+  // An ordinary level's special events (Bosco Smeraldo's): "pokemon" is the part, played by the species the level's
+  // "cast" gives it.
+  "events": [
+    { "at": "1:30", "kind": "swarm", "pokemon": "swarm", "count": 20, "speed": 2.2 },
+    { "at": "3:30", "kind": "ring", "pokemon": "ring", "count": 12, "radius": 150, "speed": 0.4, "lifetime": 10 },
+    { "at": "5:00", "kind": "stampede", "pokemon": "stampede", "count": 4, "speed": 2.6, "hp": 3 },
+    { "at": "6:30", "every": "2:30", "until": "13:00", "kind": "swarm", "pokemon": "swarm", "count": 40, "speed": 2.4 },
+    { "at": "8:00", "every": "3:00", "until": "14:30", "kind": "ring", "pokemon": "ring", "count": 28, "radius": 150, "speed": 0.5, "hp": 3, "lifetime": 10 },
+    { "at": "10:15", "every": "2:00", "until": "14:30", "kind": "stampede", "pokemon": "stampede", "count": 7, "speed": 2.6, "hp": 3 },
+    { "at": "3:00", "kind": "dominant", "pokemon": "dominant1", "hp": 18, "speed": 0.85, "chest": "poke" },
+    { "at": "6:00", "kind": "dominant", "pokemon": "dominant2", "hp": 25, "chest": "poke" },
+    { "at": "8:30", "kind": "dominant", "pokemon": "dominant3", "hp": 30, "chest": "great" },
+    { "at": "11:00", "kind": "dominant", "pokemon": "dominant4", "hp": 40, "chest": "great" },
+    { "at": "13:30", "kind": "dominant", "pokemon": "dominant5", "hp": 45, "chest": "ultra" }
+  ],
+
+  // How a level's boss fights when its file gives no phases (Pinsir's, phase 3.4): volleys shoot the boss' "shot", or
+  // its type's move from "shots"; a type without one throws rocks.
+  "boss": {
+    "pokemon": "", "hp": 60, "speed": 0.9,
+    "phases": [
+      { "below": 1, "rest": 1.6, "attacks": [
+        { "kind": "charge", "windUp": 0.9, "dashSpeed": 4.5, "dashTime": 0.8, "recover": 0.9 },
+        { "kind": "volley", "windUp": 0.7, "count": 5, "spread": 60, "shotSpeed": 110 }
+      ] },
+      { "below": 0.6, "rest": 1.3, "attacks": [
+        { "kind": "charge", "windUp": 0.8, "dashSpeed": 4.5, "dashTime": 0.8, "recover": 0.8 },
+        { "kind": "rockfall", "windUp": 0.5, "count": 3, "radius": 28, "delay": 1.1, "damage": 2 },
+        { "kind": "volley", "windUp": 0.6, "count": 7, "spread": 90, "shotSpeed": 120 }
+      ] },
+      { "below": 0.3, "speed": 1.3, "rest": 0.9, "attacks": [
+        { "kind": "charge", "windUp": 0.7, "dashSpeed": 5, "dashTime": 0.8, "recover": 0.6 },
+        { "kind": "rockfall", "windUp": 0.4, "count": 5, "radius": 28, "delay": 1, "damage": 2 },
+        { "kind": "volley", "windUp": 0.5, "count": 9, "spread": 120, "shotSpeed": 130 }
+      ] }
+    ]
+  },
+
+  // The legendaries of Ultra (phase 7.3): sturdier than a boss, wider volleys, more rocks. "hp" in a level file
+  // multiplies this one's.
+  "legendary": {
+    "pokemon": "", "hp": 70, "speed": 1,
+    "phases": [
+      { "below": 1, "rest": 1.4, "attacks": [
+        { "kind": "volley", "windUp": 0.7, "count": 7, "spread": 80, "shotSpeed": 120 },
+        { "kind": "charge", "windUp": 0.8, "dashSpeed": 4.8, "dashTime": 0.8, "recover": 0.8 },
+        { "kind": "rockfall", "windUp": 0.5, "count": 3, "radius": 30, "delay": 1.1, "damage": 2 }
+      ] },
+      { "below": 0.6, "rest": 1.1, "attacks": [
+        { "kind": "volley", "windUp": 0.6, "count": 9, "spread": 110, "shotSpeed": 130 },
+        { "kind": "charge", "windUp": 0.7, "dashSpeed": 5, "dashTime": 0.8, "recover": 0.7 },
+        { "kind": "rockfall", "windUp": 0.5, "count": 4, "radius": 30, "delay": 1, "damage": 2 }
+      ] },
+      { "below": 0.3, "speed": 1.25, "rest": 0.8, "attacks": [
+        { "kind": "volley", "windUp": 0.5, "count": 11, "spread": 150, "shotSpeed": 140 },
+        { "kind": "charge", "windUp": 0.6, "dashSpeed": 5.2, "dashTime": 0.8, "recover": 0.6 },
+        { "kind": "rockfall", "windUp": 0.4, "count": 6, "radius": 30, "delay": 1, "damage": 2 }
+      ] }
+    ]
+  },
+
+  // Type → the move whose look a volley borrows (as for the trainers' teams, trainers.json); Rock and Ground throw rocks.
+  "shots": {
+    "Normal": "swift", "Fire": "ember", "Water": "bubble", "Grass": "razor-leaf", "Electric": "aura-sphere", "Ice": "ice-shard",
+    "Fighting": "aura-sphere", "Poison": "poison-sting", "Flying": "air-slash", "Psychic": "swift", "Bug": "x-scissor",
+    "Ghost": "shadow-ball", "Dragon": "twister", "Dark": "shadow-ball", "Steel": "gyro-ball"
+  },
+
+  // What lies on a level's map when its file lists nothing (Bosco Smeraldo's layout, phase 3.6); in a corridor or an
+  // arena it is brought inside the walls.
+  "mapItems": [
+    { "item": "magnet", "x": 650, "y": -420 },
+    { "loot": "potion", "x": -480, "y": 260 },
+    { "item": "lucky-egg", "x": -900, "y": -700 },
+    { "loot": "rareCandy", "x": 1100, "y": 520 },
+    { "item": "hp-up", "x": -320, "y": 1150 },
+    { "loot": "expShare", "x": 1500, "y": -1100 },
+    { "item": "wide-lens", "x": -1600, "y": 300 },
+    { "loot": "potion", "x": 300, "y": -1400 }
+  ],
+
+  "worlds": [
+    { "id": "kanto", "region": "Kanto", "nameIt": "Kanto", "levels": [
+      { "id": "bosco-smeraldo", "trainers": [ "erika", "koga" ] },
+      { "id": "monte-luna", "trainers": [ "brock", "giovanni" ] },
+      { "id": "torre-pokemon", "trainers": [ "sabrina", "agatha" ] },
+      { "id": "centrale-elettrica", "trainers": [ "ltsurge" ] },
+      { "id": "isole-spumarine", "trainers": [ "misty", "lorelei", "blaine" ] },
+      { "id": "via-vittoria", "trainers": [ "bruno", "lance", "blue" ] },
+      { "id": "grotta-ignota" }
+    ] },
+    { "id": "johto", "region": "Johto", "nameIt": "Johto", "levels": [
+      { "id": "bosco-di-lecci", "trainers": [ "bugsy", "falkner" ] },
+      { "id": "rovine-d-alfa", "trainers": [ "whitney", "will" ] },
+      { "id": "torre-bruciata", "trainers": [ "morty", "karen" ] },
+      { "id": "isole-vorticose", "trainers": [ "chuck", "jasmine" ] },
+      { "id": "torre-campana", "trainers": [ "janine", "clair" ] },
+      { "id": "monte-argento", "trainers": [ "pryce", "red" ] }
+    ] },
+    { "id": "hoenn", "region": "Hoenn", "nameIt": "Hoenn", "levels": [
+      { "id": "bosco-petalo", "trainers": [ "roxanne", "brawly" ] },
+      { "id": "monte-camino", "trainers": [ "flannery", "wattson" ] },
+      { "id": "deserto", "trainers": [ "norman", "sidney" ] },
+      { "id": "isola-meridionale", "trainers": [ "winona", "tateandliza" ] },
+      { "id": "grotta-dei-tempi", "trainers": [ "juan", "glacia" ] },
+      { "id": "torre-dei-cieli", "trainers": [ "phoebe", "drake", "steven", "wallace" ] }
+    ] },
+    { "id": "sinnoh", "region": "Sinnoh", "nameIt": "Sinnoh", "levels": [
+      { "id": "bosco-evopoli", "trainers": [ "gardenia", "fantina" ] },
+      { "id": "monte-corona", "trainers": [ "roark", "byron", "bertha" ] },
+      { "id": "lago-verita", "trainers": [ "crasherwake", "maylene", "lucian" ] },
+      { "id": "giardino-fiorito", "trainers": [ "aaron" ] },
+      { "id": "tempio-nevoso", "trainers": [ "candice", "volkner" ] },
+      { "id": "vetta-lancia", "trainers": [ "flint", "cynthia" ] }
+    ] }
+  ]
+}

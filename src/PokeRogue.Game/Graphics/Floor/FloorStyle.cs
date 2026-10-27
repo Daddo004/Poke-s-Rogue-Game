@@ -37,6 +37,41 @@ public sealed record FloorStyle
     /// <summary>Raised decorations (rocks, stumps, bushes) per 64 px cell, 0–1.</summary>
     public float PropChance { get; init; }
 
+    /// <summary>Which decorations: "rock", "bush", "stump" (repeat one to make it commoner).</summary>
+    public string[] Props { get; init; } = ["rock", "bush", "stump"];
+
+    // ---- Phase 7.2: the other levels' floors ----
+
+    /// <summary>Single pixels scattered on the floor (pebbles, sand grains, sparkles of snow), per 10,000 px².</summary>
+    public Color[] Speckles { get; init; } = [];
+
+    public float SpeckleDensity { get; init; }
+
+    /// <summary>Short crooked cracks, per 10,000 px²; with <see cref="CrackGlow"/> they glow (lava).</summary>
+    public Color? Crack { get; init; }
+
+    public Color? CrackGlow { get; init; }
+
+    public float CrackDensity { get; init; }
+
+    /// <summary>A floor of tiles or planks this big, with <see cref="Grout"/> between them; 0 for open ground.</summary>
+    public int TileWidth { get; init; }
+
+    public int TileHeight { get; init; }
+
+    /// <summary>Every other row shifted by half a tile, like planks and bricks.</summary>
+    public bool TileStagger { get; init; }
+
+    public Color Grout { get; init; } = new(40, 40, 48);
+
+    /// <summary>Metal plates: a rivet in each corner.</summary>
+    public Color? Rivets { get; init; }
+
+    /// <summary>Pools of water where a noise field is high (lakes, wet caves); 0 disables.</summary>
+    public float PoolThreshold { get; init; }
+
+    public Color[] PoolTones { get; init; } = [new(60, 120, 170), new(100, 160, 206)];
+
     public static readonly FloorStyle Meadow = new() { Id = "prato" };
 
     public static readonly FloorStyle MeadowDecorated = new()
@@ -55,10 +90,12 @@ public sealed record FloorStyle
         PropChance = 0.1f,
     };
 
+    /// <summary>The floors of phase 1.1, and since phase 7.2 every level's (<see cref="Tileset"/>).</summary>
     public static FloorStyle ById(string? id) => id switch
     {
         "decorato" => MeadowDecorated,
         "sentiero" => Route,
-        _ => Meadow,
+        "prato" or null => Meadow,
+        _ => Tileset.ById(id).Floor,
     };
 }

@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "id": "via-vittoria",
+  "nameIt": "Via Vittoria",
+  "descriptionIt": "L'ultima salita prima della Lega: un sentiero di roccia stretto fra due pareti, dove si allenano i Pokémon più forti.",
+  "minutes": 15, "hpPerMinute": 0.65, "damagePerMinute": 0.13, "crowd": 0.9,
+  "map": { "tileset": "montagna", "shape": "Corridor", "axis": "Vertical", "width": 520, "obstacles": 0.2, "obstacleRadius": 13, "seed": 6, "grass": 0.3, "rock": 1.5 },
+  "darkness": 0.3,
+  "waves": [
+    { "species": [ "geodude:3", "zubat:2", "machop:1" ] },
+    { "species": [ "machop:2", "geodude:2", "zubat:2" ] },
+    { "species": [ "zubat:2", "geodude:3", "machop:2", "onix:1" ] },
+    { "species": [ "machoke:2", "graveler:2", "golbat:2" ] },
+    { "species": [ "venomoth:2", "machoke:2", "graveler:2", "onix:1" ] },
+    { "species": [ "marowak:2", "golbat:3", "graveler:2" ] },
+    { "species": [ "machoke:3", "graveler:3", "rhyhorn:2" ] },
+    { "species": [ "venomoth:2", "golbat:3", "onix:2", "marowak:2" ] },
+    { "species": [ "machoke:3", "rhyhorn:2", "graveler:2", "golbat:2" ] },
+    { "species": [ "machamp:1", "rhydon:1", "graveler:3", "golbat:2" ] },
+    { "species": [ "machoke:3", "marowak:2", "onix:2", "venomoth:2" ] },
+    { "species": [ "machamp:2", "golem:1", "golbat:3", "rhyhorn:2" ] },
+    { "species": [ "rhydon:2", "machamp:2", "graveler:3" ] },
+    { "species": [ "golem:2", "machamp:2", "golbat:3", "marowak:2" ] },
+    { "species": [ "machamp:3", "golem:2", "rhydon:2", "golbat:2" ] }
+  ],
+  "cast": { "swarm": "golbat", "ring": "geodude", "stampede": "rhyhorn",
+    "dominant1": "machoke", "dominant2": "onix", "dominant3": "marowak", "dominant4": "rhydon", "dominant5": "golem" },
+  "boss": { "pokemon": "machamp", "titleIt": "Campione della Via", "hp": 60 },
+  "legendaries": [ { "pokemon": "moltres", "titleIt": "Signore della Fiamma" } ],
+  "finds": [ { "find": "aerodactyl", "x": 150, "y": -1700 } ]
+}

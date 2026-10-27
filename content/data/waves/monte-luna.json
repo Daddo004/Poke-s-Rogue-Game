@@ -1,0 +1,33 @@
+{
+  // Phase 7.4. A level in the short form: every wave lasts a minute and takes worlds.json's pace for that minute;
+  // species are "key" or "key:weight". "cast" gives worlds.json's events their Pokémon; the boss fights by worlds.json's
+  // pattern. "finds" are fossils and eggs hidden on the map (the character they bring).
+  "version": 1,
+  "id": "monte-luna",
+  "nameIt": "Monte Luna",
+  "descriptionIt": "Una grotta buia e piena di Zubat, dove a volte cadono le pietre lunari. Nel fondo dormono due fossili antichi.",
+  "minutes": 15, "hpPerMinute": 0.65, "damagePerMinute": 0.13,
+  "map": { "tileset": "grotta", "obstacles": 0.3, "obstacleRadius": 13, "seed": 2, "grass": 0, "rock": 1.8 },
+  "darkness": 0.45,
+  "waves": [
+    { "species": [ "zubat:3", "geodude:2" ] },
+    { "species": [ "zubat:3", "geodude:2", "paras:2" ] },
+    { "species": [ "zubat:2", "paras:2", "clefairy:2", "sandshrew:2" ] },
+    { "species": [ "geodude:3", "sandshrew:2", "paras:2", "zubat:2" ] },
+    { "species": [ "zubat:3", "clefairy:2", "geodude:2", "golbat:1" ] },
+    { "species": [ "paras:3", "sandshrew:3", "ekans:2", "zubat:2" ] },
+    { "species": [ "golbat:3", "graveler:2", "clefairy:2" ] },
+    { "species": [ "graveler:3", "sandslash:2", "parasect:2" ] },
+    { "species": [ "golbat:3", "clefairy:2", "onix:1", "graveler:2" ] },
+    { "species": [ "parasect:2", "sandslash:2", "golbat:3", "arbok:1" ] },
+    { "species": [ "graveler:3", "onix:1", "clefable:1", "golbat:3" ] },
+    { "species": [ "sandslash:3", "golbat:3", "parasect:2", "dugtrio:1" ] },
+    { "species": [ "golem:1", "onix:2", "golbat:3", "clefable:1" ] },
+    { "species": [ "graveler:3", "golbat:3", "sandslash:2", "onix:2" ] },
+    { "species": [ "golem:2", "golbat:3", "onix:2", "clefable:1" ] }
+  ],
+  "cast": { "swarm": "zubat", "ring": "diglett", "stampede": "geodude",
+    "dominant1": "clefairy", "dominant2": "golbat", "dominant3": "parasect", "dominant4": "onix", "dominant5": "golem" },
+  "boss": { "pokemon": "clefable", "titleIt": "Custode della Luna", "hp": 60, "shot": "swift" },
+  "finds": [ { "find": "omanyte", "x": 1300, "y": -900 }, { "find": "kabuto", "x": -1400, "y": 1000 } ]
+}

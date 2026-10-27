@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "id": "torre-bruciata",
+  "nameIt": "Torre Bruciata",
+  "descriptionIt": "I resti carbonizzati della torre di Amarantopoli, fra travi crollate e cenere. Nel sotterraneo riposano tre Pokémon leggendari.",
+  "minutes": 15, "hpPerMinute": 0.75, "damagePerMinute": 0.15,
+  "map": { "tileset": "bruciata", "shape": "Arena", "width": 1600, "height": 1200, "obstacles": 0.24, "obstacleRadius": 11, "seed": 10, "grass": 0, "rock": 0.8 },
+  "darkness": 0.4,
+  "waves": [
+    { "species": [ "rattata:3", "koffing:2" ] },
+    { "species": [ "rattata:2", "koffing:2", "zubat:2", "gastly:1" ] },
+    { "species": [ "koffing:3", "slugma:2", "raticate:1" ] },
+    { "species": [ "zubat:2", "gastly:2", "slugma:2", "houndour:1" ] },
+    { "species": [ "raticate:2", "koffing:2", "houndour:2", "misdreavus:1" ] },
+    { "species": [ "weezing:1", "magmar:1", "slugma:2", "raticate:2" ] },
+    { "species": [ "houndour:3", "golbat:2", "weezing:2" ] },
+    { "species": [ "magmar:2", "misdreavus:2", "magcargo:1", "haunter:1" ] },
+    { "species": [ "weezing:2", "houndoom:1", "golbat:2", "raticate:2" ] },
+    { "species": [ "magmar:2", "magcargo:2", "houndour:2", "misdreavus:2" ] },
+    { "species": [ "houndoom:2", "weezing:2", "haunter:2" ] },
+    { "species": [ "magmar:3", "golbat:2", "magcargo:2" ] },
+    { "species": [ "houndoom:2", "misdreavus:2", "weezing:2", "magmar:2" ] },
+    { "species": [ "houndoom:3", "magcargo:2", "haunter:2" ] },
+    { "species": [ "houndoom:3", "magmar:3", "weezing:2", "misdreavus:2" ] }
+  ],
+  "cast": { "swarm": "zubat", "ring": "koffing", "stampede": "houndour",
+    "dominant1": "raticate", "dominant2": "weezing", "dominant3": "magcargo", "dominant4": "magmar", "dominant5": "houndoom" },
+  "boss": { "pokemon": "houndoom", "titleIt": "Fiamma Nera", "hp": 60 },
+  "legendaries": [
+    { "pokemon": "raikou", "titleIt": "Il Fulmine", "hp": 0.6 },
+    { "pokemon": "entei", "titleIt": "Il Vulcano", "hp": 0.6 },
+    { "pokemon": "suicune", "titleIt": "Il Vento del Nord", "hp": 0.6 }
+  ]
+}

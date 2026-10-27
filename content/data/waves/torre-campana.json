@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "id": "torre-campana",
+  "nameIt": "Torre Campana",
+  "descriptionIt": "La pagoda dorata di Amarantopoli, fra pilastri laccati. Dal sesto minuto splende il sole, e in cima aspetta l'uccello arcobaleno.",
+  "minutes": 15, "hpPerMinute": 0.75, "damagePerMinute": 0.15,
+  "map": { "tileset": "campana", "shape": "Arena", "width": 1500, "height": 1500, "obstacles": 0.15, "obstacleRadius": 11, "seed": 12, "grass": 0, "rock": 0.4 },
+  "weather": [ { "at": "6:00", "kind": "Sun" } ],
+  "waves": [
+    { "species": [ "hoothoot:3", "koffing:2" ] },
+    { "species": [ "hoothoot:2", "koffing:2", "rattata:2", "gastly:1" ] },
+    { "species": [ "vulpix:2", "growlithe:2", "gastly:2", "ponyta:1" ] },
+    { "species": [ "haunter:1", "ponyta:2", "murkrow:2", "vulpix:2" ] },
+    { "species": [ "noctowl:2", "growlithe:2", "houndour:2", "haunter:1" ] },
+    { "species": [ "magmar:1", "rapidash:1", "murkrow:2", "sneasel:2" ] },
+    { "species": [ "ninetales:1", "arcanine:1", "haunter:2", "noctowl:2" ] },
+    { "species": [ "rapidash:2", "magmar:2", "sneasel:2", "murkrow:2" ] },
+    { "species": [ "houndoom:2", "ninetales:2", "haunter:2" ] },
+    { "species": [ "arcanine:2", "rapidash:2", "noctowl:2", "sneasel:2" ] },
+    { "species": [ "magmar:2", "ninetales:2", "gengar:1", "houndoom:2" ] },
+    { "species": [ "arcanine:2", "rapidash:2", "murkrow:2", "magmar:2" ] },
+    { "species": [ "houndoom:3", "ninetales:2", "gengar:1" ] },
+    { "species": [ "arcanine:3", "magmar:2", "rapidash:2" ] },
+    { "species": [ "arcanine:3", "houndoom:2", "ninetales:2", "gengar:2" ] }
+  ],
+  "cast": { "swarm": "murkrow", "ring": "gastly", "stampede": "ponyta",
+    "dominant1": "noctowl", "dominant2": "sneasel", "dominant3": "rapidash", "dominant4": "ninetales", "dominant5": "houndoom" },
+  "boss": { "pokemon": "arcanine", "titleIt": "Fiamma Sacra", "hp": 60 },
+  "legendaries": [ { "pokemon": "ho-oh", "titleIt": "L'Arcobaleno", "hp": 0.9 } ]
+}

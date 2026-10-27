@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "id": "monte-argento",
+  "nameIt": "Monte Argento",
+  "descriptionIt": "La vetta innevata al confine fra Kanto e Johto, battuta dalla grandine. Solo i più forti ci arrivano, e lassù qualcuno aspetta in silenzio.",
+  "minutes": 15, "hpPerMinute": 0.8, "damagePerMinute": 0.16,
+  "map": { "tileset": "neve", "obstacles": 0.2, "obstacleRadius": 12, "seed": 13, "grass": 0, "rock": 1 },
+  "weather": [ { "at": "0:00", "kind": "Hail" } ],
+  "waves": [
+    { "species": [ "swinub:3", "teddiursa:2", "smoochum:1" ] },
+    { "species": [ "swinub:2", "teddiursa:2", "phanpy:2", "delibird:1" ] },
+    { "species": [ "sneasel:1", "swinub:2", "larvitar:2", "zubat:2" ] },
+    { "species": [ "delibird:2", "phanpy:2", "smoochum:2", "larvitar:2" ] },
+    { "species": [ "piloswine:1", "sneasel:2", "teddiursa:2", "golbat:2" ] },
+    { "species": [ "ursaring:1", "piloswine:2", "jynx:1", "donphan:1" ] },
+    { "species": [ "pupitar:2", "sneasel:3", "golbat:2", "graveler:2" ] },
+    { "species": [ "ursaring:2", "piloswine:2", "jynx:2", "misdreavus:1" ] },
+    { "species": [ "donphan:2", "pupitar:2", "sneasel:2", "steelix:1" ] },
+    { "species": [ "ursaring:2", "piloswine:2", "machoke:2", "golbat:2" ] },
+    { "species": [ "jynx:2", "donphan:2", "pupitar:2", "misdreavus:2" ] },
+    { "species": [ "steelix:1", "ursaring:2", "piloswine:3", "sneasel:2" ] },
+    { "species": [ "tyranitar:1", "donphan:2", "jynx:2", "ursaring:2" ] },
+    { "species": [ "pupitar:2", "piloswine:3", "steelix:2", "golbat:2" ] },
+    { "species": [ "tyranitar:2", "ursaring:3", "donphan:2", "piloswine:2" ] }
+  ],
+  "cast": { "swarm": "golbat", "ring": "swinub", "stampede": "donphan",
+    "dominant1": "delibird", "dominant2": "ursaring", "dominant3": "piloswine", "dominant4": "jynx", "dominant5": "steelix" },
+  "boss": { "pokemon": "tyranitar", "titleIt": "Vetta del Monte", "hp": 60 }
+}

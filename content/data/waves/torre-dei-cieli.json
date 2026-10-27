@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "id": "torre-dei-cieli",
+  "nameIt": "Torre dei Cieli",
+  "descriptionIt": "Una torre antica che sale oltre le nuvole, stretta e crepata. In cima vive il signore del cielo, e dallo spazio arriva un visitatore.",
+  "minutes": 15, "hpPerMinute": 0.9, "damagePerMinute": 0.18, "crowd": 0.85,
+  "map": { "tileset": "cielo", "shape": "Corridor", "axis": "Vertical", "width": 480, "obstacles": 0.15, "obstacleRadius": 11, "seed": 19, "grass": 0, "rock": 0.8 },
+  "waves": [
+    { "species": [ "baltoy:3", "zubat:2" ] },
+    { "species": [ "baltoy:2", "zubat:2", "swablu:2", "shuppet:1" ] },
+    { "species": [ "golbat:1", "sableye:2", "shuppet:2", "swablu:2" ] },
+    { "species": [ "bagon:2", "altaria:1", "sableye:2", "baltoy:2" ] },
+    { "species": [ "dusclops:1", "claydol:2", "beldum:2", "golbat:2" ] },
+    { "species": [ "shelgon:1", "altaria:2", "banette:2", "metang:1" ] },
+    { "species": [ "flygon:1", "claydol:2", "dusclops:2", "shelgon:2" ] },
+    { "species": [ "metang:2", "altaria:2", "banette:2", "golbat:2" ] },
+    { "species": [ "salamence:1", "shelgon:2", "dusclops:2", "flygon:2" ] },
+    { "species": [ "metang:2", "claydol:2", "altaria:3" ] },
+    { "species": [ "flygon:2", "shelgon:2", "dusclops:2", "banette:2" ] },
+    { "species": [ "metagross:1", "salamence:1", "metang:2", "altaria:2" ] },
+    { "species": [ "flygon:2", "dusclops:3", "shelgon:2" ] },
+    { "species": [ "salamence:2", "metang:2", "flygon:2" ] },
+    { "species": [ "metagross:2", "salamence:2", "flygon:2", "dusclops:2" ] }
+  ],
+  "cast": { "swarm": "swablu", "ring": "beldum", "stampede": "bagon",
+    "dominant1": "claydol", "dominant2": "dusclops", "dominant3": "metang", "dominant4": "flygon", "dominant5": "metagross" },
+  "boss": { "pokemon": "salamence", "titleIt": "Ali del Cielo", "hp": 60 },
+  "legendaries": [
+    { "pokemon": "rayquaza", "titleIt": "Signore del Cielo", "hp": 0.7 },
+    { "pokemon": "deoxys", "titleIt": "Il Visitatore dallo Spazio", "hp": 0.6 }
+  ]
+}

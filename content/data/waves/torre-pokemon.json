@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "id": "torre-pokemon",
+  "nameIt": "Torre Pokémon",
+  "descriptionIt": "La torre delle tombe di Lavandonia, dove vagano gli spiriti. Un piano chiuso fra le lapidi, quasi al buio.",
+  "minutes": 15, "hpPerMinute": 0.65, "damagePerMinute": 0.13,
+  "map": { "tileset": "torre", "shape": "Arena", "width": 1600, "height": 1200, "obstacles": 0.22, "obstacleRadius": 9, "seed": 3, "grass": 0, "rock": 0 },
+  "darkness": 0.55,
+  "waves": [
+    { "species": [ "gastly:3", "zubat:2" ] },
+    { "species": [ "gastly:3", "zubat:2", "rattata:2" ] },
+    { "species": [ "gastly:3", "cubone:2", "zubat:2" ] },
+    { "species": [ "gastly:3", "cubone:2", "golbat:1", "rattata:2" ] },
+    { "species": [ "haunter:2", "gastly:3", "cubone:2" ] },
+    { "species": [ "gastly:3", "golbat:2", "cubone:2", "drowzee:2" ] },
+    { "species": [ "haunter:3", "cubone:2", "golbat:2", "gastly:2" ] },
+    { "species": [ "haunter:3", "marowak:1", "golbat:2", "hypno:1" ] },
+    { "species": [ "haunter:3", "gastly:3", "marowak:2" ] },
+    { "species": [ "gengar:1", "haunter:3", "golbat:2", "hypno:2" ] },
+    { "species": [ "haunter:3", "marowak:2", "golbat:2", "gastly:2" ] },
+    { "species": [ "gengar:1", "haunter:3", "marowak:2", "hypno:2" ] },
+    { "species": [ "gengar:2", "haunter:3", "golbat:2", "cubone:2" ] },
+    { "species": [ "gengar:2", "haunter:3", "marowak:2" ] },
+    { "species": [ "gengar:3", "haunter:3", "golbat:2", "marowak:2" ] }
+  ],
+  "cast": { "swarm": "zubat", "ring": "gastly", "stampede": "cubone",
+    "dominant1": "cubone", "dominant2": "haunter", "dominant3": "hypno", "dominant4": "marowak", "dominant5": "gengar" },
+  "boss": { "pokemon": "marowak", "titleIt": "Spirito della Torre", "hp": 60 }
+}

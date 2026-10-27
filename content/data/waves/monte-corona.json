@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "id": "monte-corona",
+  "nameIt": "Monte Corona",
+  "descriptionIt": "Le grotte della montagna che divide Sinnoh, buie e piene di massi. Nel profondo ribolle la lava e riposano due fossili.",
+  "minutes": 15, "hpPerMinute": 0.95, "damagePerMinute": 0.19,
+  "map": { "tileset": "corona", "obstacles": 0.3, "obstacleRadius": 13, "seed": 21, "grass": 0, "rock": 1.8 },
+  "darkness": 0.5,
+  "waves": [
+    { "species": [ "zubat:3", "geodude:2", "bronzor:1" ] },
+    { "species": [ "zubat:2", "geodude:2", "machop:2", "chingling:2" ] },
+    { "species": [ "bronzor:2", "nosepass:1", "clefairy:2", "golbat:2" ] },
+    { "species": [ "graveler:2", "machoke:2", "gible:1", "bronzor:2" ] },
+    { "species": [ "golbat:2", "chingling:2", "onix:1", "graveler:2" ] },
+    { "species": [ "gabite:1", "machoke:2", "probopass:1", "bronzong:1" ] },
+    { "species": [ "graveler:3", "golbat:2", "bronzong:1", "clefairy:2" ] },
+    { "species": [ "gabite:2", "machoke:2", "onix:2" ] },
+    { "species": [ "probopass:2", "bronzong:2", "golbat:2", "graveler:2" ] },
+    { "species": [ "steelix:1", "gabite:2", "machoke:2", "clefable:1" ] },
+    { "species": [ "golem:1", "bronzong:2", "probopass:2" ] },
+    { "species": [ "gabite:2", "steelix:2", "golbat:3" ] },
+    { "species": [ "garchomp:1", "golem:2", "bronzong:2", "machamp:1" ] },
+    { "species": [ "steelix:2", "probopass:2", "gabite:2" ] },
+    { "species": [ "garchomp:2", "golem:2", "steelix:2", "bronzong:2" ] }
+  ],
+  "cast": { "swarm": "zubat", "ring": "chingling", "stampede": "geodude",
+    "dominant1": "clefairy", "dominant2": "bronzong", "dominant3": "probopass", "dominant4": "steelix", "dominant5": "golem" },
+  "boss": { "pokemon": "garchomp", "titleIt": "Drago della Montagna", "hp": 60 },
+  "legendaries": [ { "pokemon": "heatran", "titleIt": "Il Pokémon Cupola Lava", "hp": 0.9 } ],
+  "finds": [ { "find": "cranidos", "x": 1400, "y": -1200 }, { "find": "shieldon", "x": -1500, "y": 900 } ]
+}

@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "id": "isole-vorticose",
+  "nameIt": "Isole Vorticose",
+  "descriptionIt": "Grotte di scogli bagnati in mezzo ai gorghi, sotto una pioggia che non smette mai. Nel profondo dorme il guardiano dei mari.",
+  "minutes": 15, "hpPerMinute": 0.75, "damagePerMinute": 0.15, "crowd": 0.85,
+  "map": { "tileset": "scogliera", "shape": "Corridor", "axis": "Horizontal", "width": 420, "obstacles": 0.18, "obstacleRadius": 12, "seed": 11, "grass": 0, "rock": 1.2 },
+  "weather": [ { "at": "0:00", "kind": "Rain" } ],
+  "darkness": 0.3,
+  "waves": [
+    { "species": [ "shellder:3", "slowpoke:2" ] },
+    { "species": [ "shellder:2", "seel:2", "slowpoke:2", "zubat:1" ] },
+    { "species": [ "tentacool:3", "shellder:2", "krabby:1" ] },
+    { "species": [ "slowpoke:2", "seel:2", "golbat:2", "chinchou:2" ] },
+    { "species": [ "horsea:2", "tentacool:2", "qwilfish:1", "golbat:2" ] },
+    { "species": [ "seadra:2", "kingler:2", "corsola:2" ] },
+    { "species": [ "tentacruel:2", "chinchou:2", "golbat:2", "slowpoke:2" ] },
+    { "species": [ "lanturn:2", "seadra:2", "dewgong:1", "qwilfish:2" ] },
+    { "species": [ "kingler:2", "octillery:1", "golbat:2", "tentacruel:2" ] },
+    { "species": [ "mantine:1", "lanturn:2", "seadra:2", "corsola:2" ] },
+    { "species": [ "dewgong:2", "tentacruel:2", "octillery:2" ] },
+    { "species": [ "kingler:2", "lanturn:2", "golbat:3", "slowbro:1" ] },
+    { "species": [ "seadra:3", "octillery:2", "mantine:1", "dewgong:2" ] },
+    { "species": [ "tentacruel:3", "lanturn:2", "kingler:2" ] },
+    { "species": [ "kingdra:1", "seadra:3", "octillery:2", "tentacruel:2", "mantine:1" ] }
+  ],
+  "cast": { "swarm": "golbat", "ring": "tentacool", "stampede": "seel",
+    "dominant1": "qwilfish", "dominant2": "corsola", "dominant3": "lanturn", "dominant4": "octillery", "dominant5": "mantine" },
+  "boss": { "pokemon": "kingdra", "titleIt": "Signore dei Vortici", "hp": 60 },
+  "legendaries": [ { "pokemon": "lugia", "titleIt": "Guardiano dei Mari", "hp": 1.2 } ]
+}

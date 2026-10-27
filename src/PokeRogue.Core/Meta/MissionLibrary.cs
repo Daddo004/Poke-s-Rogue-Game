@@ -125,16 +125,20 @@ public sealed class MissionLibrary
     /// <summary>The mission whose reward is <paramref name="characterId"/>, if any.</summary>
     public MissionSpec? Unlocking(string characterId) => All.FirstOrDefault(m => m.Reward.Character == characterId);
 
-    public static MissionLibrary Load(string contentRoot, CharacterLibrary characters, TrainerLibrary trainers)
+    /// <param name="worlds">With the worlds, every level gets a "win it" mission at each difficulty the file does not already give (Block 7).</param>
+    public static MissionLibrary Load(string contentRoot, CharacterLibrary characters, TrainerLibrary trainers, Run.Worlds.WorldLibrary? worlds = null)
     {
         var path = Path.Combine(contentRoot, "data", FileName);
         using var stream = File.OpenRead(path);
         var file = JsonSerializer.Deserialize(stream, DataJsonContext.Default.MissionFile) ?? throw new InvalidDataException($"{path} is empty.");
-        return From(file, characters, trainers);
+        return From(file, characters, trainers, worlds);
     }
 
-    public static MissionLibrary From(MissionFile file, CharacterLibrary characters, TrainerLibrary trainers)
+    public static MissionLibrary From(MissionFile file, CharacterLibrary characters, TrainerLibrary trainers, Run.Worlds.WorldLibrary? worlds = null)
     {
+        if (worlds is not null)
+            file = file with { Missions = file.Missions.Concat(LevelMissions(file, worlds)).ToList() };
+
         foreach (var mission in file.Missions)
         {
             string Where() => $"{FileName}, '{mission.Id}'";
@@ -174,6 +178,42 @@ public sealed class MissionLibrary
                 throw new InvalidDataException($"{FileName}: {character.Id} is unlocked by a mission, and {givers} missions give it.");
         }
 
+        if (worlds is not null && file.Missions.FirstOrDefault(m => m.Level is { } level && worlds.Find(level) is null) is { } stray)
+            throw new InvalidDataException($"{FileName}, '{stray.Id}': '{stray.Level}' is not a level of worlds.json.");
+
         return new MissionLibrary(file.Missions);
+    }
+
+    /// <summary>
+    /// "Win the level" at each difficulty, for every level whose mission the file does not write by hand (phase 7.3):
+    /// "<c>level-normale</c>", "<c>level-difficile</c>", "<c>level-ultra</c>", the coins of worlds.json's difficulty, a
+    /// quarter more for each world further on.
+    /// </summary>
+    private static IEnumerable<MissionSpec> LevelMissions(MissionFile file, Run.Worlds.WorldLibrary worlds)
+    {
+        foreach (var level in worlds.Levels)
+        {
+            foreach (var difficulty in Enum.GetValues<Difficulty>())
+            {
+                if (file.Missions.Any(m => m.Kind == MissionKind.WinLevel && m.Level == level.Id && m.Difficulty == difficulty))
+                    continue;
+
+                var spec = worlds.Difficulty(difficulty);
+                var coins = (int)(MathF.Round(spec.MissionCoins * (1f + 0.25f * level.World.Index) / 50f) * 50f);
+                var suffix = difficulty switch { Difficulty.Normal => "normale", Difficulty.Hard => "difficile", _ => "ultra" };
+                yield return new MissionSpec
+                {
+                    Id = $"{level.Id}-{suffix}",
+                    NameIt = difficulty == Difficulty.Normal ? level.NameIt : $"{level.NameIt} {spec.NameIt.ToLowerInvariant()}",
+                    DescriptionIt = difficulty == Difficulty.Normal
+                        ? $"Vinci {level.NameIt}."
+                        : $"Vinci {level.NameIt} a difficoltà {spec.NameIt}.",
+                    Kind = MissionKind.WinLevel,
+                    Level = level.Id,
+                    Difficulty = difficulty,
+                    Reward = new MissionReward { Coins = coins },
+                };
+            }
+        }
     }
 }

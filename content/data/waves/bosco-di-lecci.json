@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "id": "bosco-di-lecci",
+  "nameIt": "Bosco di Lecci",
+  "descriptionIt": "Un bosco antico e ombroso, sacro al custode della foresta. Dopo qualche minuto scende la notte e escono i Pokémon notturni.",
+  "minutes": 15, "hpPerMinute": 0.75, "damagePerMinute": 0.15,
+  "map": { "tileset": "lecci", "obstacles": 0.22, "obstacleRadius": 13, "seed": 8 },
+  "night": { "from": "5:00", "to": "10:00" },
+  "waves": [
+    { "species": [ "caterpie:2", "weedle:2", "ledyba:2" ] },
+    { "species": [ "metapod:2", "kakuna:2", "ledyba:2", "pidgey:2" ] },
+    { "species": [ "paras:2", "oddish:2", "pineco:2", "ledyba:2" ] },
+    { "species": [ "ledian:1", "paras:2", "pineco:2", "psyduck:2" ] },
+    { "species": [ "butterfree:2", "beedrill:2", "pineco:2", "zubat:2" ] },
+    { "species": [ "ledian:2", "paras:2", "pineco:2", "beedrill:2" ], "night": [ "spinarak:3", "hoothoot:3", "venonat:2", "oddish:2" ] },
+    { "species": [ "forretress:1", "ledian:2", "beedrill:2", "butterfree:2" ], "night": [ "ariados:2", "noctowl:2", "venonat:2", "gloom:2" ] },
+    { "species": [ "parasect:2", "ledian:2", "forretress:1", "pidgeotto:2" ], "night": [ "ariados:2", "noctowl:2", "gloom:2", "venomoth:1" ] },
+    { "species": [ "venomoth:2", "ledian:2", "forretress:2" ], "night": [ "ariados:2", "noctowl:2", "venomoth:2", "misdreavus:1" ] },
+    { "species": [ "gloom:2", "parasect:2", "ledian:2", "beedrill:2" ], "night": [ "gloom:2", "ariados:2", "noctowl:2", "haunter:1" ] },
+    { "species": [ "ledian:2", "forretress:2", "scyther:1", "beedrill:2" ], "night": [ "noctowl:2", "ariados:2", "venomoth:2" ] },
+    { "species": [ "heracross:1", "ledian:2", "pinsir:1", "forretress:2", "beedrill:2" ] },
+    { "species": [ "scyther:2", "heracross:1", "butterfree:2", "vileplume:1" ] },
+    { "species": [ "forretress:2", "heracross:2", "ledian:2", "scyther:1" ] },
+    { "species": [ "heracross:2", "scyther:2", "pinsir:2", "forretress:2" ] }
+  ],
+  "cast": { "swarm": "ledyba", "ring": "spinarak", "stampede": "farfetchd",
+    "dominant1": "ledian", "dominant2": "ariados", "dominant3": "noctowl", "dominant4": "forretress", "dominant5": "scyther" },
+  "boss": { "pokemon": "heracross", "titleIt": "Re dei Lecci", "hp": 60 },
+  "finds": [ { "find": "togepi", "x": -1300, "y": -1100 } ]
+}
