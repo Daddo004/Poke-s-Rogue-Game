@@ -115,6 +115,12 @@ public sealed class SaveData
     /// <summary>Fossils found on the levels (Block 7), ready to be revived in the shop.</summary>
     public List<string> Fossils { get; set; } = [];
 
+    /// <summary>Arceus' Plates found on the levels (phase 9.1).</summary>
+    public List<string> Plates { get; set; } = [];
+
+    /// <summary>The Plate chosen for the last run; null for none.</summary>
+    public string? LastPlate { get; set; }
+
     /// <summary>Trainers unlocked; Ash is not listed.</summary>
     public List<string> Trainers { get; set; } = [];
 

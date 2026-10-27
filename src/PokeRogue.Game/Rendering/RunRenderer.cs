@@ -30,6 +30,8 @@ public sealed class RunRenderer
     private readonly EnemyVfx _enemyVfx;
     private readonly AbilityVfx _abilityVfx;
     private readonly TrainerVfx _trainerVfx;
+    private readonly PlateVfx _plateVfx;
+    private readonly MerchantVfx _merchantVfx;
     private readonly List<int> _levelBursts = [];
 
     /// <summary>Ages of Focalnastro revivals still showing (rings and the sash rising over Pikachu).</summary>
@@ -70,6 +72,8 @@ public sealed class RunRenderer
         _enemyVfx = new EnemyVfx(services, _vfx.Shake);
         _abilityVfx = new AbilityVfx(services);
         _trainerVfx = new TrainerVfx(services);
+        _plateVfx = new PlateVfx(services);
+        _merchantVfx = new MerchantVfx(services);
         _conditions = new ConditionsVfx(services);
         UseTileset(tileset);
     }
@@ -100,7 +104,7 @@ public sealed class RunRenderer
 
     public Camera2D Camera { get; }
 
-    public int ParticleCount => _particles.Active + _vfx.ParticleCount + _statusVfx.ParticleCount + _enemyVfx.ParticleCount + _trainerVfx.ParticleCount;
+    public int ParticleCount => _particles.Active + _vfx.ParticleCount + _statusVfx.ParticleCount + _enemyVfx.ParticleCount + _trainerVfx.ParticleCount + _plateVfx.ParticleCount;
 
     public ScreenShake Shake => _vfx.Shake;
 
@@ -128,6 +132,8 @@ public sealed class RunRenderer
         _enemyVfx.Reset();
         _abilityVfx.Reset();
         _trainerVfx.Reset();
+        _plateVfx.Reset();
+        _merchantVfx.Reset();
         _conditions.Reset();
         _levelBursts.Clear();
         _bossEntrance = -1;
@@ -159,6 +165,9 @@ public sealed class RunRenderer
         _statusVfx.Update(run, paused, Cull());
         _enemyVfx.Update(run, paused);
         _trainerVfx.Update(run, _playerAnimator.Anim, _playerAnimator.Frame, run.Player.Facing, paused);
+        _plateVfx.Update();
+        if (!paused)
+            _merchantVfx.Update(run);
         if (!paused)
             _conditions.Update(run, run.Player.Position.ToXna());
         if (paused)
@@ -173,6 +182,8 @@ public sealed class RunRenderer
             _enemyVfx.OnEvent(e);
             _abilityVfx.OnEvent(e, run, _playerAnimator.Anim, _playerAnimator.Frame);
             _trainerVfx.OnEvent(e, run);
+            _plateVfx.OnEvent(e);
+            _merchantVfx.OnEvent(e);
             Audio.RunSounds.OnEvent(_services.Sounds, e, run);
             switch (e.Type)
             {
@@ -181,6 +192,10 @@ public sealed class RunRenderer
                     _abilityVfx.Announce(trainer.Active.NameIt, Color.Lerp(TrainerVfx.ColorOf(trainer), Color.White, 0.25f));
                     if (trainer.Active.Kind == Core.Run.Trainers.TrainerActiveKind.Wave)
                         _vfx.Shake.Add(0.18f);
+                    break;
+                case RunEventType.PlateEffect when (int)e.Value == (int)Core.Run.Plates.PlateEffectKind.Phantom:
+                    // Lastratetra: the hit went through.
+                    _abilityVfx.Announce("Schivato!", new Color(190, 160, 240));
                     break;
                 case RunEventType.PlayerHurt:
                     _hurtTicks = 12;
@@ -381,6 +396,8 @@ public sealed class RunRenderer
         _vfx.DrawGround(batch, run);
         _enemyVfx.DrawGround(batch, run, cull);
         _trainerVfx.DrawGround(batch, run);
+        _plateVfx.DrawGround(batch, run);
+        _merchantVfx.DrawGround(batch, run);
         DrawGems(batch, run, cull);
         DrawLoot(batch, run, cull);
         DrawChests(batch, run, cull);
@@ -393,6 +410,8 @@ public sealed class RunRenderer
         _statusVfx.DrawObjects(batch);
         _abilityVfx.DrawObjects(batch);
         _trainerVfx.DrawObjects(batch, run);
+        _merchantVfx.DrawObjects(batch, run);
+        _plateVfx.DrawObjects(batch);
         DrawThrownBall(batch);
 
         var player = run.Player;
@@ -771,6 +790,22 @@ public sealed class RunRenderer
                 continue;
             }
 
+            // One of Arceus' Plates (phase 9.1): the tablet floating over a ring of its type's colour, under a thin beam of light.
+            if (loot.Kind == Core.Run.Pickups.LootKind.Plate && _services.Plates.Value.Find(loot.ItemId) is { } plate)
+            {
+                var color = TypePalette.Of(plate.Type);
+                var beat = 0.55f + 0.3f * MathF.Sin((_tick + loot.Serial * 5) * 0.08f);
+                var floating = 6f + MathF.Sin(_tick * 0.06f) * 2f;
+                p.Rect(batch, new Vector2(ground.X - 3, ground.Y - 60), new Vector2(6, 58), color * (0.12f * beat));
+                p.Rect(batch, new Vector2(ground.X - 1, ground.Y - 60), new Vector2(2, 58), Color.White * (0.18f * beat));
+                p.Ring(batch, ground, 14f, 6f, color * beat, 2);
+                p.Ring(batch, ground, 9f, 4f, Color.White * (beat * 0.5f));
+                _services.ItemIcons.Draw(batch, plate.Icon, new Rectangle((int)ground.X - 12, (int)(ground.Y - 24 - floating), 24, 24));
+                if ((_tick + loot.Serial * 13) % 40 < 5)
+                    p.Rect(batch, new Rectangle((int)ground.X + 4, (int)(ground.Y - 20 - floating), 2, 2), Color.White);
+                continue;
+            }
+
             // A held item (phase 3.6) stands on a slowly beating gold ring, so it reads as a lasting find.
             if (loot.Kind == Core.Run.Pickups.LootKind.HeldItem)
             {
@@ -1107,7 +1142,14 @@ public sealed class RunRenderer
         {
             if (loot.Kind == Core.Run.Pickups.LootKind.Find && Vector2.DistanceSquared(loot.Position.ToXna(), run.Player.Position.ToXna()) < 700f * 700f)
                 EdgeArrow(batch, view, run.Player.Position.ToXna(), loot.Position.ToXna(), EnemyVfx.ShinyGold, null);
+            else if (loot.Kind == Core.Run.Pickups.LootKind.Plate && Vector2.DistanceSquared(loot.Position.ToXna(), run.Player.Position.ToXna()) < 700f * 700f
+                && _services.Plates.Value.Find(loot.ItemId) is { } plate)
+                EdgeArrow(batch, view, run.Player.Position.ToXna(), loot.Position.ToXna(), TypePalette.Of(plate.Type), plate.Icon);
         }
+
+        // Kecleon, while it visits (phase 9.2).
+        if (run.Merchant.Present)
+            EdgeArrow(batch, view, run.Player.Position.ToXna(), run.Merchant.Position.ToXna(), MerchantVfx.Green, "amulet-coin");
     }
 
     private void EdgeArrow(SpriteBatch batch, Rectangle view, Vector2 from, Vector2 target, Color color, string? icon)

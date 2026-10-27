@@ -41,7 +41,10 @@ public sealed record RunReport(
     /// <summary>Levels and difficulties opened by this run (phase 7.1).</summary>
     public IReadOnlyList<string> Opened { get; init; } = [];
 
-    public bool HasNews => Missions.Count > 0 || NewCharacters.Count > 0 || NewTrainers.Count > 0 || Fossils.Count > 0 || Opened.Count > 0;
+    /// <summary>Plates found for the first time (phase 9.1).</summary>
+    public IReadOnlyList<Run.Plates.PlateDefinition> Plates { get; init; } = [];
+
+    public bool HasNews => Missions.Count > 0 || NewCharacters.Count > 0 || NewTrainers.Count > 0 || Fossils.Count > 0 || Opened.Count > 0 || Plates.Count > 0;
 }
 
 /// <summary>
@@ -57,9 +60,26 @@ public sealed class MetaProgress(
     MissionLibrary missions,
     IReadOnlyList<SpeciesData> pokedex,
     SaveStore? store = null,
-    Run.Worlds.WorldLibrary? worlds = null)
+    Run.Worlds.WorldLibrary? worlds = null,
+    Run.Plates.PlateLibrary? plates = null)
 {
     public SaveData Data { get; } = data;
+
+    /// <summary>Arceus' Plates (phase 9.1); null in tests that do not use them.</summary>
+    public Run.Plates.PlateLibrary? Plates { get; } = plates;
+
+    /// <summary>A Plate found on its level in some earlier run.</summary>
+    public bool IsUnlocked(Run.Plates.PlateDefinition plate) => Data.Plates.Contains(plate.Id);
+
+    /// <summary>The Plates found so far, in the order of the file.</summary>
+    public IReadOnlyList<Run.Plates.PlateDefinition> UnlockedPlates() => Plates?.All.Where(IsUnlocked).ToList() ?? [];
+
+    /// <summary>Remembers the Plate chosen for the next runs (null for none).</summary>
+    public void ChoosePlate(string? plateId)
+    {
+        Data.LastPlate = plateId;
+        Persist();
+    }
 
     /// <summary>The worlds and their levels (Block 7); null in tests that only look at the shop.</summary>
     public Run.Worlds.WorldLibrary? Worlds { get; } = worlds;
@@ -392,7 +412,7 @@ public sealed class MetaProgress(
         totals.Shinies += run.Shinies;
         totals.Dominants += run.Dominants;
         totals.Chests += run.Chests;
-        totals.CoinsEarned += run.Coins;
+        totals.CoinsEarned += run.Earned;
         totals.Specials += run.Specials;
         totals.TrainerUses += run.TrainerUses;
         totals.MovesEvolved += run.MovesEvolved;
@@ -452,6 +472,15 @@ public sealed class MetaProgress(
             newCharacters.Add(legendary);
         }
 
+        // Plates picked up on the map are kept, won or lost (phase 9.1).
+        var newPlates = new List<Run.Plates.PlateDefinition>();
+        foreach (var plateId in run.Plates.Distinct().Where(id => !Data.Plates.Contains(id)))
+        {
+            Data.Plates.Add(plateId);
+            if (Plates?.Find(plateId) is { } plate)
+                newPlates.Add(plate);
+        }
+
         var newTrainers = new List<TrainerDefinition>();
         if (run.ChallengeWon is { } beaten && Trainers.Find(beaten) is { } trainer)
         {
@@ -496,6 +525,7 @@ public sealed class MetaProgress(
         {
             Fossils = fossils,
             Opened = OpenLevels().Except(openBefore).ToList(),
+            Plates = newPlates,
         };
     }
 
@@ -576,7 +606,7 @@ public sealed class MetaProgress(
             case MissionKind.EvolveMove:
                 return (Count(totals.MovesEvolved, run?.MovesEvolved ?? 0), target);
             case MissionKind.CollectCoins:
-                return (Count(totals.CoinsEarned, run?.Coins ?? 0), target);
+                return (Count(totals.CoinsEarned, run?.Earned ?? 0), target);
 
             case MissionKind.ReachLevel:
                 return (Math.Max(totals.BestLevel, run?.Level ?? 0), target);

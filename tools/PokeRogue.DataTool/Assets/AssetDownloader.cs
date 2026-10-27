@@ -45,6 +45,9 @@ public sealed class AssetDownloader(Downloader downloader, string contentRoot, i
         "oval-stone", "kings-rock", "metal-coat", "dragon-scale", "up-grade", "dubious-disc", "protector", "electirizer", "magmarizer",
         "reaper-cloth", "razor-claw", "razor-fang", "deep-sea-tooth", "deep-sea-scale", "prism-scale", "pp-max", "max-elixir",
         "oran-berry", "sitrus-berry", "nugget", "big-nugget",
+        // Arceus' Plates (phase 9.1).
+        "flame-plate", "splash-plate", "zap-plate", "meadow-plate", "icicle-plate", "fist-plate", "toxic-plate", "earth-plate",
+        "sky-plate", "mind-plate", "insect-plate", "stone-plate", "spooky-plate", "draco-plate", "dread-plate", "iron-plate",
     ];
 
     /// <summary>Animations a sprite can live without (the game falls back to Hurt/Attack).</summary>

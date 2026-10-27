@@ -179,11 +179,14 @@ public sealed class MetaPreviewScene : Scene
         Won("centrale-elettrica", Difficulty.Hard, 1, 16, 5233);
         data.Missions.AddRange(["bosco-normale", "bosco-difficile", "bosco-ultra", "monte-luna-normale", "torre-pokemon-normale", "centrale-elettrica-normale", "centrale-elettrica-difficile"]);
         data.Fossils.Add("omanyte");
+        data.Plates.AddRange(["lastrabaco", "lastrapietra", "lastratetra", "lastrasaetta", "lastramente"]);
+        data.LastPlate = "lastrasaetta";
         data.LastLevel = "monte-luna";
         data.LastDifficulty = Difficulty.Hard;
 
         var worlds = services.Worlds.Value;
         return new MetaProgress(data, services.Shop.Value, services.Characters, services.Trainers.Value,
-            MissionLibrary.Load(services.ContentRoot, services.Characters, services.Trainers.Value, worlds), services.Pokedex.Value.Species, worlds: worlds);
+            MissionLibrary.Load(services.ContentRoot, services.Characters, services.Trainers.Value, worlds), services.Pokedex.Value.Species, worlds: worlds,
+            plates: services.Plates.Value);
     }
 }

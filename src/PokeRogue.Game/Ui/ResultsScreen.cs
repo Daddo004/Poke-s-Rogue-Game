@@ -143,7 +143,7 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
         p.Rect(batch, new Rectangle(0, 0, services.Screen.Width, services.Screen.Height), Color.Black * 0.6f);
         services.Input.Region(new Rectangle(0, 0, services.Screen.Width, services.Screen.Height), "novita");
 
-        var unlocks = report.NewCharacters.Count + report.NewTrainers.Count + report.Fossils.Count;
+        var unlocks = report.NewCharacters.Count + report.NewTrainers.Count + report.Fossils.Count + report.Plates.Count;
         var rows = Math.Min(report.Missions.Count, 6);
         var opened = OpenedText(report);
         var height = 52 + rows * 26 + (unlocks > 0 ? 70 : 0) + (opened is null ? 0 : 30);
@@ -196,6 +196,15 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
                 var art = services.Finds.Icon(fossil.Id);
                 batch.Draw(art, new Rectangle(frame.Center.X - art.Width, frame.Center.Y - art.Height, art.Width * 2, art.Height * 2), Color.White);
                 UiDraw.TextCentered(batch, small, "FOSSILE", frame.Center.X, frame.Bottom + 1, Gold, Ink);
+                x += 48;
+            }
+
+            // A Plate found (phase 9.1): from now on it can be chosen before a run.
+            foreach (var plate in report.Plates.Take(7))
+            {
+                var frame = new Rectangle(x, y + 16, 44, 44);
+                PlateArt.DrawCell(batch, services, frame, plate, found: true, 0);
+                UiDraw.TextCentered(batch, small, "LASTRA", frame.Center.X, frame.Bottom + 1, Gold, Ink);
                 x += 48;
             }
 

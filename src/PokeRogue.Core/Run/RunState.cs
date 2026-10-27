@@ -115,7 +115,83 @@ public sealed class RunState
     /// <summary>Ids of the moves and items banished this run: level-ups never offer them again.</summary>
     public HashSet<string> Banished { get; } = new(StringComparer.Ordinal);
 
-    public bool IsPaused => LevelUpChoices is not null || SpecialPending;
+    public bool IsPaused => LevelUpChoices is not null || SpecialPending || PlateChoices is not null || ShopOpen;
+
+    // ---- Arceus' Plates (phase 9.1) ----
+
+    /// <summary>The Plates' rules (content/data/plates.json); null = no Plates on the map nor from chests.</summary>
+    public Run.Plates.PlateLibrary? PlateRules { get; init; }
+
+    /// <summary>The Plates found so far: a chest may offer them during the run.</summary>
+    public IReadOnlyList<Run.Plates.PlateDefinition> PlatePool { get; init; } = [];
+
+    /// <summary>Plates already found: theirs are not laid on the map again.</summary>
+    public IReadOnlySet<string> SkipPlates { get; init; } = new HashSet<string>();
+
+    /// <summary>The Plates held in this run, in the order they came.</summary>
+    public List<Run.Plates.PlateDefinition> Plates { get; } = [];
+
+    public Run.Plates.PlateState PlateState { get; } = new();
+
+    /// <summary>The Plates a chest offers; while not null the run is paused.</summary>
+    public IReadOnlyList<Run.Plates.PlateDefinition>? PlateChoices { get; private set; }
+
+    /// <summary>Holds <paramref name="plate"/> from now on, unless it is already held or the run has no room left. Call before the run starts for the chosen one.</summary>
+    public bool UsePlate(Run.Plates.PlateDefinition plate)
+    {
+        var max = PlateRules?.File.MaxPerRun ?? 2;
+        if (Plates.Any(p => p.Id == plate.Id) || Plates.Count >= max)
+            return false;
+
+        Plates.Add(plate);
+        Run.Plates.PlateSystem.OnGained(this, plate);
+        return true;
+    }
+
+    /// <summary>Takes the offered Plate at <paramref name="index"/>; any other index declines the offer.</summary>
+    public void ChoosePlate(int index)
+    {
+        if (PlateChoices is { } choices && (uint)index < (uint)choices.Count)
+        {
+            UsePlate(choices[index]);
+            AddEventOnResume(new RunEvent(RunEventType.PlateEffect, Player.Position, -2f, MoveId: choices[index].Id));
+        }
+
+        PlateChoices = null;
+    }
+
+    /// <summary>Previews and cheats: offers these Plates now, as a chest would.</summary>
+    public void OfferPlates(IReadOnlyList<Run.Plates.PlateDefinition> options) => PlateChoices = options.Count > 0 ? options : null;
+
+    /// <summary>The first chest opened from the Plates' time on offers some of the Plates found, not held yet.</summary>
+    private void OfferPlateFromChest()
+    {
+        if (PlateState.Offered || PlateRules is not { } rules || Ticks < rules.OfferFromTicks || Plates.Count >= rules.File.MaxPerRun)
+            return;
+
+        PlateState.Offered = true;
+        var options = PlatePool.Where(p => Plates.All(h => h.Id != p.Id)).OrderBy(_ => Random.Next()).Take(rules.File.OfferCount).ToList();
+        if (options.Count > 0)
+            PlateChoices = options;
+    }
+
+    // ---- Kecleon (phase 9.2) ----
+
+    /// <summary>Kecleon's rules (content/data/merchant.json); null = it never comes.</summary>
+    public Run.Merchant.MerchantRules? MerchantRules { get; init; }
+
+    public Run.Merchant.MerchantState Merchant { get; } = new();
+
+    /// <summary>The player walked into Kecleon: its shop is open and the run waits.</summary>
+    public bool ShopOpen { get; private set; }
+
+    /// <summary>Opens Kecleon's shop (the merchant when touched, previews).</summary>
+    public void OpenShop() => ShopOpen = Merchant.Present;
+
+    public void CloseShop() => ShopOpen = false;
+
+    /// <summary>Buys the ware at <paramref name="index"/> with the run's coins.</summary>
+    public bool BuyWare(int index) => Run.Merchant.MerchantSystem.Buy(this, index);
 
     /// <summary>Survive this long to win (the Block 1 prototype uses 10 minutes); null for endless.</summary>
     public int? TimeLimitTicks { get; init; }
@@ -221,7 +297,7 @@ public sealed class RunState
     public int MaxMoves => Loadout.MaxMoves;
 
     /// <summary>Cards per level-up: three, four with Fortuna.</summary>
-    public int ChoiceCount => Loadout.Choices;
+    public int ChoiceCount => Loadout.Choices + Run.Plates.PlateSystem.ExtraChoices(this);
 
     /// <summary>Sets the run's loadout: its bonus on the player and the level-up charges it adds. Call before the run starts.</summary>
     public void UseLoadout(RunLoadout loadout)
@@ -334,8 +410,10 @@ public sealed class RunState
         EnemyShots.Tick(this);
         BossAi.TickHazards(this);
         MoveSystem.Tick(this);
+        Run.Plates.PlateSystem.Tick(this);
         Pickups.Tick(this);
         Loot.Tick(this);
+        Run.Merchant.MerchantSystem.Tick(this);
         Spawner.Tick(this);
         CheckOutcome();
     }
@@ -549,8 +627,9 @@ public sealed class RunState
         var definition = move.Definition;
         var defender = new DefenderProfile(e.Type1, e.Type2, e.Defense, e.SpDefense);
         var power = move.Stats.Power * Player.PowerMultiplier(definition.Category) * AbilitySystem.DamageMultiplier(this, move)
-            * TrainerSystem.DamageMultiplier(this, move) * Worlds.WeatherSystem.DamageMultiplier(this, definition.Type);
-        var attacker = AbilitySystem.Attacker(this, Player.Attacker);
+            * TrainerSystem.DamageMultiplier(this, move) * Worlds.WeatherSystem.DamageMultiplier(this, definition.Type)
+            * Run.Plates.PlateSystem.DamageMultiplier(this, move, e);
+        var attacker = Run.Plates.PlateSystem.Attacker(this, AbilitySystem.Attacker(this, Player.Attacker));
         if (definition.CritBonus > 0f)
             attacker = attacker with { CritChance = attacker.CritChance + definition.CritBonus };
         var result = DamageCalculator.Compute(power, definition.Category, definition.Type, attacker, defender, TypeChart, Random);
@@ -588,6 +667,8 @@ public sealed class RunState
             return 0f;
 
         var multiplier = AbilitySystem.HurtMultiplier(this, hurt);
+        if (multiplier > 0f)
+            multiplier *= Run.Plates.PlateSystem.HurtMultiplier(this);
         if (multiplier <= 0f)
             return 0f;
 
@@ -637,6 +718,8 @@ public sealed class RunState
 
         if (e.Hp <= 0f)
         {
+            // The Plates look at its status before fainting clears it (phase 9.1).
+            Run.Plates.PlateSystem.OnDefeated(this, e);
             Enemies.Defeat(index);
             Stats.RecordKill(e.SpeciesId);
             _events.Add(new RunEvent(RunEventType.EnemyDefeated, e.Position, 0f, e.SpeciesId));
@@ -652,7 +735,7 @@ public sealed class RunState
             }
             else if (e.Rank == EnemyRank.Normal && LootRules is { } loot)
             {
-                var roll = Random.NextSingle() / AbilitySystem.DropMultiplier(this);
+                var roll = Random.NextSingle() / (AbilitySystem.DropMultiplier(this) * Run.Plates.PlateSystem.DropMultiplier(this));
                 if (roll < loot.File.EnemyFoodChance)
                     Loot.Drop(e.Position + new Vector2(-4, 3), LootKind.OranBerry);
                 else if (roll < loot.File.EnemyFoodChance + loot.File.EnemyCoinChance)
@@ -689,6 +772,7 @@ public sealed class RunState
         var rewards = ChestRewards.Open(this, ChestRewards.CountFor(tier));
         LastChest = new ChestOpening(tier, rewards, Ticks);
         Stats.RecordChest();
+        OfferPlateFromChest();
         _events.Add(new RunEvent(RunEventType.ChestOpened, position, (int)tier));
         return LastChest;
     }
@@ -748,6 +832,7 @@ public sealed class RunState
 
             StatusSystem.Steer(this, e, ref desired, ref contactDamage);
             AbilitySystem.Steer(this, ref e, ref desired);
+            Run.Plates.PlateSystem.Steer(this, e, ref desired);
             desired *= slow;
             e.Velocity = desired;
             e.Position += (desired + e.Knockback) * RunClock.Dt;

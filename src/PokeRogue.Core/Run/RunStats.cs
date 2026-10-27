@@ -61,6 +61,21 @@ public sealed class RunStats
 
     public void RecordCoins(int amount) => CoinsCollected += amount;
 
+    /// <summary>Coins spent at Kecleon's (phase 9.2): they do not go to the bank.</summary>
+    public int CoinsSpent { get; private set; }
+
+    public void RecordSpent(int amount) => CoinsSpent += amount;
+
+    /// <summary>The coins that go to the bank at the end: collected, minus spent.</summary>
+    public int CoinsBanked => Math.Max(0, CoinsCollected - CoinsSpent);
+
+    private readonly List<string> _plates = [];
+
+    /// <summary>Plates picked up from the map (phase 9.1): the meta-progression unlocks them.</summary>
+    public IReadOnlyList<string> PlatesFound => _plates;
+
+    public void RecordPlate(string plateId) => _plates.Add(plateId);
+
     public void RecordChest() => ChestsOpened++;
 
     private readonly List<string> _finds = [];

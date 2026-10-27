@@ -103,6 +103,12 @@ public sealed class GameServices(GraphicsDevice device, string contentRoot, Virt
     /// <summary>The special moves, one per type (phase 4.4).</summary>
     public Lazy<Core.Run.Specials.SpecialMoves> Specials { get; } = new(() => Core.Run.Specials.SpecialMoves.Load(contentRoot));
 
+    /// <summary>Arceus' Plates (phase 9.1).</summary>
+    public Lazy<Core.Run.Plates.PlateLibrary> Plates { get; } = new(() => Core.Run.Plates.PlateLibrary.Load(contentRoot));
+
+    /// <summary>Kecleon the merchant (phase 9.2).</summary>
+    public Lazy<Core.Run.Merchant.MerchantRules> Merchant { get; } = new(() => Core.Run.Merchant.MerchantRules.Load(contentRoot));
+
     private Core.Run.Characters.CharacterLibrary? _characters;
 
     /// <summary>The playable characters (phase 4.1).</summary>
@@ -138,7 +144,7 @@ public sealed class GameServices(GraphicsDevice device, string contentRoot, Virt
     public Core.Meta.MetaProgress Meta
     {
         get => _meta ??= new Core.Meta.MetaProgress(SaveStore?.Load() ?? new Core.Meta.SaveData(), Shop.Value, Characters, Trainers.Value,
-            Core.Meta.MissionLibrary.Load(ContentRoot, Characters, Trainers.Value, Worlds.Value), Pokedex.Value.Species, SaveStore, Worlds.Value);
+            Core.Meta.MissionLibrary.Load(ContentRoot, Characters, Trainers.Value, Worlds.Value), Pokedex.Value.Species, SaveStore, Worlds.Value, Plates.Value);
         set => _meta = value;
     }
 

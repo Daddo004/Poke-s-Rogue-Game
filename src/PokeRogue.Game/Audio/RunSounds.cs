@@ -97,6 +97,32 @@ public static class RunSounds
             case RunEventType.TrainerAbility when (Core.Run.Trainers.TrainerEffect)(int)e.Value == Core.Run.Trainers.TrainerEffect.Used:
                 sounds.Play("allenatore");
                 break;
+
+            // Arceus' Plates (phase 9.1): found or chosen, then the effects that show; Kecleon's visits (phase 9.2).
+            case RunEventType.PlateEffect when e.Value < 0f:
+                sounds.Play("mossa-evoluta");
+                break;
+            case RunEventType.PlateEffect:
+                switch ((Core.Run.Plates.PlateEffectKind)(int)e.Value)
+                {
+                    case Core.Run.Plates.PlateEffectKind.Tide:
+                        sounds.Play("mossa-acqua");
+                        break;
+                    case Core.Run.Plates.PlateEffectKind.Bolt:
+                        sounds.Play("mossa-elettro", 0.7f);
+                        break;
+                    case Core.Run.Plates.PlateEffectKind.BurnBlast:
+                        sounds.Play("esplosione", 0.5f);
+                        break;
+                    case Core.Run.Plates.PlateEffectKind.Phantom:
+                        sounds.Play("abilita");
+                        break;
+                }
+
+                break;
+            case RunEventType.MerchantArrived:
+                sounds.Play("missione");
+                break;
         }
     }
 

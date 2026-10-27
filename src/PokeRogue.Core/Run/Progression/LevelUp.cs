@@ -109,6 +109,9 @@ public static class LevelUp
             // Rare items (Metronomo) come up less often, as new items and as upgrades.
             if (kind is LevelUpKind.NewItem or LevelUpKind.ItemUpgrade && run.ItemPool.FirstOrDefault(d => d.Id == candidates[i].Id) is { } item)
                 weights[i] *= item.Rarity;
+
+            // The moves of a Plate's type come up more often (phase 9.1).
+            weights[i] *= Plates.PlateSystem.CardWeight(run, candidates[i]);
         }
 
         var remaining = Enumerable.Range(0, candidates.Count).ToList();

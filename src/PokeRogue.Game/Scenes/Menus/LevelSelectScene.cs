@@ -146,7 +146,10 @@ public sealed class LevelSelectScene : MenuScene
             return;
         }
 
-        Services.Switch(MainMenuScene.Run(Services, _character, _trainer, level.Id, _difficulty, Challenge));
+        // With a Plate found, it is chosen next (phase 9.1).
+        Services.Switch(Meta.UnlockedPlates().Count > 0 && Services.Plates.Value.File.Enabled
+            ? new PlateSelectScene(Services, _character, _trainer, level.Id, _difficulty, Challenge)
+            : MainMenuScene.Run(Services, _character, _trainer, level.Id, _difficulty, Challenge));
     }
 
     private void SwitchWorld(int delta)

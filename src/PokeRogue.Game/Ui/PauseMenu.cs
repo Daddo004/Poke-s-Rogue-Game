@@ -289,7 +289,13 @@ public sealed class PauseMenu(GameServices services, Hud hud)
         {
             if (loot.Kind == LootKind.Find)
                 Marker(batch, area, ToMap(loot.Position), EnemyVfx.ShinyGold, MarkerShape.Star);
+            else if (loot.Kind == LootKind.Plate && services.Plates.Value.Find(loot.ItemId) is { } plate)
+                Marker(batch, area, ToMap(loot.Position), TypePalette.Of(plate.Type), MarkerShape.Star);
         }
+
+        // Kecleon, while it visits (phase 9.2).
+        if (run.Merchant.Present)
+            Marker(batch, area, ToMap(run.Merchant.Position), MerchantVfx.Green, MarkerShape.Diamond);
 
         // The start.
         var start = ToMap(System.Numerics.Vector2.Zero);
@@ -301,7 +307,7 @@ public sealed class PauseMenu(GameServices services, Hud hud)
 
         foreach (var loot in run.Loot.Items)
         {
-            if (loot.Kind is LootKind.Coin or LootKind.Nugget or LootKind.Find)
+            if (loot.Kind is LootKind.Coin or LootKind.Nugget or LootKind.Find or LootKind.Plate)
                 continue;
             if (loot.Kind == LootKind.HeldItem)
                 Marker(batch, area, ToMap(loot.Position), EnemyVfx.ShinyGold, MarkerShape.Diamond);

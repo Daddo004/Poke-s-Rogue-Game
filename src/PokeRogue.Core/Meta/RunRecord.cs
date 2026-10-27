@@ -39,7 +39,13 @@ public sealed record RunRecord
 
     public int Chests { get; init; }
 
+    /// <summary>Coins that go to the bank: collected, minus those spent at Kecleon's (phase 9.2).</summary>
     public int Coins { get; init; }
+
+    /// <summary>Coins collected, spent or not (the totals and the missions); records without it count <see cref="Coins"/>.</summary>
+    public int CoinsEarned { get; init; }
+
+    public int Earned => Math.Max(CoinsEarned, Coins);
 
     public int HealingPickups { get; init; }
 
@@ -64,6 +70,9 @@ public sealed record RunRecord
     /// <summary>Legendaries beaten at Ultra (phase 7.3), by species id.</summary>
     public IReadOnlyList<int> LegendariesDefeated { get; init; } = [];
 
+    /// <summary>Plates picked up from the map (phase 9.1).</summary>
+    public IReadOnlyList<string> Plates { get; init; } = [];
+
     /// <param name="difficulty">The run's own (<see cref="RunState.Difficulty"/>) when null.</param>
     public static RunRecord From(RunState run, string levelId, Difficulty? difficulty = null) => new()
     {
@@ -83,7 +92,9 @@ public sealed record RunRecord
         Shinies = run.Stats.ShiniesDefeated,
         Dominants = run.Stats.DominantsDefeated,
         Chests = run.Stats.ChestsOpened,
-        Coins = run.Stats.CoinsCollected,
+        Coins = run.Stats.CoinsBanked,
+        CoinsEarned = run.Stats.CoinsCollected,
+        Plates = run.Stats.PlatesFound.ToList(),
         HealingPickups = run.Stats.HealingPickups,
         Level = run.Player.Level,
         MovesEvolved = run.Player.Moves.Count(m => m.Definition.IsEvolution),

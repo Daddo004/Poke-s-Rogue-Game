@@ -25,6 +25,8 @@ namespace PokeRogue.Core.Data;
 [JsonSerializable(typeof(PokeRogue.Core.Meta.ShopFile))]
 [JsonSerializable(typeof(PokeRogue.Core.Meta.MissionFile))]
 [JsonSerializable(typeof(PokeRogue.Core.Run.Worlds.WorldsFile))]
+[JsonSerializable(typeof(PokeRogue.Core.Run.Plates.PlateFile))]
+[JsonSerializable(typeof(PokeRogue.Core.Run.Merchant.MerchantFile))]
 [JsonSerializable(typeof(PokeRogue.Core.Audio.AudioFile))]
 [JsonSerializable(typeof(PokeRogue.Core.Audio.MusicFile))]
 public sealed partial class DataJsonContext : JsonSerializerContext;

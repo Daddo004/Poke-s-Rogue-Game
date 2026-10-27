@@ -136,6 +136,21 @@ public enum RunEventType
 
     /// <summary>A fossil or an egg was picked up (phase 7.4): MoveId = the character it brings.</summary>
     FindCollected,
+
+    /// <summary>
+    /// A Plate did something worth showing (phase 9.1): MoveId = its id, Value = (int)Plates.PlateEffectKind, Position =
+    /// where, Target.X = a radius; a bolt goes from Target to Position. A Plate picked up from the map has Value -1.
+    /// </summary>
+    PlateEffect,
+
+    /// <summary>Kecleon came to the level (phase 9.2): Position = where it stands.</summary>
+    MerchantArrived,
+
+    /// <summary>Kecleon left: Position = where it stood.</summary>
+    MerchantLeft,
+
+    /// <summary>Something was bought from Kecleon: Value = the price, MoveId = the ware's kind.</summary>
+    MerchantSale,
 }
 
 /// <summary>Something the renderer or audio may react to; the list is cleared at the start of every tick.</summary>

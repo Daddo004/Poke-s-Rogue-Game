@@ -126,9 +126,24 @@ public sealed class Hud
             _trainerCutIn = -1;
         if (_trainerFlash > 0)
             _trainerFlash--;
+        if (_plateFlash > 0)
+            _plateFlash--;
 
         foreach (var e in run.Events)
         {
+            // A Plate found on the map or taken from a chest (phase 9.1), and Kecleon's visits (phase 9.2).
+            if (e.Type == RunEventType.PlateEffect && e.Value < 0f && _services.Plates.Value.Find(e.MoveId) is { } plate)
+            {
+                _plateFlash = FlashTicks;
+                Announce(e.Value < -1f ? $"{plate.NameIt.ToUpperInvariant()}: {TypePalette.NameIt(plate.Type).ToUpperInvariant()} PIÙ FORTE!"
+                    : $"HAI TROVATO {plate.NameIt.ToUpperInvariant()}!", Color.Lerp(TypePalette.Of(plate.Type), Color.White, 0.35f));
+            }
+
+            if (e.Type == RunEventType.MerchantArrived)
+                Announce("È ARRIVATO KECLEON IL MERCANTE!", Vfx.MerchantVfx.Green);
+            if (e.Type == RunEventType.MerchantLeft)
+                Announce("KECLEON SE N'È ANDATO", Dim);
+
             if (e.Type == RunEventType.TrainerAbility)
             {
                 switch ((Core.Run.Trainers.TrainerEffect)(int)e.Value)
@@ -384,12 +399,36 @@ public sealed class Hud
         var coinsWidth = UiDraw.Measure(numbers, coins).X;
         UiDraw.TextOutlined(batch, numbers, coins, new Vector2(coinsRight - coinsWidth, 26), Gold, Ink);
         batch.Draw(_services.Pickups.Coin, new Vector2(coinsRight - coinsWidth - 10, 33), Color.White);
+        DrawPlates(batch, run, new Vector2(right, 48));
 
         DrawBanner(batch);
         DrawBossBar(batch, run);
         DrawMission(batch);
         batch.End();
     }
+
+    /// <summary>
+    /// The Plates held (phase 9.1), right-aligned under the coins: each tablet in a small frame of its type's colour, with a
+    /// white flash for a moment when it comes.
+    /// </summary>
+    public void DrawPlates(SpriteBatch batch, RunState run, Vector2 topRight)
+    {
+        var p = _services.Primitives;
+        for (var i = 0; i < run.Plates.Count; i++)
+        {
+            var plate = run.Plates[i];
+            var color = TypePalette.Of(plate.Type);
+            var box = new Rectangle((int)topRight.X - 22 - i * 24, (int)topRight.Y, 22, 22);
+            p.Rect(batch, box, Ink);
+            p.Rect(batch, new Rectangle(box.X + 1, box.Y + 1, box.Width - 2, box.Height - 2), Color.Lerp(color, Ink, 0.6f));
+            p.Outline(batch, new Rectangle(box.X + 1, box.Y + 1, box.Width - 2, box.Height - 2), color);
+            _services.ItemIcons.Draw(batch, plate.Icon, new Rectangle(box.X + 2, box.Y + 2, 18, 18));
+            if (_plateFlash > 0 && i == run.Plates.Count - 1)
+                p.Rect(batch, box, Color.White * (0.8f * _plateFlash / (float)FlashTicks));
+        }
+    }
+
+    private int _plateFlash;
 
     /// <summary>
     /// The ability strip under the items (phase 4.3): its name, and for an active one the key, gold when it is ready. A thin

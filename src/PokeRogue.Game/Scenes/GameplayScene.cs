@@ -86,7 +86,15 @@ public sealed class GameplayScene : Scene
         _special = new SpecialWindow(services);
         _bossIntro = new BossIntro(services);
         _trainerIntro = new TrainerIntro(services);
+        _plateWindow = new PlateWindow(services);
+        _shop = new MerchantWindow(services);
     }
+
+    private readonly PlateWindow _plateWindow;
+    private readonly MerchantWindow _shop;
+
+    /// <summary>Previews: Kecleon's shop.</summary>
+    public MerchantWindow Shop => _shop;
 
     private readonly BossIntro _bossIntro;
 
@@ -98,6 +106,9 @@ public sealed class GameplayScene : Scene
 
     /// <summary>A challenge run (phase 5.3, --sfida id): this trainer replaces the level's boss when the time runs out.</summary>
     public string? ChallengeId { get; init; }
+
+    /// <summary>The Plate chosen for the run (phase 9.1, --lastra id); null for none.</summary>
+    public string? PlateId { get; init; }
 
     /// <summary>
     /// The meta-progression (Block 6): the run gets the character's loadout and the trainer's grades from it, the missions
@@ -187,7 +198,7 @@ public sealed class GameplayScene : Scene
 
     /// <summary>While playing the pointer hides when the mouse stops; any window (pause, level-up, chest…) keeps it.</summary>
     public override bool ShowsPointer =>
-        _phase != Phase.Playing || _levelUp.Active || _chestWindow.IsOpen || _evolution.IsOpen;
+        _phase != Phase.Playing || _levelUp.Active || _chestWindow.IsOpen || _evolution.IsOpen || _plateWindow.IsOpen || _shop.IsOpen;
 
     public bool IsPauseOpen => _phase == Phase.Paused;
 
@@ -301,6 +312,35 @@ public sealed class GameplayScene : Scene
             }
             _renderer.Update(_run, paused: true);
             _hud.Update(_run);
+            return;
+        }
+
+        // Kecleon's shop (phase 9.2) and a chest's Plate (phase 9.1): the game freezes; Esc leaves them instead of pausing.
+        if (_shop.IsOpen)
+        {
+            _shop.Update(_run, Autopilot ? null : input);
+            _renderer.Update(_run, paused: true);
+            _hud.Update(_run);
+            return;
+        }
+
+        if (_plateWindow.IsOpen)
+        {
+            _plateWindow.Update(_run, Autopilot ? null : input);
+            _renderer.Update(_run, paused: true);
+            _hud.Update(_run);
+            return;
+        }
+
+        if (_run.ShopOpen)
+        {
+            _shop.Open(_run);
+            return;
+        }
+
+        if (_run.PlateChoices is { } plates && !_chestWindow.IsOpen)
+        {
+            _plateWindow.Open(plates);
             return;
         }
 
@@ -451,6 +491,8 @@ public sealed class GameplayScene : Scene
 
         _levelUpWindow.Draw(batch);
         _chestWindow.Draw(batch);
+        _plateWindow.Draw(batch);
+        _shop.Draw(batch, _run);
         _evolution.Draw(batch);
         _special.Draw(batch);
         _pause.Draw(batch, _run, _explored);
@@ -545,11 +587,19 @@ public sealed class GameplayScene : Scene
         var waves = WaveTimeline.Load(Services.ContentRoot, LevelId, pokedex, Services.Moves.Value, worlds.Defaults, worlds.Difficulty(Difficulty));
         var enemies = EnemyLibrary.Load(Services.ContentRoot, pokedex, Services.Moves.Value);
         var loot = Core.Run.Pickups.LootRules.Load(Services.ContentRoot);
+        var plates = Core.Run.Plates.PlateLibrary.Load(Services.ContentRoot);
+        var merchant = Core.Run.Merchant.MerchantRules.Load(Services.ContentRoot);
+        var platesFound = Meta?.UnlockedPlates() ?? [];
         _renderer.UseTileset(Tileset.ById(waves.Map.Spec.Tileset));
         _run = new RunState(pokedex, Services.TypeChart.Value, _character.First.Id, waves, view, seed: Environment.TickCount)
         {
             Difficulty = Difficulty,
             SkipFinds = Meta?.FoundFinds() ?? new HashSet<string>(),
+            // Arceus' Plates and Kecleon (Block 9).
+            PlateRules = plates.File.Enabled || PlateId is not null ? plates : null,
+            PlatePool = platesFound,
+            SkipPlates = platesFound.Select(p => p.Id).ToHashSet(),
+            MerchantRules = merchant.File.Enabled ? merchant : null,
             TimeLimitTicks = waves.DurationTicks,
             MovePool = Services.Moves.Value.Enabled,
             Evolutions = PendingEvolutions
@@ -564,6 +614,8 @@ public sealed class GameplayScene : Scene
         };
         _run.UseCharacter(_character, Loadout ?? Meta?.Loadout(_character));
         _run.UseTrainer(Meta?.Upgraded(_trainer) ?? _trainer);
+        if (plates.Find(PlateId) is { } plate)
+            _run.UsePlate(plate);
         if (ChallengeId is { } challengeId)
         {
             var challenged = Services.Trainers.Value.Find(challengeId)
@@ -593,6 +645,8 @@ public sealed class GameplayScene : Scene
         _banner.Stop();
         _results.Close();
         _chestWindow.Close();
+        _plateWindow.Close();
+        _shop.Close();
         _evolution.Close();
         _special.Close();
         _bossIntro.Stop();

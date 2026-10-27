@@ -1,0 +1,25 @@
+{
+  // Kecleon the merchant (phase 9.2): it comes to every level at "appearAt" ("m:ss"), "distance" px ahead of the player,
+  // and stays "stay" seconds, camouflaged until the player is close. Walking into it opens its shop and freezes the
+  // game. It takes the coins of the run: what is spent there does not go to the bank at the end.
+  // It brings "stock" wares drawn by weight, each sold once; the item a stone evolution needs comes first when due.
+  // Kinds: potion (heals "power" of the PS), rareCandy (one level), heldItem (a level of a held item, or a new one),
+  // reroll (one more Rilancio), repel (every regular enemy on screen faints), expShare (every gem flies in),
+  // evolutionItem (the stone or item the player's evolution needs).
+  "version": 1,
+  "enabled": true,
+  "appearAt": [ "4:30", "10:00" ],
+  "stay": 60,
+  "distance": 150,
+  "reach": 20,
+  "stock": 4,
+  "wares": [
+    { "kind": "potion", "price": 40, "weight": 3, "power": 0.5 },
+    { "kind": "rareCandy", "price": 80, "weight": 2 },
+    { "kind": "heldItem", "price": 120, "weight": 3 },
+    { "kind": "reroll", "price": 50, "weight": 1 },
+    { "kind": "repel", "price": 60, "weight": 1 },
+    { "kind": "expShare", "price": 50, "weight": 1 },
+    { "kind": "evolutionItem", "price": 150, "weight": 0 }
+  ]
+}

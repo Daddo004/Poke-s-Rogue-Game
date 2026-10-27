@@ -36,6 +36,9 @@ public enum LootKind : byte
 
     /// <summary>A fossil or an egg hidden on the level (phase 7.4): <see cref="Loot.ItemId"/> is the character it brings.</summary>
     Find,
+
+    /// <summary>One of Arceus' Plates hidden on the level (phase 9.1): <see cref="Loot.ItemId"/> is the Plate.</summary>
+    Plate,
 }
 
 public sealed record BreakableSpec
@@ -225,6 +228,16 @@ public sealed class LootSystem
                 if (item.Kind != LootKind.Find || item.ItemId is not { } find || !run.SkipFinds.Contains(find))
                     Drop(item.Position, item.Kind, item.ItemId);
             }
+
+            // The level's Plate, until it has been found (phase 9.1).
+            if (run.PlateRules is { } plates)
+            {
+                foreach (var plate in plates.OnLevel(run.Spawner.Timeline.Id).Where(p => !run.SkipPlates.Contains(p.Id)))
+                {
+                    var at = run.Map.IsConstrained ? run.Map.FreePoint(run.Map.Clamp(plate.Position, 40f), 16f) : run.Map.FreePoint(plate.Position, 16f);
+                    Drop(at, LootKind.Plate, plate.Id);
+                }
+            }
         }
 
         // At once on the first tick (and after a time jump), then every few ticks.
@@ -349,7 +362,7 @@ public sealed class LootSystem
                 run.AddCoins(file.BigNuggetValue);
                 break;
             case LootKind.Potion:
-                player.Heal(player.MaxHp * file.PotionHeal * Abilities.AbilitySystem.HealMultiplier(run));
+                player.Heal(player.MaxHp * file.PotionHeal * Abilities.AbilitySystem.HealMultiplier(run) * Plates.PlateSystem.HealMultiplier(run));
                 break;
             case LootKind.RareCandy:
                 run.GrantLevel();
@@ -361,7 +374,7 @@ public sealed class LootSystem
                 Repel(run);
                 break;
             case LootKind.OranBerry:
-                player.Heal(file.FoodHeal * Abilities.AbilitySystem.HealMultiplier(run));
+                player.Heal(file.FoodHeal * Abilities.AbilitySystem.HealMultiplier(run) * Plates.PlateSystem.HealMultiplier(run));
                 break;
             case LootKind.HeldItem when loot.ItemId is { } id:
                 GiveItem(run, rules, id);
@@ -370,6 +383,13 @@ public sealed class LootSystem
                 // The meta-progression keeps it at the end of the run: a fossil to revive, an egg that hatches.
                 run.Stats.RecordFind(character);
                 run.AddEvent(new RunEvent(RunEventType.FindCollected, loot.Position, 0f, MoveId: character));
+                break;
+            case LootKind.Plate when loot.ItemId is { } plateId:
+                // Kept for good at the end of the run; with room, it already works in this one.
+                run.Stats.RecordPlate(plateId);
+                if (run.PlateRules?.Find(plateId) is { } plate)
+                    run.UsePlate(plate);
+                run.AddEvent(new RunEvent(RunEventType.PlateEffect, loot.Position, -1f, MoveId: plateId));
                 break;
         }
 
@@ -384,6 +404,13 @@ public sealed class LootSystem
     /// </summary>
     private static void GiveItem(RunState run, LootRules rules, string id)
     {
+        if (!TryGiveItem(run, id))
+            run.AddCoins(rules.File.NuggetValue);
+    }
+
+    /// <summary>A level of a held item the player has, or the item itself while there is room. False when neither fits.</summary>
+    internal static bool TryGiveItem(RunState run, string id)
+    {
         var player = run.Player;
         var owned = player.Items.FirstOrDefault(i => i.Definition.Id == id);
         var definition = run.ItemPool.FirstOrDefault(d => d.Id == id);
@@ -392,16 +419,14 @@ public sealed class LootSystem
         else if (owned is null && definition is not null && player.Items.Count < Progression.LevelUp.MaxItems)
             player.Items.Add(new Items.ItemInstance(definition) { AcquiredTick = run.Ticks });
         else
-        {
-            run.AddCoins(rules.File.NuggetValue);
-            return;
-        }
+            return false;
 
         player.RecalculateStats();
+        return true;
     }
 
     /// <summary>Every regular enemy on screen faints and leaves its gem; Dominanti, bosses and props are untouched.</summary>
-    private static void Repel(RunState run)
+    internal static void Repel(RunState run)
     {
         var half = run.Spawner.ViewSize / 2f;
         var player = run.Player.Position;
