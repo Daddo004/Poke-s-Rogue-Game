@@ -27,7 +27,10 @@ public sealed class OptionsPanel(GameServices services)
         Scale,
     }
 
-    public static readonly Option[] All = Enum.GetValues<Option>();
+    /// <summary>On a phone the game always fills the screen: no window, no full screen, no resolution to choose.</summary>
+    public static readonly Option[] All = Enum.GetValues<Option>()
+        .Where(o => !OperatingSystem.IsAndroid() || o is not (Option.FullScreen or Option.Resolution))
+        .ToArray();
 
     private const string Tag = "opzioni";
     private const int RowHeight = 20;

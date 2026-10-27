@@ -10,7 +10,7 @@ namespace PokeRogue.Game.Input;
 /// <see cref="KeyRegion"/> ("[INVIO] GIOCA") presses its key when clicked; the right button presses Esc and the wheel
 /// presses the arrows up and down.
 /// </summary>
-public sealed class InputState
+public sealed partial class InputState
 {
     /// <summary>The pointer counts as in use for this long after it last moved or clicked (3 s).</summary>
     public const int PointerAwakeTicks = 180;
@@ -64,7 +64,8 @@ public sealed class InputState
         _previousMouse = _mouse;
         _keys = Keyboard.GetState();
         _pad = GamePad.GetState(PlayerIndex.One);
-        _mouse = Mouse.GetState();
+        // On a phone the touches are read on their own (UpdateTouch): the mouse would only echo them.
+        _mouse = OperatingSystem.IsAndroid() ? default : Mouse.GetState();
         _pressedByPointer.Clear();
 
         var at = SimulatedPointer ?? ToVirtual?.Invoke(_mouse.Position) ?? _mouse.Position.ToVector2();
@@ -73,6 +74,9 @@ public sealed class InputState
         Clicked = WindowActive && _mouse.LeftButton == ButtonState.Pressed && _previousMouse.LeftButton == ButtonState.Released;
         RightClicked = WindowActive && _mouse.RightButton == ButtonState.Pressed && _previousMouse.RightButton == ButtonState.Released;
         Wheel = WindowActive ? Math.Sign(_mouse.ScrollWheelValue - _previousMouse.ScrollWheelValue) : 0;
+        if (PointerMoved || Clicked || RightClicked || Wheel != 0)
+            LastWasTouch = false;
+        UpdateTouch();
 
         if (PointerMoved || Clicked || RightClicked || Wheel != 0)
         {
@@ -118,6 +122,7 @@ public sealed class InputState
             var stick = _pad.ThumbSticks.Left;
             if (stick.LengthSquared() > 0.04f)
                 v += new Vector2(stick.X, -stick.Y);
+            v += TouchStick;
 
             return v.LengthSquared() > 1f ? Vector2.Normalize(v) : v;
         }

@@ -91,7 +91,7 @@ public sealed class TitleScene : MenuScene
         DrawLogo(batch);
 
         if (_leaving < 0 && Age / 30 % 2 == 0 && Age > 20)
-            UiDraw.TextCentered(batch, Body, "PREMI INVIO O CLICCA", width / 2f, 214, Paper, Ink);
+            UiDraw.TextCentered(batch, Body, OperatingSystem.IsAndroid() ? "TOCCA LO SCHERMO" : "PREMI INVIO O CLICCA", width / 2f, 214, Paper, Ink);
 
         UiDraw.TextCentered(batch, Small, "UN GIOCO PERSONALE, NON COMMERCIALE.  POKÉMON © NINTENDO, CREATURES, GAME FREAK.", width / 2f, height - 14, Dim * 0.8f);
 

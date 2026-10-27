@@ -254,6 +254,7 @@ public sealed class GameplayScene : Scene
     {
         var input = Services.Input;
         _motion.Invalidate();
+        _touchPlay = false;
         switch (_phase)
         {
             case Phase.Paused:
@@ -408,6 +409,7 @@ public sealed class GameplayScene : Scene
             return;
         }
 
+        UpdateTouchButtons(input);
         for (var step = 0; step < Speed; step++)
         {
             var move = Autopilot ? AutoPilot.Input(_run) : input.Move.ToNumerics();
@@ -489,11 +491,43 @@ public sealed class GameplayScene : Scene
         }
     }
 
+    /// <summary>
+    /// The run is being played: fingers drive it (Android). Which round buttons it has, and which are ready, follow the
+    /// character, the trainer and the special move bought.
+    /// </summary>
+    private void UpdateTouchButtons(Input.InputState input)
+    {
+        _touchPlay = !Autopilot;
+        input.GameControls = _touchPlay;
+        Show(Input.InputState.TouchButton.Ability, Core.Run.Abilities.AbilitySystem.IsActive(_run), Core.Run.Abilities.AbilitySystem.CanUse(_run));
+        Show(Input.InputState.TouchButton.Special, _run.SpecialMove is not null, _run.Special.IsFull);
+        Show(Input.InputState.TouchButton.Trainer, _run.Trainer is not null, Core.Run.Trainers.TrainerSystem.CanUse(_run));
+
+        void Show(Input.InputState.TouchButton button, bool shown, bool ready)
+        {
+            if (shown)
+                input.ShownButtons.Add(button);
+            else
+                input.ShownButtons.Remove(button);
+            if (ready)
+                _touchReady.Add(button);
+            else
+                _touchReady.Remove(button);
+        }
+    }
+
+    /// <summary>The last tick was played freely (no window open): the touch controls are drawn.</summary>
+    private bool _touchPlay;
+
+    private readonly HashSet<Input.InputState.TouchButton> _touchReady = [Input.InputState.TouchButton.Pause];
+
     private void DrawScene(SpriteBatch batch)
     {
         _renderer.Draw(batch, _run);
         if (_phase is Phase.Playing or Phase.Paused)
             _hud.Draw(batch, _run);
+        if (_phase == Phase.Playing && _touchPlay)
+            TouchControls.Draw(batch, Services, _touchReady);
 
         _bossIntro.Draw(batch);
         _trainerIntro.Draw(batch);

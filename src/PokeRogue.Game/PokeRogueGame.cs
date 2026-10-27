@@ -30,8 +30,12 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
     private DebugOverlay _overlay = null!;
     private CursorArt _cursor = null!;
 
-    public PokeRogueGame(string[] args)
+    /// <summary>The content folder; null finds it next to the executable (on a phone it is where the app unpacked it).</summary>
+    private readonly string? _contentRoot;
+
+    public PokeRogueGame(string[] args, string? contentRoot = null)
     {
+        _contentRoot = contentRoot;
         _options = LaunchOptions.Parse(args);
         _capture = new PreviewCapture(_options);
         _graphics = new GraphicsDeviceManager(this)
@@ -40,6 +44,17 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
             PreferredBackBufferHeight = VirtualScreen.DefaultHeight * 2,
             SynchronizeWithVerticalRetrace = !_options.Values.ContainsKey("novsync"),
         };
+        if (OperatingSystem.IsAndroid())
+        {
+            // A phone: always the whole screen, held sideways; no window to size or move.
+            _graphics.IsFullScreen = true;
+            _graphics.SupportedOrientations = DisplayOrientation.LandscapeLeft | DisplayOrientation.LandscapeRight;
+            TargetElapsedTime = TimeSpan.FromSeconds(1.0 / TargetFps);
+            IsFixedTimeStep = false;
+            _blendFrames = true;
+            return;
+        }
+
 
         // Captures need exactly one simulation tick per drawn frame: a fixed timestep would catch up after slow
         // loading frames with several updates per draw, so "--wait N" would no longer mean N ticks.
@@ -61,6 +76,8 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
     /// </summary>
     public void ToggleFullScreen()
     {
+        if (OperatingSystem.IsAndroid())
+            return;
         if (_graphics.IsFullScreen)
         {
             _graphics.IsFullScreen = false;
@@ -158,6 +175,12 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
     /// <summary>A resized window gets a back buffer of its new size, so the scaling can grow with it; the size is kept.</summary>
     private void FollowWindowSize()
     {
+        if (OperatingSystem.IsAndroid())
+        {
+            FitPhoneScreen();
+            return;
+        }
+
         if (_graphics.IsFullScreen || Window.ClientBounds.Width <= 0 || Window.ClientBounds.Height <= 0)
             return;
         if (_graphics.PreferredBackBufferWidth == Window.ClientBounds.Width && _graphics.PreferredBackBufferHeight == Window.ClientBounds.Height)
@@ -173,10 +196,40 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
         }
     }
 
+    /// <summary>The game view's size on a phone, as the activity last saw it laid out; applied at the next update.</summary>
+    private Point _phoneView;
+
+    private volatile bool _phoneViewChanged;
+
+    /// <summary>The activity's view was laid out at this size (Android; called from its thread).</summary>
+    public void ViewLaidOut(int width, int height)
+    {
+        _phoneView = new Point(width, height);
+        _phoneViewChanged = true;
+    }
+
+    /// <summary>A phone: the back buffer is the whole screen held sideways (20:9 and the like), the game centred in it.</summary>
+    private void FitPhoneScreen()
+    {
+        // MonoGame keeps the back buffer's shape and letterboxes the view to it, so it is asked for the view's own
+        // (the display's until the view is laid out: a notch or the bars may leave it narrower).
+        var display = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode;
+        var size = _phoneView is { X: > 0, Y: > 0 } view ? view : new Point(display.Width, display.Height);
+        size = new Point(Math.Max(size.X, size.Y), Math.Min(size.X, size.Y));
+        if (size.X <= 0 || size == new Point(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight))
+            return;
+
+        _graphics.PreferredBackBufferWidth = size.X;
+        _graphics.PreferredBackBufferHeight = size.Y;
+        _graphics.ApplyChanges();
+    }
+
     protected override void Initialize()
     {
         var display = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode;
         _monitor = new Point(display.Width, display.Height);
+        if (OperatingSystem.IsAndroid())
+            FitPhoneScreen();
         base.Initialize();
         if (_options.Values.ContainsKey("schermo-intero") && !_capture.Active && !_graphics.IsFullScreen)
             ToggleFullScreen();
@@ -186,7 +239,7 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
     {
         _batch = new SpriteBatch(GraphicsDevice);
         var screen = new VirtualScreen(GraphicsDevice, VirtualScreen.DefaultWidth, VirtualScreen.DefaultHeight);
-        _services = new GameServices(GraphicsDevice, ContentPaths.FindContentRoot(), screen)
+        _services = new GameServices(GraphicsDevice, _contentRoot ?? ContentPaths.FindContentRoot(), screen)
         {
             Exit = Exit,
             Settings = _options.Preview is null && !_capture.Active ? Settings.Load() : new Settings(),
@@ -261,6 +314,12 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
 
     protected override void Update(GameTime gameTime)
     {
+        if (_phoneViewChanged)
+        {
+            _phoneViewChanged = false;
+            FitPhoneScreen();
+        }
+
         if (!_blendFrames)
         {
             Step();
@@ -341,6 +400,12 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
     private void DrawPointer()
     {
         var input = _services.Input;
+        if (input.LastWasTouch && input.SimulatedPointer is null)
+        {
+            IsMouseVisible = false;
+            return;
+        }
+
         var window = Mouse.GetState().Position;
         IsMouseVisible = !_services.Screen.Shows(window) || !IsActive;
         if (input.SimulatedPointer is null && (_capture.Active || !IsActive || !input.PointerEverUsed || !_services.Screen.Shows(window)))

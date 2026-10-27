@@ -22,13 +22,13 @@ public sealed class Settings
     /// False: the game is scaled by a whole number, every pixel square (bars around it). True: it fills the screen,
     /// scaled up sharp first and then smoothly down to fit, so pixels stay crisp without gaps (phase 8.2).
     /// </summary>
-    public bool FillScreen { get; set; }
+    public bool FillScreen { get; set; } = OperatingSystem.IsAndroid();
 
     /// <summary>
     /// How big the HUD is drawn, in percent of its design size (the playtest of 2026-10-27 found it too big on a 1440p
     /// screen). It is rounded to whole monitor pixels per HUD pixel, so it stays sharp: at ×4 the sizes are 50, 75 and 100.
     /// </summary>
-    public int HudPercent { get; set; } = 75;
+    public int HudPercent { get; set; } = OperatingSystem.IsAndroid() ? 100 : 75;
 
     /// <summary>The window's size; 0 keeps the default (twice the game's 640×360).</summary>
     public int WindowWidth { get; set; }

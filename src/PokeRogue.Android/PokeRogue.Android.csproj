@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The Android build of the game: the same code as PokeRogue.Game, compiled against MonoGame's Android flavour. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>24</SupportedOSPlatformVersion>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>PokeRogue.Android</RootNamespace>
+    <AssemblyName>PokeRogue</AssemblyName>
+    <ApplicationId>com.daddo.pokerogue</ApplicationId>
+    <ApplicationTitle>PokeRogue</ApplicationTitle>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <RuntimeIdentifiers>android-arm64;android-x64</RuntimeIdentifiers>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <!-- The content is unpacked from the APK on first launch (MainActivity); pictures and sounds are stored, not zipped again. -->
+    <AndroidStoreUncompressedFileExtensions>.png;.jpg;.ogg;.wav</AndroidStoreUncompressedFileExtensions>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- The Android SDK checks doc comments, which the PC build does not: an overloaded cref is not an error here. -->
+    <NoWarn>$(NoWarn);CS0419;CS1574</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <AndroidLinkMode>None</AndroidLinkMode>
+    <PublishTrimmed>false</PublishTrimmed>
+    <RunAOTCompilation>false</RunAOTCompilation>
+  </PropertyGroup>
+
+  <!-- Android's own implicit usings would clash with the game's names (Button, Orientation, Application…). -->
+  <ItemGroup>
+    <Using Remove="Android.App" />
+    <Using Remove="Android.Widget" />
+    <Using Remove="Android.OS.Bundle" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.Android" Version="3.8.5.1" />
+    <PackageReference Include="FontStashSharp.MonoGame" Version="1.6.1" />
+    <PackageReference Include="NVorbis" Version="0.10.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PokeRogue.Core\PokeRogue.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\PokeRogue.Game\**\*.cs" Exclude="..\PokeRogue.Game\Program.cs;..\PokeRogue.Game\bin\**;..\PokeRogue.Game\obj\**" LinkBase="Game" />
+  </ItemGroup>
+
+  <!-- Everything the game reads at run time; the download cache stays on the PC. -->
+  <ItemGroup>
+    <AndroidAsset Include="..\..\content\**\*" Exclude="..\..\content\cache\**" Link="Assets\content\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>
