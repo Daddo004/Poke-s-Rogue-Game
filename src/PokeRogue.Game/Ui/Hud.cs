@@ -219,7 +219,7 @@ public sealed class Hud
         _bossTrail = _bossTrail > ratio ? MathF.Max(ratio, _bossTrail - 0.004f) : ratio;
 
         var p = _services.Primitives;
-        var bar = new Rectangle(170, 30, 300, 9);
+        var bar = new Rectangle((_width - 300) / 2, 30, 300, 9);
         p.Rect(batch, new Rectangle(bar.X - 1, bar.Y - 1, bar.Width + 2, bar.Height + 2), Ink);
         p.Rect(batch, bar, new Color(40, 24, 32));
         p.Rect(batch, new Rectangle(bar.X, bar.Y, (int)(bar.Width * _bossTrail), bar.Height), new Color(255, 236, 200));
@@ -309,7 +309,7 @@ public sealed class Hud
         const int width = 184, height = 42;
         var slide = MathF.Min(1f, MathF.Min(_missionAge / 12f, (MissionTicks - _missionAge) / 12f));
         var eased = 1f - (1f - slide) * (1f - slide);
-        var x = (int)MathF.Round(_services.Screen.Width - 4 - width * eased);
+        var x = (int)MathF.Round(_width - 4 - width * eased);
         var box = new Rectangle(x, 46, width, height);
         UiDraw.Frame(batch, p, box, EvolvedTheme);
         if (_missionAge < 20)
@@ -344,18 +344,47 @@ public sealed class Hud
         var fade = MathHelper.Clamp((BannerTicks - _bannerAge) / 30f, 0f, 1f);
         var blink = _bannerAge < 40 && _bannerAge / 10 % 2 == 1 ? 0.6f : 1f;
         var y = 26 - slide * 8f;
-        UiDraw.TextCentered(batch, font, _banner, _services.Screen.Width / 2f, y, _bannerColor * (fade * blink), Ink * fade);
+        UiDraw.TextCentered(batch, font, _banner, _width / 2f, y, _bannerColor * (fade * blink), Ink * fade);
     }
+
+    /// <summary>
+    /// The HUD sizes Opzioni offers at a screen zoom, in percent: whole monitor pixels per HUD pixel from half the zoom up
+    /// to all of it, so every size stays sharp (×4: 50, 75, 100; ×3: 67, 100; ×2: 50, 100).
+    /// </summary>
+    public static int[] Sizes(int zoom)
+    {
+        var from = Math.Max(1, (zoom + 1) / 2);
+        return Enumerable.Range(from, zoom - from + 1).Select(k => (int)MathF.Round(100f * k / zoom)).ToArray();
+    }
+
+    /// <summary>Monitor pixels per HUD pixel for the player's size at <paramref name="zoom"/>.</summary>
+    public static int PixelSize(int percent, int zoom) => Math.Clamp((int)MathF.Round(zoom * percent / 100f), Math.Max(1, (zoom + 1) / 2), Math.Max(1, zoom));
+
+    /// <summary>The size the HUD is really drawn at, in percent: the player's, rounded to whole monitor pixels.</summary>
+    public static int EffectivePercent(int percent, int zoom) => (int)MathF.Round(100f * PixelSize(percent, zoom) / Math.Max(1, zoom));
+
+    /// <summary>The HUD's layout size: the screen's, larger when the HUD is drawn smaller, so its corners stay in the screen's.</summary>
+    private int _width = VirtualScreen.DefaultWidth;
+    private int _height = VirtualScreen.DefaultHeight;
 
     public void Draw(SpriteBatch batch, RunState run)
     {
         var p = _services.Primitives;
         var theme = _services.Style.Theme;
-        var numbers = _services.Fonts.Numbers(_services.Style);
         var player = run.Player;
 
-        batch.BeginVirtual(samplerState: SamplerState.PointClamp);
-        XpBar.Draw(batch, player);
+        // Opzioni "Dimensione HUD" (playtest of 2026-10-27): the HUD is laid out on a larger canvas and drawn scaled down,
+        // a whole number of monitor pixels per HUD pixel; its text is rasterised at that size too.
+        var zoom = _services.Screen.Zoom;
+        var pixels = PixelSize(_services.Settings.HudPercent, zoom);
+        var scale = pixels / (float)zoom;
+        _width = (int)MathF.Round(_services.Screen.Width / scale);
+        _height = (int)MathF.Round(_services.Screen.Height / scale);
+        _services.Fonts.Zoom = pixels;
+        var numbers = _services.Fonts.Numbers(_services.Style);
+
+        batch.BeginVirtual(samplerState: SamplerState.PointClamp, transformMatrix: Matrix.CreateScale(scale, scale, 1f));
+        XpBar.Draw(batch, player, _width);
 
         for (var i = 0; i < Slots; i++)
         {
@@ -380,14 +409,14 @@ public sealed class Hud
         DrawAbility(batch, run, new Rectangle(3, 67, Slots * 26 - 2, 14));
         DrawSpecial(batch, run, new Rectangle(3, 83, Slots * 26 - 2, 14));
         DrawTrainerCutIn(batch, run);
-        DrawTrainer(batch, run, new Rectangle(4, _services.Screen.Height - 48, 150, 44));
+        DrawTrainer(batch, run, new Rectangle(4, _height - 48, 150, 44));
 
         // In the endless mode past the boss, the clock turns violet (phase 9.3).
         var clock = UiFormat.Clock(run.Ticks);
-        UiDraw.TextCentered(batch, numbers, clock, _services.Screen.Width / 2f, 9, run.Endless && run.PastBoss ? Color.Lerp(Endless, Color.White, 0.35f) : Paper, Ink);
+        UiDraw.TextCentered(batch, numbers, clock, _width / 2f, 9, run.Endless && run.PastBoss ? Color.Lerp(Endless, Color.White, 0.35f) : Paper, Ink);
 
         // The sky beside the timer (phase 7.2): the weather, then the moon at night.
-        var sky = new Vector2(_services.Screen.Width / 2f + UiDraw.Measure(numbers, clock).X / 2f + 5, 11);
+        var sky = new Vector2(_width / 2f + UiDraw.Measure(numbers, clock).X / 2f + 5, 11);
         if (run.Weather != Core.Run.Worlds.WeatherKind.Clear && _skyIcons.TryGetValue(run.Weather.ToString(), out var weatherIcon))
         {
             batch.Draw(weatherIcon, sky, Color.White);
@@ -398,7 +427,7 @@ public sealed class Hud
             batch.Draw(_skyIcons["Night"], sky, Color.White);
 
         // Coins and KO, right-aligned under the level.
-        var right = _services.Screen.Width - 4f;
+        var right = _width - 4f;
         var kills = UiFormat.Number(run.Stats.Kills);
         var killsWidth = UiDraw.Measure(numbers, kills).X;
         UiDraw.TextOutlined(batch, numbers, kills, new Vector2(right - killsWidth, 26), Paper, Ink);
@@ -415,6 +444,7 @@ public sealed class Hud
         DrawBossBar(batch, run);
         DrawMission(batch);
         batch.End();
+        _services.Fonts.Zoom = zoom;
     }
 
     /// <summary>
@@ -577,7 +607,7 @@ public sealed class Hud
         var rise = MathF.Min(1f, _trainerCutIn / 8f);
         rise = 1f - (1f - rise) * (1f - rise);
         var alpha = _trainerCutIn > CutInTicks - 16 ? (CutInTicks - _trainerCutIn) / 16f : 1f;
-        var cardTop = _services.Screen.Height - 48;
+        var cardTop = _height - 48;
         var y = cardTop + 4 - (sprite.Height - 6) * rise;
         batch.Draw(sprite, new Vector2(10, MathF.Round(y)), Color.White * alpha);
     }

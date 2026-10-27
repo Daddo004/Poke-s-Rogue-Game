@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using PokeRogue.Core.Run;
 
 namespace PokeRogue.Core.Meta;
 
@@ -33,6 +34,34 @@ public sealed class TrainerProgress
     public int Grade { get; set; }
 
     public int Coins { get; set; }
+}
+
+/// <summary>A line's bond and packs for the collectible cards (phase 10), with its records for the cards' backs.</summary>
+public sealed class CardLineProgress
+{
+    /// <summary>Bond points, from every run played with the line.</summary>
+    public int Bond { get; set; }
+
+    /// <summary>Bond levels already turned into packs.</summary>
+    public int Level { get; set; }
+
+    /// <summary>Packs waiting to be opened.</summary>
+    public int Packs { get; set; }
+
+    /// <summary>Species keys of the line reached in some run.</summary>
+    public List<string> Reached { get; set; } = [];
+
+    /// <summary>Difficulties at which a level was won with the line.</summary>
+    public List<Difficulty> Won { get; set; } = [];
+
+    public int Runs { get; set; }
+
+    public long Kills { get; set; }
+
+    public int BestLevel { get; set; }
+
+    /// <summary>The longest run with the line, in ticks.</summary>
+    public int BestTicks { get; set; }
 }
 
 /// <summary>A Pokédex entry (phase 6.4): how many times the species was met and defeated.</summary>
@@ -97,7 +126,11 @@ public sealed class SaveTotals
 /// </summary>
 public sealed class SaveData
 {
-    public const int CurrentVersion = 1;
+    /// <summary>
+    /// 2: run times count ticks of the level's faster clock (2026-10-27). 3: the collectible cards (phase 10); lines
+    /// already won with start with a bond.
+    /// </summary>
+    public const int CurrentVersion = 3;
 
     public int Version { get; set; } = CurrentVersion;
 
@@ -154,6 +187,15 @@ public sealed class SaveData
 
     public SaveTotals Totals { get; set; } = new();
 
+    /// <summary>Bond and packs of each line, by character id (phase 10).</summary>
+    public Dictionary<string, CardLineProgress> CardLines { get; set; } = [];
+
+    /// <summary>Collectible cards owned, in the order they came out of their packs.</summary>
+    public List<string> Cards { get; set; } = [];
+
+    /// <summary>Cards owned but not looked at yet in the album (they show "NUOVA").</summary>
+    public List<string> NewCards { get; set; } = [];
+
     /// <summary>The last character and trainer played, chosen again when the menu opens.</summary>
     public string? LastCharacter { get; set; }
 
@@ -187,6 +229,13 @@ public sealed class SaveData
         if (!Levels.TryGetValue(key, out var record))
             Levels[key] = record = new LevelRecord();
         return record;
+    }
+
+    public CardLineProgress CardLineOf(string characterId)
+    {
+        if (!CardLines.TryGetValue(characterId, out var line))
+            CardLines[characterId] = line = new CardLineProgress();
+        return line;
     }
 
     public PokedexEntry EntryOf(int speciesId)
@@ -277,7 +326,34 @@ public sealed class SaveStore(string path)
     /// <summary>Brings an older save up to <see cref="SaveData.CurrentVersion"/>; a newer one is read as it is.</summary>
     private static SaveData Migrate(SaveData data)
     {
-        // Version 1 is the first: nothing to migrate yet.
+        // Version 1 ran the clock at real speed: its records keep the same time on the clock, which is now fewer ticks.
+        if (data.Version < 2)
+        {
+            static int Clock(int ticks) => (int)((long)ticks * RunClock.TicksPerClockSecond / RunClock.TicksPerSecond);
+            foreach (var record in data.Levels.Values)
+                record.BestTicks = Clock(record.BestTicks);
+            foreach (var level in data.EndlessBest.Keys.ToList())
+                data.EndlessBest[level] = Clock(data.EndlessBest[level]);
+            data.Totals.BestTicks = Clock(data.Totals.BestTicks);
+            data.Version = 2;
+        }
+
+        // Version 3 brought the cards: each win so far is worth 20 bond points and the line's first species is reached.
+        // The packs those points give come with the first MetaProgress (SyncCards).
+        if (data.Version < 3)
+        {
+            foreach (var (characterId, wins) in data.CharacterWins.Where(w => w.Value > 0))
+            {
+                var line = data.CardLineOf(characterId);
+                line.Bond += wins * 20;
+                line.Runs = Math.Max(line.Runs, wins);
+                if (!line.Won.Contains(Difficulty.Normal))
+                    line.Won.Add(Difficulty.Normal);
+            }
+
+            data.Version = 3;
+        }
+
         return data;
     }
 

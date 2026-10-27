@@ -14,10 +14,11 @@ namespace PokeRogue.Game.Scenes.Menus;
 /// </summary>
 public sealed class MainMenuScene : MenuScene
 {
-    private static readonly string[] Rows = ["Gioca", "Potenziamenti", "Collezione", "Opzioni", "Crediti", "Esci"];
+    private static readonly string[] Rows = ["Gioca", "Potenziamenti", "Collezione", "Carte", "Opzioni", "Crediti", "Esci"];
 
-    public const int OptionsRow = 3;
-    public const int CreditsRow = 4;
+    public const int CardsRow = 3;
+    public const int OptionsRow = 4;
+    public const int CreditsRow = 5;
 
     private readonly MenuPokemon _pokemon;
     private int _cursor;
@@ -76,6 +77,9 @@ public sealed class MainMenuScene : MenuScene
             case 2:
                 Services.Switch(new CollectionScene(Services));
                 break;
+            case CardsRow:
+                Services.Switch(new CardsScene(Services));
+                break;
             case OptionsRow:
                 Services.Switch(new OptionsScene(Services));
                 break;
@@ -96,15 +100,26 @@ public sealed class MainMenuScene : MenuScene
         UiDraw.TextOutlined(batch, Services.Fonts.Title(Services.Style), "POKÉROGUE", new Vector2(32, 34), Gold, Ink);
         UiDraw.Text(batch, Small, "UN ROGUELITE CON I POKÉMON DI KANTO, JOHTO, HOENN E SINNOH", new Vector2(34, 70), Dim);
 
+        var packs = Meta.PacksWaiting;
         for (var i = 0; i < Rows.Length; i++)
         {
-            var row = new Rectangle(32, 100 + i * 29, 200, 24);
+            var row = new Rectangle(32, 96 + i * 26, 200, 22);
             var selected = i == _cursor;
             Clickable(row, "menu", i);
             UiDraw.Frame(batch, p, row, selected ? new UiTheme(new Color(60, 48, 24, 235), Gold, new Color(140, 110, 40), Ink, Paper, Dim) : Services.Style.Theme);
             if (selected)
                 p.Outline(batch, new Rectangle(row.X - 1, row.Y - 1, row.Width + 2, row.Height + 2), Age / 20 % 2 == 0 ? Gold : Color.Lerp(Gold, Color.White, 0.5f), 1);
-            UiDraw.Text(batch, Body, Rows[i], new Vector2(row.X + 12, row.Y + 4), selected ? Paper : Dim);
+            UiDraw.Text(batch, Body, Rows[i], new Vector2(row.X + 12, row.Y + 3), selected ? Paper : Dim);
+
+            // Packs waiting to be opened, on the cards' row.
+            if (i == CardsRow && packs > 0)
+            {
+                var text = packs == 1 ? "1 BUSTINA" : $"{packs} BUSTINE";
+                var badgeWidth = (int)UiDraw.Measure(Small, text).X + 10;
+                var badge = new Rectangle(row.Right - badgeWidth - 6, row.Y + 5, badgeWidth, 12);
+                p.Rect(batch, badge, Age / 25 % 2 == 0 ? new Color(200, 60, 50) : new Color(230, 90, 70));
+                UiDraw.TextWithNumbers(batch, Small, SmallNumbers, text, new Vector2(badge.X + 5, badge.Y + 2), Paper);
+            }
         }
 
         // The last team played, on a stage.

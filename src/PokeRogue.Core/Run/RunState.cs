@@ -373,7 +373,7 @@ public sealed class RunState
         if (ReaperCame)
             return;
 
-        var warnAt = rules.ReaperAtTicks - RunClock.TicksPerSecond * 60;
+        var warnAt = rules.ReaperAtTicks - RunClock.TicksPerClockMinute;
         if (!_reaperWarned && Ticks >= warnAt)
         {
             _reaperWarned = true;
@@ -411,7 +411,8 @@ public sealed class RunState
 
     public int Ticks { get; private set; }
 
-    public TimeSpan Elapsed => TimeSpan.FromSeconds(Ticks / (double)RunClock.TicksPerSecond);
+    /// <summary>Time on the level's clock (faster than real time, see <see cref="RunClock.TicksPerClockSecond"/>).</summary>
+    public TimeSpan Elapsed => TimeSpan.FromSeconds(Ticks / (double)RunClock.TicksPerClockSecond);
 
     public IReadOnlyList<RunEvent> Events => _events;
 

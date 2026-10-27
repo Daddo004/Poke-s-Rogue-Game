@@ -44,7 +44,13 @@ public sealed record RunReport(
     /// <summary>Plates found for the first time (phase 9.1).</summary>
     public IReadOnlyList<Run.Plates.PlateDefinition> Plates { get; init; } = [];
 
-    public bool HasNews => Missions.Count > 0 || NewCharacters.Count > 0 || NewTrainers.Count > 0 || Fossils.Count > 0 || Opened.Count > 0 || Plates.Count > 0;
+    /// <summary>Packs of collectible cards earned this run (phase 10), by line.</summary>
+    public IReadOnlyList<(CharacterDefinition Line, int Count)> Packs { get; init; } = [];
+
+    /// <summary>The bond the run gave its line, and the line's bond level after it.</summary>
+    public (int Points, int Level) Bond { get; init; }
+
+    public bool HasNews => Missions.Count > 0 || NewCharacters.Count > 0 || NewTrainers.Count > 0 || Fossils.Count > 0 || Opened.Count > 0 || Plates.Count > 0 || Packs.Count > 0;
 }
 
 /// <summary>
@@ -52,7 +58,7 @@ public sealed record RunReport(
 /// stat grades, trainer grades, upgrades for every run, with refunds), the missions' progress, and what a finished run
 /// leaves behind. Every change is written at once when a <see cref="SaveStore"/> is given.
 /// </summary>
-public sealed class MetaProgress(
+public sealed partial class MetaProgress(
     SaveData data,
     ShopRules shop,
     CharacterLibrary characters,
@@ -61,8 +67,12 @@ public sealed class MetaProgress(
     IReadOnlyList<SpeciesData> pokedex,
     SaveStore? store = null,
     Run.Worlds.WorldLibrary? worlds = null,
-    Run.Plates.PlateLibrary? plates = null)
+    Run.Plates.PlateLibrary? plates = null,
+    Cards.CardCatalog? cards = null)
 {
+    /// <summary>The collectible cards (phase 10); null in tests that do not use them.</summary>
+    public Cards.CardCatalog? CardCatalog { get; } = cards;
+
     public SaveData Data { get; } = data;
 
     /// <summary>Arceus' Plates (phase 9.1); null in tests that do not use them.</summary>
@@ -524,6 +534,7 @@ public sealed class MetaProgress(
         }
         while (more);
 
+        var (packs, bond) = RecordCards(run);
         Persist();
         var newSpecies = Data.Pokedex.Count(e => e.Value.Seen > 0) - seenBefore;
         return new RunReport(run.Coins, missionCoins, Data.Coins, completed, newCharacters, newTrainers, newSpecies)
@@ -531,6 +542,8 @@ public sealed class MetaProgress(
             Fossils = fossils,
             Opened = OpenLevels().Except(openBefore).ToList(),
             Plates = newPlates,
+            Packs = packs,
+            Bond = bond,
         };
     }
 
@@ -579,7 +592,7 @@ public sealed class MetaProgress(
                 return (totals.Runs + (live is { Over: true } ? 1 : 0), target);
 
             case MissionKind.Survive:
-                var minutes = run is null ? (mission.NoHealing ? 0 : totals.BestTicks / (RunClock.TicksPerSecond * 60))
+                var minutes = run is null ? (mission.NoHealing ? 0 : totals.BestTicks / RunClock.TicksPerClockMinute)
                     : mission.NoHealing && run.HealingPickups > 0 ? 0 : run.Minutes;
                 return (minutes, target);
 

@@ -244,7 +244,7 @@ public sealed class GameplayScene : Scene
             $"   {LevelId} {Difficulty} {_run.Weather}{(_run.IsNight ? " notte" : "")}",
         $"PS {_run.Player.Hp:0}/{_run.Player.MaxHp:0}   pos {_run.Player.Position.X:0},{_run.Player.Position.Y:0}   vel {_run.Player.MoveSpeed:0} px/s" +
             $"{(_run.Player.Invincible ? "   [INVINCIBILE]" : "")}{(_run.Spawner.Enabled ? "" : "   [SPAWN OFF]")}" +
-            (_run.Spawner.Timeline.WaveAt(_run.Ticks) is { } wave ? $"   ondata {wave.FromTick / (RunClock.TicksPerSecond * 60)}' min {wave.MinAlive} max {wave.MaxAlive}" : ""),
+            (_run.Spawner.Timeline.WaveAt(_run.Ticks) is { } wave ? $"   ondata {wave.FromTick / RunClock.TicksPerClockMinute}' min {wave.MinAlive} max {wave.MaxAlive}" : ""),
         $"Lv {_run.Player.Level}   Esp {_run.Player.Xp:0}/{_run.Player.XpToNext}   gemme {_run.Pickups.Gems.ActiveCount}   raggio {_run.Player.PickupRadius:0}   " +
             string.Join(" ", _run.Player.Moves.Select(m => $"{m.Definition.NameIt} {m.Level}").Concat(_run.Player.Items.Select(i => $"{i.Definition.NameIt} {i.Level}"))),
         $"F1 invincibile  F2 +1 livello  F4 +100  F9 +500  F5 dominante (Maiusc: forziere)  F6 +1 min (Maiusc: boss)  F7 KO  F8 spawn  F10 fine  F11 velocita x{Speed}  F12 hitbox  F3 overlay",
@@ -722,7 +722,7 @@ public sealed class GameplayScene : Scene
         if (input.Pressed(Keys.F6) && input.IsDown(Keys.LeftShift))
             _run.SummonBoss();
         else if (input.Pressed(Keys.F6))
-            _run.AdvanceTime(RunClock.TicksPerSecond * 60);
+            _run.AdvanceTime(RunClock.TicksPerClockMinute);
         if (input.Pressed(Keys.F7))
             KillVisible();
         if (input.Pressed(Keys.F8))
@@ -748,7 +748,7 @@ public sealed class GameplayScene : Scene
             return;
         }
 
-        var minute = _run.Ticks / (RunClock.TicksPerSecond * 60);
+        var minute = _run.Ticks / RunClock.TicksPerClockMinute;
         var tier = minute < 5 ? ChestTier.Poke : minute < 10 ? ChestTier.Great : ChestTier.Ultra;
         var index = _run.Spawner.SpawnOne(_run);
         if (index < 0)

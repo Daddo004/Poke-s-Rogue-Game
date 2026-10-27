@@ -132,7 +132,7 @@ public sealed class MetaPreviewScene : Scene
             Missions = ["prima-partita", "cinque-minuti", "mille-ko", "cromatico", "prima-medaglia", "livello-30", "prima-evoluzione", "dieci-partite"],
             LastCharacter = "pikachu",
             LastTrainer = "ash",
-            Totals = new SaveTotals { Runs = 12, Victories = 3, Kills = 14520, Shinies = 21, Dominants = 31, Chests = 19, CoinsEarned = 5210, Specials = 6, TrainerUses = 40, MovesEvolved = 2, BestLevel = 48, BestTicks = RunClock.TicksPerSecond * 60 * 15 },
+            Totals = new SaveTotals { Runs = 12, Victories = 3, Kills = 14520, Shinies = 21, Dominants = 31, Chests = 19, CoinsEarned = 5210, Specials = 6, TrainerUses = 40, MovesEvolved = 2, BestLevel = 48, BestTicks = RunClock.TicksPerClockMinute * 15 },
         };
         data.CharacterProgress["pikachu"] = new CharacterProgress
         {
@@ -166,7 +166,7 @@ public sealed class MetaPreviewScene : Scene
             var record = data.LevelOf(level, difficulty);
             record.Runs = runs;
             record.Wins = 1;
-            record.BestTicks = RunClock.TicksPerSecond * 60 * minutes;
+            record.BestTicks = RunClock.TicksPerClockMinute * minutes;
             record.BestKills = kills;
         }
 
@@ -187,6 +187,6 @@ public sealed class MetaPreviewScene : Scene
         var worlds = services.Worlds.Value;
         return new MetaProgress(data, services.Shop.Value, services.Characters, services.Trainers.Value,
             MissionLibrary.Load(services.ContentRoot, services.Characters, services.Trainers.Value, worlds), services.Pokedex.Value.Species, worlds: worlds,
-            plates: services.Plates.Value);
+            plates: services.Plates.Value, cards: services.Cards);
     }
 }

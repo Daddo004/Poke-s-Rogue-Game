@@ -26,7 +26,7 @@ namespace PokeRogue.DataTool.Balance;
 /// </summary>
 public sealed class RosterSimulation
 {
-    private const int TicksPerMinute = RunClock.TicksPerSecond * 60;
+    private const int TicksPerMinute = RunClock.TicksPerClockMinute;
     private const string LevelId = "bosco-smeraldo";
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 

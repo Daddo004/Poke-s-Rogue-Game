@@ -55,27 +55,31 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
     }
 
     /// <summary>
-    /// Alt+Invio (or --schermo-intero at launch): borderless full screen at the monitor's own resolution. The game is
-    /// drawn at 640×360 and scaled by a whole number, so a 1080p screen shows it pixel-perfect at 3×, 1440p at 4×, 4K at 6×.
+    /// Alt+Invio (or --schermo-intero at launch): full screen, borderless at the monitor's own resolution unless Opzioni
+    /// chose another (then the monitor switches mode). The game is drawn at 640×360 and scaled by a whole number, so a
+    /// 1080p screen shows it pixel-perfect at 3×, 1440p at 4×, 4K at 6×.
     /// </summary>
     public void ToggleFullScreen()
     {
-        _graphics.HardwareModeSwitch = false;
         if (_graphics.IsFullScreen)
         {
             _graphics.IsFullScreen = false;
-            _graphics.PreferredBackBufferWidth = VirtualScreen.DefaultWidth * 2;
-            _graphics.PreferredBackBufferHeight = VirtualScreen.DefaultHeight * 2;
+            var window = WindowSize();
+            _graphics.PreferredBackBufferWidth = window.X;
+            _graphics.PreferredBackBufferHeight = window.Y;
         }
         else
         {
-            var display = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode;
+            var size = FullScreenSize();
+            _graphics.HardwareModeSwitch = size != _monitor;
             _graphics.IsFullScreen = true;
-            _graphics.PreferredBackBufferWidth = display.Width;
-            _graphics.PreferredBackBufferHeight = display.Height;
+            _graphics.PreferredBackBufferWidth = size.X;
+            _graphics.PreferredBackBufferHeight = size.Y;
         }
 
         _graphics.ApplyChanges();
+        if (!_graphics.IsFullScreen)
+            CenterWindow();
         if (_services is not null)
         {
             _services.Settings.FullScreen = _graphics.IsFullScreen;
@@ -83,7 +87,75 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
         }
     }
 
-    /// <summary>A resized window gets a back buffer of its new size, so the scaling can grow with it.</summary>
+    /// <summary>The monitor's own resolution, read before any change of mode.</summary>
+    private Point _monitor;
+
+    /// <summary>Window sizes Opzioni offers: the game's 16:9 at common sizes, smaller than the monitor (room for the title bar).</summary>
+    private static readonly Point[] WindowSizes =
+        [new(640, 360), new(960, 540), new(1280, 720), new(1600, 900), new(1920, 1080), new(2560, 1440), new(3200, 1800), new(3840, 2160)];
+
+    private IReadOnlyList<Point> Resolutions()
+    {
+        if (!_graphics.IsFullScreen)
+            return WindowSizes.Where(s => s.X < _monitor.X && s.Y < _monitor.Y).ToList();
+
+        // Full screen: the monitor's own first, then its other modes from the largest, none smaller than the game.
+        var modes = GraphicsAdapter.DefaultAdapter.SupportedDisplayModes
+            .Select(m => new Point(m.Width, m.Height))
+            .Where(s => s != _monitor && s.X >= VirtualScreen.DefaultWidth && s.Y >= VirtualScreen.DefaultHeight)
+            .Distinct()
+            .OrderByDescending(s => s.X * s.Y);
+        return [_monitor, .. modes];
+    }
+
+    private Point WindowSize()
+    {
+        var saved = _services is null ? Point.Zero : new Point(_services.Settings.WindowWidth, _services.Settings.WindowHeight);
+        return saved.X > 0 && saved.Y > 0 && saved.X <= _monitor.X && saved.Y <= _monitor.Y
+            ? saved
+            : new Point(VirtualScreen.DefaultWidth * 2, VirtualScreen.DefaultHeight * 2);
+    }
+
+    private Point FullScreenSize()
+    {
+        var saved = _services is null ? Point.Zero : new Point(_services.Settings.FullScreenWidth, _services.Settings.FullScreenHeight);
+        return saved.X > 0 && saved.Y > 0 && GraphicsAdapter.DefaultAdapter.SupportedDisplayModes.Any(m => m.Width == saved.X && m.Height == saved.Y)
+            ? saved
+            : _monitor;
+    }
+
+    /// <summary>Opzioni "Risoluzione": the window's size, or full screen's (leaving and entering it again to switch mode).</summary>
+    private void SetResolution(Point size)
+    {
+        var settings = _services.Settings;
+        if (_graphics.IsFullScreen)
+        {
+            (settings.FullScreenWidth, settings.FullScreenHeight) = size == _monitor ? (0, 0) : (size.X, size.Y);
+            settings.Save();
+            if (size != new Point(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight))
+            {
+                ToggleFullScreen();
+                ToggleFullScreen();
+            }
+
+            return;
+        }
+
+        (settings.WindowWidth, settings.WindowHeight) = (size.X, size.Y);
+        settings.Save();
+        _graphics.PreferredBackBufferWidth = size.X;
+        _graphics.PreferredBackBufferHeight = size.Y;
+        _graphics.ApplyChanges();
+        CenterWindow();
+    }
+
+    private void CenterWindow()
+    {
+        var bounds = Window.ClientBounds;
+        Window.Position = new Point(Math.Max(0, (_monitor.X - bounds.Width) / 2), Math.Max(32, (_monitor.Y - bounds.Height) / 2));
+    }
+
+    /// <summary>A resized window gets a back buffer of its new size, so the scaling can grow with it; the size is kept.</summary>
     private void FollowWindowSize()
     {
         if (_graphics.IsFullScreen || Window.ClientBounds.Width <= 0 || Window.ClientBounds.Height <= 0)
@@ -94,10 +166,17 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
         _graphics.PreferredBackBufferWidth = Window.ClientBounds.Width;
         _graphics.PreferredBackBufferHeight = Window.ClientBounds.Height;
         _graphics.ApplyChanges();
+        if (_services is not null && !_capture.Active)
+        {
+            (_services.Settings.WindowWidth, _services.Settings.WindowHeight) = (Window.ClientBounds.Width, Window.ClientBounds.Height);
+            _services.Settings.Save();
+        }
     }
 
     protected override void Initialize()
     {
+        var display = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode;
+        _monitor = new Point(display.Width, display.Height);
         base.Initialize();
         if (_options.Values.ContainsKey("schermo-intero") && !_capture.Active && !_graphics.IsFullScreen)
             ToggleFullScreen();
@@ -120,8 +199,21 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
                     ToggleFullScreen();
             },
         };
+        _services.Resolutions = Resolutions;
+        _services.Resolution = () => _graphics.IsFullScreen
+            ? new Point(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight)
+            : new Point(Window.ClientBounds.Width, Window.ClientBounds.Height);
+        _services.SetResolution = SetResolution;
         if (_services.Settings.FullScreen && !_graphics.IsFullScreen && !_capture.Active)
             ToggleFullScreen();
+        else if (!_graphics.IsFullScreen && !_capture.Active && WindowSize() is var window
+                 && window != new Point(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight))
+        {
+            _graphics.PreferredBackBufferWidth = window.X;
+            _graphics.PreferredBackBufferHeight = window.Y;
+            _graphics.ApplyChanges();
+            CenterWindow();
+        }
         var muted = _options.CapturePng is not null || _options.CaptureGif is not null || _options.Values.ContainsKey("muto");
         _services.Cries.Muted = _services.Sounds.Muted = _services.Music.Muted = muted;
         _services.ApplyVolumes();
@@ -137,7 +229,8 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
             screen.FixedZoom = _options.Scale;
         _scenes.Switched += _services.Input.ClearRegions;
         _cursor = new CursorArt(GraphicsDevice);
-        _overlay = new DebugOverlay(_services) { Visible = _options.Preview is null || _options.Values.ContainsKey("debug") };
+        // The developer panel (frame timings) only with --debug, since the playtest of 2026-10-27.
+        _overlay = new DebugOverlay(_services) { Visible = _options.Values.ContainsKey("debug") };
 
         // The title screen (phase 8.2), unless a run is asked for straight away (playtests: --pokemon, --allenatore,
         // --sfida, --da): that run still goes into the save and ends back in the menu.
@@ -201,7 +294,7 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
         // The right button is "back" in the menus: it never closes the game.
         if (_services.Input.Pressed(Keys.Escape) && !_services.Input.RightClicked && _scenes.Current is not { HandlesEscape: true })
             Exit();
-        if (_services.Input.Pressed(Keys.F3))
+        if (_services.Input.Pressed(Keys.F3) && _options.Values.ContainsKey("debug"))
             _overlay.Visible = !_overlay.Visible;
         if (_services.Input.Pressed(Keys.Enter) && (_services.Input.IsDown(Keys.LeftAlt) || _services.Input.IsDown(Keys.RightAlt)))
             ToggleFullScreen();
@@ -215,7 +308,6 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
         _stats.BeginDraw();
         _services.Screen.Begin();
         _services.Fonts.Zoom = _services.Screen.Zoom;
-        _services.Fonts.Smooth = _services.Settings.SmoothText;
         _services.Input.BeginRegions();
         _scenes.Draw(_batch);
         _services.Input.EndRegions();

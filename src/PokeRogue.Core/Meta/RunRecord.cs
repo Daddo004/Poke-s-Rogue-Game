@@ -28,7 +28,8 @@ public sealed record RunRecord
 
     public int Ticks { get; init; }
 
-    public int Minutes => Ticks / (RunClock.TicksPerSecond * 60);
+    /// <summary>Whole minutes on the level's clock.</summary>
+    public int Minutes => Ticks / RunClock.TicksPerClockMinute;
 
     public int Kills { get; init; }
 
@@ -58,6 +59,9 @@ public sealed record RunRecord
 
     /// <summary>Evolutions down the character's line reached (0 = still the first stage).</summary>
     public int StageDepth { get; init; }
+
+    /// <summary>The species key of the stage the run ended as (the collectible cards, phase 10); null without a character.</summary>
+    public string? StageKey { get; init; }
 
     public int Specials { get; init; }
 
@@ -103,6 +107,7 @@ public sealed record RunRecord
         Level = run.Player.Level,
         MovesEvolved = run.Player.Moves.Count(m => m.Definition.IsEvolution),
         StageDepth = run.Stage?.Depth ?? 0,
+        StageKey = run.Stage?.Species.Key,
         Specials = run.Special.Uses,
         TrainerUses = run.TrainerState.Uses,
         Moves = run.Player.Moves.SelectMany(m => m.Definition.EvolvesFrom is { } from ? new[] { from, m.Definition.Id } : [m.Definition.Id]).Distinct().ToList(),

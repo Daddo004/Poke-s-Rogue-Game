@@ -22,8 +22,10 @@
   ],
 
   // Now and then a regular Pokémon leaves a coin; rarely a wave sends a shiny one (10× PS, harder hits, 5× experience; it leaves a big nugget and a held item).
+  // Playtest of 2026-10-27: 0.004 gave 74 shinies in 5 runs (15 a run) and their big nuggets were 70% of the coins.
+  // At 0.0008 a run of 3–4 thousand KO meets two or three.
   "enemyCoinChance": 0.01,
-  "shinyChance": 0.004,
+  "shinyChance": 0.0008,
 
   // Phase 3.6: now and then a defeated Pokémon leaves a Baccarancia that restores "foodHeal" PS, like Vampire Survivors'
   // floor chicken. With about a thousand KO by minute 5, 0.3% gives three or four before then.

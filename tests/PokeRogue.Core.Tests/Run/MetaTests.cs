@@ -265,4 +265,32 @@ public class MetaTests
         Assert.Equal(SaveData.CurrentVersion, data.Version);
         Assert.Equal(0, data.Coins);
     }
+
+    [Fact]
+    public void A_version_1_save_keeps_its_records_as_times_on_the_faster_clock()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "pokerogue-tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        var path = Path.Combine(folder, "save.json");
+        try
+        {
+            // Ten minutes at real speed, as version 1 counted them.
+            var tenMinutes = RunClock.TicksPerSecond * 600;
+            File.WriteAllText(path, $$"""
+                { "version": 1, "coins": 7, "endlessBest": { "bosco-smeraldo": {{tenMinutes}} },
+                  "levels": { "bosco-smeraldo/Normal": { "runs": 1, "bestTicks": {{tenMinutes}} } }, "totals": { "bestTicks": {{tenMinutes}} } }
+                """);
+
+            var data = new SaveStore(path).Load();
+            Assert.Equal(SaveData.CurrentVersion, data.Version);
+            Assert.Equal(7, data.Coins);
+            Assert.Equal(RunClock.TicksPerClockMinute * 10, data.Totals.BestTicks);
+            Assert.Equal(RunClock.TicksPerClockMinute * 10, data.Levels["bosco-smeraldo/Normal"].BestTicks);
+            Assert.Equal(RunClock.TicksPerClockMinute * 10, data.EndlessBest["bosco-smeraldo"]);
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
 }

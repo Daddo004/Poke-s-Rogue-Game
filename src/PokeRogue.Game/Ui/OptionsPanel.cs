@@ -21,9 +21,10 @@ public sealed class OptionsPanel(GameServices services)
         Cries,
         DamageNumbers,
         Shake,
+        HudSize,
         FullScreen,
+        Resolution,
         Scale,
-        Text,
     }
 
     public static readonly Option[] All = Enum.GetValues<Option>();
@@ -102,14 +103,21 @@ public sealed class OptionsPanel(GameServices services)
             case Option.Shake:
                 settings.ShakePercent = Step(settings.ShakePercent / 25, delta, 4, wrap) * 25;
                 break;
+            case Option.HudSize:
+                var sizes = Hud.Sizes(services.Screen.Zoom);
+                var size = Array.IndexOf(sizes, Hud.EffectivePercent(settings.HudPercent, services.Screen.Zoom));
+                settings.HudPercent = sizes[Step(size, delta, sizes.Length - 1, wrap)];
+                break;
             case Option.FullScreen:
                 services.SetFullScreen(!settings.FullScreen);
                 break;
+            case Option.Resolution:
+                var resolutions = services.Resolutions();
+                if (resolutions.Count > 0)
+                    services.SetResolution(resolutions[Step(ResolutionIndex(resolutions), delta, resolutions.Count - 1, wrap)]);
+                break;
             case Option.Scale:
                 services.SetFillScreen(!settings.FillScreen);
-                break;
-            case Option.Text:
-                settings.SmoothText = !settings.SmoothText;
                 break;
         }
 
@@ -117,6 +125,20 @@ public sealed class OptionsPanel(GameServices services)
         services.ApplyVolumes();
         if (All[Cursor] != Option.Cries)
             services.Sounds.Play("menu-conferma");
+    }
+
+    /// <summary>Where the resolution in use stands in <paramref name="list"/>: itself, or the nearest by size (a window resized by hand).</summary>
+    private int ResolutionIndex(IReadOnlyList<Point> list)
+    {
+        var current = services.Resolution();
+        var best = 0;
+        for (var i = 1; i < list.Count; i++)
+        {
+            if (Math.Abs(list[i].X * list[i].Y - current.X * current.Y) < Math.Abs(list[best].X * list[best].Y - current.X * current.Y))
+                best = i;
+        }
+
+        return best;
     }
 
     private static int Step(int value, int delta, int max, bool wrap)
@@ -134,9 +156,10 @@ public sealed class OptionsPanel(GameServices services)
         Option.Cries => "Versi dei Pokémon",
         Option.DamageNumbers => "Numeri dei danni",
         Option.Shake => "Scossa dello schermo",
+        Option.HudSize => "Dimensione HUD",
         Option.FullScreen => "Schermo intero",
-        Option.Scale => "Scala dell'immagine",
-        _ => "Scritte",
+        Option.Resolution => "Risoluzione",
+        _ => "Scala dell'immagine",
     };
 
     private static string Help(Option option) => option switch
@@ -146,9 +169,10 @@ public sealed class OptionsPanel(GameServices services)
         Option.Cries => "I VERSI DEI BOSS, DELLE EVOLUZIONI E DEI POKÉMON DEGLI ALLENATORI.",
         Option.DamageNumbers => "I NUMERI CHE ESCONO DAI NEMICI COLPITI.",
         Option.Shake => "QUANTO TREMA LO SCHERMO PER ESPLOSIONI, BOSS E MOSSE FORTI.",
-        Option.FullScreen => "A TUTTO SCHERMO ALLA RISOLUZIONE DEL MONITOR. ANCHE CON ALT+INVIO.",
-        Option.Scale => "NITIDA: PIXEL TUTTI UGUALI, CON BORDI. PIENA: RIEMPIE LO SCHERMO, SEMPRE NITIDA.",
-        _ => "NITIDE: SCRITTE LISCE ALLA RISOLUZIONE DEL MONITOR. PIXEL: I FONT A PIXEL ORIGINALI.",
+        Option.HudSize => "QUANTO SONO GRANDI MOSSE, STRUMENTI, TEMPO E MONETE IN PARTITA. OGNI MISURA RESTA NITIDA.",
+        Option.FullScreen => "A TUTTO SCHERMO, ALLA RISOLUZIONE SCELTA SOTTO. ANCHE CON ALT+INVIO.",
+        Option.Resolution => "IN FINESTRA: LA SUA GRANDEZZA. A SCHERMO INTERO: LA RISOLUZIONE DEL MONITOR (LA PRIMA È LA SUA).",
+        _ => "NITIDA: PIXEL TUTTI UGUALI, CON BORDI. PIENA: RIEMPIE LO SCHERMO, SEMPRE NITIDA.",
     };
 
     /// <summary>The list inside <paramref name="area"/>, the selected setting's help under it.</summary>
@@ -211,10 +235,12 @@ public sealed class OptionsPanel(GameServices services)
                     Option.DamageNumbers => (settings.ShowDamageNumbers ? "SÌ" : "NO", settings.ShowDamageNumbers),
                     Option.FullScreen => (settings.FullScreen ? "SÌ" : "NO", settings.FullScreen),
                     Option.Shake => (settings.ShakePercent == 0 ? "NO" : $"{settings.ShakePercent}%", settings.ShakePercent > 0),
-                    Option.Scale => (settings.FillScreen ? "PIENA" : "NITIDA", true),
-                    _ => (settings.SmoothText ? "NITIDE" : "PIXEL", true),
+                    Option.HudSize => ($"{Hud.EffectivePercent(settings.HudPercent, services.Screen.Zoom)}%", true),
+                    Option.Resolution => (services.Resolution() is var r ? $"{r.X}x{r.Y}" : "", true),
+                    _ => (settings.FillScreen ? "PIENA" : "NITIDA", true),
                 };
-                var font = option == Option.Shake && settings.ShakePercent > 0 ? services.Fonts.Get(services.Style.NumberFont, services.Style.NumberFontSize) : Body;
+                var numeric = option is Option.HudSize or Option.Resolution || option == Option.Shake && settings.ShakePercent > 0;
+                var font = numeric ? services.Fonts.Get(services.Style.NumberFont, services.Style.NumberFontSize) : Body;
                 var size = UiDraw.Measure(font, text);
                 UiDraw.Text(batch, font, text, new Vector2(right - size.X, y + (font == Body ? 2 : -2)), on ? Gold : Dim);
                 return (int)size.X;

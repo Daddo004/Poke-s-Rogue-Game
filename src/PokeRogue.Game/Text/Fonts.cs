@@ -1,33 +1,29 @@
 using FontStashSharp;
-using Microsoft.Xna.Framework;
 
 namespace PokeRogue.Game.Text;
 
-/// <summary>How a font is drawn on the virtual screen: its glyphs' scale and a nudge that puts its letters where the pixel font's were.</summary>
-public readonly record struct FontLook(float Scale, float OffsetY)
+/// <summary>How a font is drawn on the virtual screen: its glyphs' scale (below 1 for a font rasterised at the screen's resolution).</summary>
+public readonly record struct FontLook(float Scale)
 {
-    public static readonly FontLook Pixel = new(1f, 0f);
+    public static readonly FontLook Pixel = new(1f);
 
-    public bool Smooth => Scale < 1f;
+    /// <summary>Rasterised larger than its layout size and drawn scaled back down, a monitor pixel per glyph pixel.</summary>
+    public bool HighRes => Scale < 1f;
 }
 
 /// <summary>
-/// TTF fonts from content/fonts rendered at runtime. Pixel fonts stay crisp at multiples of their design size.
-/// Since phase 8.2 text can instead be smooth ("Scritte: nitide"): each pixel font is swapped for M PLUS Rounded 1c,
-/// rasterised at the screen's own resolution (the virtual screen's zoom) and drawn scaled back down, sized so a line takes
-/// about the room the pixel font took and its capitals sit where they sat. Layouts keep working in virtual pixels.
+/// TTF pixel fonts from content/fonts rendered at runtime. Since the playtest of 2026-10-27 (the smooth M PLUS font of
+/// phase 8.2 is gone: "lascia solo quello a pixel ma alzane la qualità") each font is rasterised at its size times the
+/// screen's <see cref="Zoom"/> and drawn scaled back down: the letters keep their pixel shapes, but their edges are cut at
+/// the monitor's pixels instead of being a small antialiased glyph blown up four times, and text can sit between game
+/// pixels. Layouts keep working in virtual pixels.
 /// </summary>
 public sealed class Fonts
 {
-    public const string SmoothBold = "MPLUSRounded1c-Bold";
-    public const string SmoothHeavy = "MPLUSRounded1c-ExtraBold";
-
-    private const string Sample = "ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789 abcdefghijklmnopqrstuvwxyz";
-
     private static readonly Dictionary<SpriteFontBase, FontLook> Looks = new(ReferenceEqualityComparer.Instance);
 
     private readonly Dictionary<string, FontSystem> _systems = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<(string Name, float Size, int Zoom), SpriteFontBase> _smooth = [];
+    private readonly Dictionary<(string Name, float Size, int Zoom), SpriteFontBase> _highRes = [];
     private readonly string _fontsDir;
 
     public Fonts(string contentRoot)
@@ -35,15 +31,13 @@ public sealed class Fonts
         _fontsDir = Path.Combine(contentRoot, "fonts");
     }
 
-    /// <summary>The player's choice (Opzioni): smooth text when the screen is zoomed at least twice and the fonts are there.</summary>
-    public bool Smooth { get; set; } = true;
-
-    /// <summary>The zoom text is drawn for (the virtual screen's, set each frame).</summary>
+    /// <summary>
+    /// Monitor pixels per layout pixel of the batch being drawn: the virtual screen's zoom, set each frame, or less while
+    /// the HUD is drawn at a smaller size (Opzioni "Dimensione HUD").
+    /// </summary>
     public int Zoom { get; set; } = 1;
 
-    private bool SmoothNow => Smooth && Zoom >= 2 && File.Exists(Path.Combine(_fontsDir, SmoothBold + ".ttf"));
-
-    /// <summary>How <paramref name="font"/> is drawn; pixel fonts as they are.</summary>
+    /// <summary>How <paramref name="font"/> is drawn; fonts at their own size as they are.</summary>
     public static FontLook LookOf(SpriteFontBase font) => Looks.GetValueOrDefault(font, FontLook.Pixel);
 
     /// <summary>Font file names (without extension) available in content/fonts.</summary>
@@ -64,55 +58,20 @@ public sealed class Fonts
     /// <summary>Big titles and banners: the body font at twice its size, so pixels stay square.</summary>
     public SpriteFontBase Title(Graphics.UiStyle style) => Get(style.BodyFont, style.BodyFontSize * 2);
 
-    /// <summary>A font at <paramref name="size"/> virtual pixels: the pixel font itself, or its smooth stand-in.</summary>
+    /// <summary>A font at <paramref name="size"/> virtual pixels, rasterised at the current zoom.</summary>
     public SpriteFontBase Get(string name, float size)
     {
-        var pixel = System(name).GetFont(size);
-        if (!SmoothNow || name.StartsWith("MPLUS", StringComparison.OrdinalIgnoreCase))
-            return pixel;
+        if (Zoom <= 1)
+            return System(name).GetFont(size);
 
         var key = (name, size, Zoom);
-        if (_smooth.TryGetValue(key, out var smooth))
-            return smooth;
+        if (_highRes.TryGetValue(key, out var font))
+            return font;
 
-        smooth = Fit(pixel, System(SmoothFile(name)), Zoom);
-        _smooth[key] = smooth;
-        return smooth;
-    }
-
-    /// <summary>Labels and numbers take the heavier weight: at small sizes thin strokes fade.</summary>
-    private static string SmoothFile(string name) =>
-        name.StartsWith("Silkscreen", StringComparison.OrdinalIgnoreCase) || name.StartsWith("Jersey", StringComparison.OrdinalIgnoreCase) ? SmoothHeavy : SmoothBold;
-
-    /// <summary>
-    /// The smooth font for <paramref name="pixel"/>: as wide over a sample line, but never with capitals much taller (the
-    /// layouts' line pitches were made for the pixel fonts), lifted so the capitals' middle stays where it was.
-    /// </summary>
-    private static SpriteFontBase Fit(SpriteFontBase pixel, FontSystem smooth, int zoom)
-    {
-        var pixelWidth = pixel.MeasureString(Sample).X;
-        var pixelCaps = Caps(pixel);
-
-        var probe = smooth.GetFont(32f);
-        var probeWidth = probe.MeasureString(Sample).X;
-        var probeCaps = Caps(probe);
-
-        var byWidth = pixelWidth / probeWidth;
-        var byHeight = pixelCaps.Height / Math.Max(1f, probeCaps.Height) * 1.12f;
-        var size = 32f * MathF.Min(byWidth, byHeight);
-
-        var font = smooth.GetFont(MathF.Max(4f, size * zoom));
-        var caps = Caps(font);
-        var offset = pixelCaps.Middle - caps.Middle / zoom;
-        Looks[font] = new FontLook(1f / zoom, offset);
+        font = System(name).GetFont(size * Zoom);
+        Looks[font] = new FontLook(1f / Zoom);
+        _highRes[key] = font;
         return font;
-    }
-
-    /// <summary>Where the capitals stand in a line: their height and the middle of them below the line's top.</summary>
-    private static (float Height, float Middle) Caps(SpriteFontBase font)
-    {
-        var bounds = font.TextBounds("HEMBIX", Vector2.Zero);
-        return (bounds.Y2 - bounds.Y, (bounds.Y + bounds.Y2) / 2f);
     }
 
     private FontSystem System(string name)

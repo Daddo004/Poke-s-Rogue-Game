@@ -76,23 +76,24 @@ public sealed class UpgradesScene(GameServices services) : MenuScene(services)
         DrawHeader(batch, "POTENZIAMENTI");
         UiDraw.Text(batch, Small, "VALGONO IN OGNI PARTITA, CON OGNI POKÉMON E ALLENATORE", new Vector2(16, 28), Dim);
 
+        // Twenty upgrades since the playtest of 2026-10-27: compact tiles, four by five; what each one gives now is in the panel.
         for (var i = 0; i < Upgrades.Count; i++)
         {
-            var tile = new Rectangle(16 + i % Columns * 152, 44 + i / Columns * 92, 144, 84);
+            var tile = new Rectangle(16 + i % Columns * 152, 42 + i / Columns * 39, 148, 36);
             DrawTile(batch, Upgrades[i], i, tile, i == _cursor);
         }
 
         var selected = Upgrades[_cursor];
-        var panel = new Rectangle(16, 236, 608, 92);
+        var panel = new Rectangle(16, 240, 608, 88);
         UiDraw.Frame(batch, p, panel, Services.Style.Theme);
-        UiDraw.Text(batch, Body, selected.NameIt, new Vector2(panel.X + 10, panel.Y + 6), Paper);
-        DrawWrapped(batch, selected.DescriptionIt, panel.X + 10, panel.Y + 28, 380, 2, Dim);
+        UiDraw.Text(batch, Body, selected.NameIt, new Vector2(panel.X + 10, panel.Y + 5), Paper);
+        DrawWrapped(batch, selected.DescriptionIt, panel.X + 10, panel.Y + 25, 380, 2, Dim);
 
         var grade = Meta.UpgradeGrade(selected);
-        UiDraw.TextWithNumbers(batch, Small, SmallNumbers, $"GRADO {grade}/{selected.MaxGrade}", new Vector2(panel.X + 10, panel.Y + 52), grade > 0 ? Green : Dim);
+        UiDraw.TextWithNumbers(batch, Small, SmallNumbers, $"GRADO {grade}/{selected.MaxGrade}   {Effect(selected, grade)}", new Vector2(panel.X + 10, panel.Y + 48), grade > 0 ? Green : Dim);
         if (Meta.MedalsNeeded(selected) is > 0 and var medals)
             UiDraw.TextWithNumbers(batch, Small, SmallNumbers, $"IL PROSSIMO GRADO VUOLE {Medals(medals)} (NE HAI {Meta.Medals})",
-                new Vector2(panel.X + 10, panel.Y + 64), Meta.Medals >= medals ? Dim : Red);
+                new Vector2(panel.X + 10, panel.Y + 60), Meta.Medals >= medals ? Dim : Red);
 
         if (Meta.Data.UpgradeCoins > 0)
             UiDraw.TextWithNumbers(batch, Small, SmallNumbers, $"SPESE QUI: {UiFormat.Number(Meta.Data.UpgradeCoins)} MONETE, [R] PER RIAVERLE",
@@ -115,24 +116,26 @@ public sealed class UpgradesScene(GameServices services) : MenuScene(services)
         else
             DrawHover(batch, tile);
 
-        var icon = new Rectangle(tile.X + 8, tile.Y + 8, 28, 28);
+        var icon = new Rectangle(tile.X + 4, tile.Y + 4, 28, 28);
         UiDraw.Frame(batch, p, icon, maxed ? new UiTheme(new Color(60, 48, 24, 235), Gold, new Color(140, 110, 40), Ink, Paper, Dim) : Services.Style.Theme);
         if (upgrade.Icon is { } key)
             Services.ItemIcons.Draw(batch, key, new Rectangle(icon.X + 2, icon.Y + 2, 24, 24));
         else
             DrawKeyBadge(batch, upgrade.Kind, icon);
 
-        UiDraw.Text(batch, Body, upgrade.NameIt, new Vector2(tile.X + 42, tile.Y + 8), grade > 0 ? Paper : Dim);
-        DrawPips(batch, tile.X + 43, tile.Y + 30, grade, upgrade.MaxGrade, 5);
-        DrawWrapped(batch, Effect(upgrade, grade), tile.X + 10, tile.Y + 44, tile.Width - 20, 2, grade > 0 ? Green : new Color(110, 104, 140));
+        UiDraw.Text(batch, Body, upgrade.NameIt, new Vector2(tile.X + 37, tile.Y + 2), grade > 0 ? Paper : Dim);
+        DrawPips(batch, tile.X + 38, tile.Y + 25, grade, upgrade.MaxGrade, 4);
 
-        var bottom = tile.Bottom - 16;
+        var bottom = tile.Bottom - 13;
         if (maxed)
-            UiDraw.Text(batch, Small, "AL MASSIMO", new Vector2(tile.X + 10, bottom), Gold);
+            UiDraw.Text(batch, Small, "MAX", new Vector2(tile.Right - 6 - UiDraw.Measure(Small, "MAX").X, bottom), Gold);
         else if (Meta.MedalsNeeded(upgrade) is > 0 and var medals && Meta.Medals < medals)
-            UiDraw.TextWithNumbers(batch, Small, SmallNumbers, Medals(medals), new Vector2(tile.X + 10, bottom), Red);
+        {
+            var text = $"{medals} MED.";
+            UiDraw.TextWithNumbers(batch, Small, SmallNumbers, text, new Vector2(tile.Right - 6 - UiDraw.Measure(Small, text).X, bottom), Red);
+        }
         else if (Meta.UpgradePrice(upgrade) is { } price)
-            DrawPrice(batch, price, tile.Right - 10, bottom);
+            DrawPrice(batch, price, tile.Right - 6, bottom);
     }
 
     private static string Medals(int count) => count == 1 ? "1 MEDAGLIA" : $"{count} MEDAGLIE";

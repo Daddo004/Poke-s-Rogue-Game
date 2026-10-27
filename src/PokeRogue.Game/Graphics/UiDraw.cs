@@ -18,33 +18,32 @@ public sealed record UiTheme(Color Fill, Color Border, Color Highlight, Color Sh
 public static class UiDraw
 {
     /// <summary>
-    /// Text at <paramref name="position"/> (virtual pixels, the top of the line). A smooth font (phase 8.2) is drawn
-    /// scaled down from the screen's resolution and nudged so its capitals sit where the pixel font's did.
+    /// Text at <paramref name="position"/> (virtual pixels, the top of the line). A font rasterised at the screen's
+    /// resolution is drawn scaled back down, placed on the monitor's pixels.
     /// </summary>
     public static void Text(SpriteBatch batch, SpriteFontBase font, string text, Vector2 position, Color color)
     {
         var look = GameFonts.LookOf(font);
-        if (!look.Smooth)
+        if (!look.HighRes)
         {
             font.DrawText(batch, text, Round(position), color);
             return;
         }
 
-        font.DrawText(batch, text, Round(position, look) + new Vector2(0, look.OffsetY), color, scale: new Vector2(look.Scale));
+        font.DrawText(batch, text, Round(position, look), color, scale: new Vector2(look.Scale));
     }
 
-    /// <summary>Text with an outline on all eight sides, readable over busy gameplay: one pixel, or two screen pixels for smooth text.</summary>
+    /// <summary>Text with a one-pixel outline on all eight sides, readable over busy gameplay.</summary>
     public static void TextOutlined(SpriteBatch batch, SpriteFontBase font, string text, Vector2 position, Color fill, Color outline)
     {
         var look = GameFonts.LookOf(font);
-        var d = look.Smooth ? MathF.Min(1f, look.Scale * 2f) : 1f;
-        position = look.Smooth ? Round(position, look) : Round(position);
+        position = look.HighRes ? Round(position, look) : Round(position);
         for (var dx = -1; dx <= 1; dx++)
         {
             for (var dy = -1; dy <= 1; dy++)
             {
                 if (dx != 0 || dy != 0)
-                    Text(batch, font, text, position + new Vector2(dx * d, dy * d), outline);
+                    Text(batch, font, text, position + new Vector2(dx, dy), outline);
             }
         }
 
@@ -83,13 +82,6 @@ public static class UiDraw
     /// </summary>
     public static void TextWithNumbers(SpriteBatch batch, SpriteFontBase font, SpriteFontBase numbers, string text, Vector2 position, Color color)
     {
-        // Smooth text has clear digits of its own.
-        if (GameFonts.LookOf(font).Smooth)
-        {
-            Text(batch, font, text, position, color);
-            return;
-        }
-
         // A decimal comma or a thousands dot between two digits ("0,2", "1.500") stays with the number.
         bool Numeric(int i) => char.IsDigit(text[i]) || text[i] is ',' or '.' && i > 0 && i + 1 < text.Length && char.IsDigit(text[i - 1]) && char.IsDigit(text[i + 1]);
 
@@ -178,7 +170,7 @@ public static class UiDraw
 
     private static Vector2 Round(Vector2 v) => new(MathF.Round(v.X), MathF.Round(v.Y));
 
-    /// <summary>Rounded to the screen's own pixels, for smooth text.</summary>
+    /// <summary>Rounded to the screen's own pixels, for text rasterised at its resolution.</summary>
     private static Vector2 Round(Vector2 v, PokeRogue.Game.Text.FontLook look) =>
         new(MathF.Round(v.X / look.Scale) * look.Scale, MathF.Round(v.Y / look.Scale) * look.Scale);
 }

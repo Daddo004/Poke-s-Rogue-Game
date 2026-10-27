@@ -28,7 +28,7 @@
     { "id": "tre-evoluzioni", "nameIt": "Arsenale", "descriptionIt": "Fai evolvere 3 mosse nella stessa partita.", "kind": "EvolveMove", "count": 3, "oneRun": true, "reward": { "coins": 600 } },
     { "id": "terzo-stadio", "nameIt": "Forma finale", "descriptionIt": "Porta un Pokémon al terzo stadio della sua linea.", "kind": "EvolvePokemon", "count": 2, "reward": { "coins": 300 } },
     { "id": "forzieri", "nameIt": "Cercatore di tesori", "descriptionIt": "Apri 25 forzieri in tutto.", "kind": "OpenChests", "count": 25, "reward": { "coins": 300 } },
-    { "id": "monete", "nameIt": "Gruzzolo", "descriptionIt": "Raccogli 1.500 monete in una partita.", "kind": "CollectCoins", "count": 1500, "oneRun": true, "reward": { "coins": 300 } },
+    { "id": "monete", "nameIt": "Gruzzolo", "descriptionIt": "Raccogli 600 monete in una partita.", "kind": "CollectCoins", "count": 600, "oneRun": true, "reward": { "coins": 300 } },
     { "id": "speciali", "nameIt": "Colpo di grazia", "descriptionIt": "Usa la mossa speciale 10 volte in tutto.", "kind": "UseSpecial", "count": 10, "reward": { "coins": 250 } },
     { "id": "allenatore", "nameIt": "Gioco di squadra", "descriptionIt": "Usa l'abilità dell'allenatore 25 volte in tutto.", "kind": "UseTrainer", "count": 25, "reward": { "coins": 250 } },
 

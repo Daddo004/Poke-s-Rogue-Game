@@ -48,6 +48,32 @@
     { "id": "crescita", "nameIt": "Crescita", "icon": "lucky-egg", "kind": "Bonus", "prices": [ 300, 600, 900, 1200, 1500 ],
       "perGrade": { "growthPercent": 0.03 }, "descriptionIt": "Esperienza +3% per grado." },
     { "id": "magnete", "nameIt": "Magnete", "icon": "magnet", "kind": "Bonus", "prices": [ 150, 300, 450 ],
-      "perGrade": { "pickupRadiusPercent": 0.1 }, "descriptionIt": "Raggio di raccolta +10% per grado." }
+      "perGrade": { "pickupRadiusPercent": 0.1 }, "descriptionIt": "Raggio di raccolta +10% per grado." },
+    // Added after the playtest of 2026-10-27 ("i potenziamenti sono troppo pochi"): the rest of Vampire Survivors'
+    // PowerUps, weaker than the held items of the same kind (a grade is about a third of an item's level).
+    { "id": "potenza", "nameIt": "Potenza", "icon": "black-belt", "kind": "Bonus", "prices": [ 300, 600, 900, 1200, 1500 ],
+      "perGrade": { "physicalPowerPercent": 0.03, "specialPowerPercent": 0.03 }, "descriptionIt": "Mosse fisiche e speciali +3% per grado." },
+    { "id": "corazza", "nameIt": "Corazza", "icon": "hard-stone", "kind": "Bonus", "prices": [ 400, 800, 1200 ],
+      "perGrade": { "physicalResistPercent": 0.02, "specialResistPercent": 0.02 }, "descriptionIt": "Danni da tutti i nemici -2% per grado." },
+    { "id": "vitalita", "nameIt": "Vitalità", "icon": "sitrus-berry", "kind": "Bonus", "prices": [ 250, 500, 750, 1000, 1250 ],
+      "perGrade": { "maxHpPercent": 0.05 }, "descriptionIt": "PS massimi +5% per grado." },
+    { "id": "ristoro", "nameIt": "Ristoro", "icon": "leftovers", "kind": "Bonus", "prices": [ 300, 600, 900 ],
+      "perGrade": { "regenPerSecond": 0.05 }, "descriptionIt": "Recuperi 0,05 PS al secondo per grado." },
+    { "id": "ricarica", "nameIt": "Ricarica", "icon": "quick-claw", "kind": "Bonus", "prices": [ 900, 1800 ],
+      "perGrade": { "cooldownReductionPercent": 0.025 }, "descriptionIt": "Ricarica delle mosse -2,5% per grado." },
+    { "id": "ampiezza", "nameIt": "Ampiezza", "icon": "wide-lens", "kind": "Bonus", "prices": [ 600, 1200 ],
+      "perGrade": { "areaPercent": 0.05 }, "descriptionIt": "Area delle mosse +5% per grado." },
+    { "id": "durata", "nameIt": "Durata", "icon": "light-clay", "kind": "Bonus", "prices": [ 400, 800 ],
+      "perGrade": { "durationPercent": 0.05 }, "descriptionIt": "Le mosse che restano in campo durano +5% per grado." },
+    { "id": "slancio", "nameIt": "Slancio", "icon": "sharp-beak", "kind": "Bonus", "prices": [ 200, 400 ],
+      "perGrade": { "projectileSpeedPercent": 0.1 }, "descriptionIt": "Velocità dei colpi +10% per grado." },
+    { "id": "scatto", "nameIt": "Scatto", "icon": "silk-scarf", "kind": "Bonus", "prices": [ 300, 600 ],
+      "perGrade": { "moveSpeedPercent": 0.03 }, "descriptionIt": "Velocità di movimento +3% per grado." },
+    { "id": "precisione", "nameIt": "Precisione", "icon": "scope-lens", "kind": "Bonus", "prices": [ 400, 800, 1200 ],
+      "perGrade": { "critChance": 0.02 }, "descriptionIt": "Brutti colpi +2% per grado." },
+    { "id": "eco", "nameIt": "Eco", "icon": "metronome", "kind": "Bonus", "prices": [ 6000 ], "medals": [ 4 ],
+      "perGrade": { "amountBonus": 1 }, "descriptionIt": "Ogni mossa lancia un colpo in più, in ogni partita." },
+    { "id": "seconda-vita", "nameIt": "Seconda vita", "icon": "focus-sash", "kind": "Bonus", "prices": [ 4000 ], "medals": [ 2 ],
+      "perGrade": { "revives": 1 }, "descriptionIt": "Una volta per partita, quando vai KO torni in piedi con metà dei PS." }
   ]
 }

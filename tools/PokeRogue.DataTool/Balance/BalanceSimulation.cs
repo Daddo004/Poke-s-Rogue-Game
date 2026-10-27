@@ -20,7 +20,7 @@ namespace PokeRogue.DataTool.Balance;
 /// </summary>
 public sealed class BalanceSimulation(string contentRoot, bool weightedCards = true)
 {
-    private const int TicksPerMinute = RunClock.TicksPerSecond * 60;
+    private const int TicksPerMinute = RunClock.TicksPerClockMinute;
 
     /// <summary>The level GameplayScene plays until worlds arrive in Block 7.</summary>
     private const string LevelId = "bosco-smeraldo";

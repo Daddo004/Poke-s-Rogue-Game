@@ -48,7 +48,8 @@ public static class LevelUp
     public const int MaxMoves = 5;
     public const int MaxItems = 6;
     public const int HealAmount = 30;
-    public const int CoinAmount = 100;
+    /// <summary>The Pepita card once everything is maxed (100 until the 2026-10-27 playtest: late levels poured coins).</summary>
+    public const int CoinAmount = 25;
 
     private static readonly CultureInfo Italian = CultureInfo.InvariantCulture;
 

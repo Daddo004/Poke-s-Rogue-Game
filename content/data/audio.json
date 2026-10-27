@@ -89,6 +89,10 @@
     "rompi-erba": { "volume": 0.1, "minGapTicks": 3, "pitchJitter": 0.2, "parts": [ { "wave": "noise", "from": 6000, "to": 2000, "length": 0.08, "cutoff": 5000 } ] },
     "rompi-roccia": { "volume": 0.2, "minGapTicks": 4, "parts": [ { "wave": "noise", "from": 1500, "to": 400, "length": 0.15, "decay": 12, "cutoff": 2000 } ] },
     "cromatico": { "volume": 0.24, "minGapTicks": 30, "parts": [ { "wave": "triangle", "notes": "E7 B6 E7 G#7", "step": 0.06, "length": 0.22, "decay": 6 } ] },
+    // Collectible cards (phase 10): the pack torn open, a card slid away, a rare card shown.
+    "bustina-strappo": { "volume": 0.24, "minGapTicks": 20, "parts": [ { "wave": "noise", "from": 1800, "to": 7000, "length": 0.35, "cutoff": 6000 } ] },
+    "carta-via": { "volume": 0.16, "minGapTicks": 4, "parts": [ { "wave": "noise", "from": 5000, "to": 2500, "length": 0.09, "cutoff": 5000 } ] },
+    "carta-rara": { "volume": 0.26, "minGapTicks": 20, "parts": [ { "wave": "triangle", "notes": "C6 E6 G6 C7 E7", "step": 0.05, "length": 0.3, "decay": 5 } ] },
     "missione": { "volume": 0.26, "minGapTicks": 30, "parts": [
       { "wave": "square", "duty": 0.25, "notes": "C6 D6 E6", "step": 0.07, "length": 0.09, "cutoff": 5000 },
       { "wave": "square", "duty": 0.25, "from": 1568, "at": 0.21, "length": 0.35, "vibrato": 0.2, "release": 0.15, "cutoff": 5000 } ] },

@@ -25,10 +25,20 @@ public sealed class Settings
     public bool FillScreen { get; set; }
 
     /// <summary>
-    /// True: text in a smooth font drawn at the monitor's resolution (phase 8.2, the player found pixel text blocky in
-    /// full screen). False: the pixel fonts of the art direction.
+    /// How big the HUD is drawn, in percent of its design size (the playtest of 2026-10-27 found it too big on a 1440p
+    /// screen). It is rounded to whole monitor pixels per HUD pixel, so it stays sharp: at ×4 the sizes are 50, 75 and 100.
     /// </summary>
-    public bool SmoothText { get; set; } = true;
+    public int HudPercent { get; set; } = 75;
+
+    /// <summary>The window's size; 0 keeps the default (twice the game's 640×360).</summary>
+    public int WindowWidth { get; set; }
+
+    public int WindowHeight { get; set; }
+
+    /// <summary>Full screen's resolution; 0 is the monitor's own (borderless), anything else switches the monitor's mode.</summary>
+    public int FullScreenWidth { get; set; }
+
+    public int FullScreenHeight { get; set; }
 
     public int MusicVolume { get; set; } = 7;
 

@@ -1,0 +1,49 @@
+{
+  // Collectible cards (phase 10): real Pokémon TCG cards, Italian prints, from the TCGdex API (api.tcgdex.net). The DataTool
+  // ("carte") asks the API for every card of each playable species, sorts them into the rarities below by the card's own
+  // rarity ("apiRarities", as TCGdex names them in Italian, TCG Pocket's included) and keeps up to "quota" per species,
+  // mixing eras; the list is content/generated/carte.json and the pictures content/cards/tcg.
+  // Playing a line fills its Legame (bond); each bond level, each new stage reached and the first win at each difficulty
+  // give a pack of that line. A pack holds up to "packSize" cards drawn from those of the line not owned yet whose rarity
+  // is open (no doubles).
+  "version": 2,
+  "bond": {
+    // Points at the end of a run: per minute on the level's clock, per "killsPerPoint" KO, plus "win" for a victory,
+    // all times the difficulty's factor. At least one point per run.
+    "perMinute": 1,
+    "killsPerPoint": 100,
+    "win": 10,
+    "difficulty": { "Normal": 1, "Hard": 1.5, "Ultra": 2 }
+  },
+  // Points needed for each bond level (cumulative); past the last one, every "levelStep" more points is another level.
+  "levels": [ 10, 30, 60, 100, 150, 210, 280, 360, 450, 550 ],
+  "levelStep": 120,
+  "packSize": 3,
+  // The rarities, from the most common. "needs": Reached (the species was reached in a run), Bond (and the bond is at
+  // least "bondLevel"), Win (and a level was won with the line), HardWin (at Difficile or Ultra), UltraWin (at Ultra).
+  // A card whose TCGdex rarity is in no list counts as Base.
+  "rarities": [
+    {
+      "rarity": "Base", "nameIt": "Comune", "quota": 3, "needs": "Reached", "hintIt": "Raggiungi questo stadio in una partita.",
+      "apiRarities": [ "Comune", "Non comune", "Nessuna", "Promo", "Une Diamant", "deux Diamant" ]
+    },
+    {
+      "rarity": "Holo", "nameIt": "Rara", "quota": 2, "needs": "Bond", "bondLevel": 3, "hintIt": "Raggiungi questo stadio e Legame 3.",
+      "apiRarities": [ "Rara", "Olografica Rara", "Rara Bianco e Nero", "Pikachu Rare", "Trois Diamant", "Quatre Diamant" ]
+    },
+    {
+      "rarity": "FullArt", "nameIt": "Ultrarara", "quota": 2, "needs": "Win", "hintIt": "Raggiungi questo stadio e vinci un livello con la linea.",
+      "apiRarities": [ "Rara doppia", "Ultrarara", "Olografica Rara V", "Olografica Rara VMAX", "Olografica Rara VSTAR", "Rara illustrazione",
+        "Rara Lucente", "Une Étoile", "Mega Attack Rare", "rara ASSO TATTICO", "Policrome", "Futuristic Rare", "Allenatore d'arte completa" ]
+    },
+    {
+      "rarity": "Shiny", "nameIt": "Illustrazione speciale", "quota": 1, "needs": "HardWin", "hintIt": "Raggiungi questo stadio e vinci a Difficile.",
+      "apiRarities": [ "Rara illustrazione speciale", "Shiny rare", "Shiny rare V", "Shiny rare VMAX", "ultrarara cromatica", "Un Chromatique",
+        "Deux Chromatique", "deux Étoiles" ]
+    },
+    {
+      "rarity": "Crown", "nameIt": "Segreta", "quota": 1, "needs": "UltraWin", "hintIt": "Raggiungi questo stadio e vinci a Ultra.",
+      "apiRarities": [ "Rara iper", "Segreto rara", "Couronne", "Trois Étoiles", "Mega Iper Raro", "RGB Rare" ]
+    }
+  ]
+}

@@ -13,7 +13,7 @@ public class EndlessTests
     private static readonly Lazy<EndlessRules> Rules = new(() =>
         TestContent.Worlds.Value.Endless(TestContent.Pokedex.Value.Species, TestContent.Moves.Value)!);
 
-    private static int Minutes(float minutes) => RunClock.Seconds(minutes * 60f);
+    private static int Minutes(float minutes) => RunClock.ClockSeconds(minutes * 60f);
 
     private static RunState NewRun(bool endless = true)
     {

@@ -156,7 +156,8 @@ public sealed class Spawner
         for (var i = 0; i < RefillPerTick && run.Enemies.AliveCount < minAlive; i++)
             SpawnOne(run, wave);
 
-        _accumulator += wave.SpawnsPerSecond * RunClock.Dt;
+        // The rate counts seconds of the level's clock, so a wave sends the same crowd however fast the clock runs.
+        _accumulator += wave.SpawnsPerSecond * RunClock.Dt * RunClock.ClockSpeed;
         while (_accumulator >= 1f)
         {
             _accumulator -= 1f;
@@ -196,9 +197,16 @@ public sealed class Spawner
         run.AddEventOnResume(new RunEvent(RunEventType.ShinyAppeared, e.Position, 0f, e.SpeciesId));
     }
 
+    /// <summary>
+    /// The horde's PS against the faster clock (<see cref="RunClock.ClockSpeed"/>): the moves still recharge in real
+    /// seconds, so at full PS a minute on the clock would see two thirds of the KO it was balanced for. Dominanti and
+    /// bosses are duels timed in real seconds and keep theirs.
+    /// </summary>
+    public const float HordeHp = 1f / RunClock.ClockSpeed;
+
     private int Spawn(RunState run, int speciesId, Vector2 position, float hpMultiplier = 1f)
     {
-        var index = run.SpawnEnemy(speciesId, position, Timeline.HpMultiplier(run.Ticks) * hpMultiplier, Timeline.XpMultiplier(run.Ticks));
+        var index = run.SpawnEnemy(speciesId, position, Timeline.HpMultiplier(run.Ticks) * hpMultiplier * HordeHp, Timeline.XpMultiplier(run.Ticks));
         if (index >= 0)
         {
             run.Enemies[index].ContactDamage *= Timeline.DamageMultiplier(run.Ticks);
@@ -246,7 +254,7 @@ public sealed class Spawner
     private Vector2 SpawnDominant(RunState run, WaveEvent e)
     {
         var at = OffscreenPoint(run.Random, run.Player.Position);
-        var index = Spawn(run, e.SpeciesId, at, e.Hp);
+        var index = Spawn(run, e.SpeciesId, at, e.Hp / HordeHp);
         if (index >= 0)
             MakeDominant(run, index, e.Chest, e.Speed);
         return at;

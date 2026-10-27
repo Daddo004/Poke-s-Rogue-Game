@@ -88,6 +88,18 @@ public sealed class GameServices(GraphicsDevice device, string contentRoot, Virt
     /// <summary>Fills the window (true) or scales it by a whole number (set by <see cref="PokeRogueGame"/>, phase 8.2).</summary>
     public Action<bool> SetFillScreen { get; set; } = _ => { };
 
+    /// <summary>
+    /// The resolutions Opzioni offers for the current mode (set by <see cref="PokeRogueGame"/>): window sizes that fit the
+    /// monitor, or in full screen the monitor's modes, the first being its own.
+    /// </summary>
+    public Func<IReadOnlyList<Microsoft.Xna.Framework.Point>> Resolutions { get; set; } = () => [];
+
+    /// <summary>The resolution in use now: the window's size, or full screen's.</summary>
+    public Func<Microsoft.Xna.Framework.Point> Resolution { get; set; } = () => Microsoft.Xna.Framework.Point.Zero;
+
+    /// <summary>Applies one of <see cref="Resolutions"/> and saves it.</summary>
+    public Action<Microsoft.Xna.Framework.Point> SetResolution { get; set; } = _ => { };
+
     public Lazy<PokedexFile> Pokedex { get; } = new(() => GameDataFiles.LoadPokedex(contentRoot));
 
     public Lazy<TypeChart> TypeChart { get; } = new(() => new TypeChart(GameDataFiles.LoadTypeChart(contentRoot).Matchups));
@@ -144,9 +156,19 @@ public sealed class GameServices(GraphicsDevice device, string contentRoot, Virt
     public Core.Meta.MetaProgress Meta
     {
         get => _meta ??= new Core.Meta.MetaProgress(SaveStore?.Load() ?? new Core.Meta.SaveData(), Shop.Value, Characters, Trainers.Value,
-            Core.Meta.MissionLibrary.Load(ContentRoot, Characters, Trainers.Value, Worlds.Value), Pokedex.Value.Species, SaveStore, Worlds.Value, Plates.Value);
+            Core.Meta.MissionLibrary.Load(ContentRoot, Characters, Trainers.Value, Worlds.Value), Pokedex.Value.Species, SaveStore, Worlds.Value, Plates.Value, Cards);
         set => _meta = value;
     }
+
+    private Core.Meta.Cards.CardCatalog? _cards;
+
+    /// <summary>The collectible cards (phase 10).</summary>
+    public Core.Meta.Cards.CardCatalog Cards => _cards ??= Core.Meta.Cards.CardCatalog.Load(ContentRoot, Characters);
+
+    private CardArt? _cardArt;
+
+    /// <summary>The cards' pictures and their drawn faces (phase 10).</summary>
+    public CardArt CardArt => _cardArt ??= new CardArt(this);
 
     public SpeciesData? Species(int id) => id >= 1 && id <= Pokedex.Value.Species.Count ? Pokedex.Value.Species[id - 1] : null;
 }

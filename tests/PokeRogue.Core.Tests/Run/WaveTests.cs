@@ -29,9 +29,9 @@ public class WaveTests
     [Fact]
     public void Times_are_minutes_and_seconds()
     {
-        Assert.Equal(150 * RunClock.TicksPerSecond, WaveTimeline.ParseTime("2:30"));
+        Assert.Equal(150 * RunClock.TicksPerClockSecond, WaveTimeline.ParseTime("2:30"));
         Assert.Equal(0, WaveTimeline.ParseTime("0:00"));
-        Assert.Equal(14 * 60 * RunClock.TicksPerSecond, WaveTimeline.ParseTime("14:00"));
+        Assert.Equal(14 * 60 * RunClock.TicksPerClockSecond, WaveTimeline.ParseTime("14:00"));
         Assert.Throws<InvalidDataException>(() => WaveTimeline.ParseTime("2:3"));
         Assert.Throws<InvalidDataException>(() => WaveTimeline.ParseTime("1:75"));
         Assert.Throws<InvalidDataException>(() => WaveTimeline.ParseTime("90"));
@@ -42,7 +42,7 @@ public class WaveTests
     {
         var waves = WaveTimeline.Load(TestContent.Root, "bosco-smeraldo", TestContent.Pokedex.Value.Species, TestContent.Moves.Value);
 
-        Assert.Equal(15 * 60 * RunClock.TicksPerSecond, waves.DurationTicks);
+        Assert.Equal(15 * 60 * RunClock.TicksPerClockSecond, waves.DurationTicks);
         Assert.Equal(127, waves.Boss?.SpeciesId);
         Assert.Equal(3, waves.Boss!.Phases.Count);
         Assert.Equal(0, waves.Waves[0].FromTick);
@@ -98,7 +98,7 @@ public class WaveTests
         run.Tick(default);
         Assert.All(run.Enemies.Items.ToArray().Where(e => e.IsAlive), e => Assert.Equal(19, e.SpeciesId));
 
-        run.AdvanceTime(RunClock.TicksPerSecond * 5);
+        run.AdvanceTime(RunClock.TicksPerClockSecond * 5);
         run.Tick(default);
         Assert.Equal(4, run.Enemies.Items.ToArray().Count(e => e.IsAlive && e.SpeciesId == 16));
     }
@@ -117,7 +117,7 @@ public class WaveTests
         run.Tick(default);
         var early = run.Enemies.Items[0].ContactDamage;
 
-        run.AdvanceTime(RunClock.TicksPerSecond * 120);
+        run.AdvanceTime(RunClock.TicksPerClockSecond * 120);
         run.DamageEnemy(0, float.MaxValue);
         run.Tick(default);
         var late = run.Enemies.Items.ToArray().First(e => e.IsAlive).ContactDamage;
@@ -132,7 +132,7 @@ public class WaveTests
         run.Tick(default);
         var early = run.Enemies.Items[0].MaxHp;
 
-        run.AdvanceTime(RunClock.TicksPerSecond * 120);
+        run.AdvanceTime(RunClock.TicksPerClockSecond * 120);
         run.DamageEnemy(0, float.MaxValue);
         run.Tick(default);
         var late = run.Enemies.Items.ToArray().First(e => e.IsAlive).MaxHp;
@@ -221,19 +221,19 @@ public class WaveTests
         var run = NewRun(Timeline(events: [new WaveEventSpec { At = "0:10", Every = "0:10", Until = "0:30", Kind = WaveEventKind.Ring, Pokemon = "diglett", Count = 1, Lifetime = 1 }]));
 
         var fired = new List<int>();
-        for (var i = 0; i < RunClock.TicksPerSecond * 60; i++)
+        for (var i = 0; i < RunClock.TicksPerClockSecond * 60; i++)
         {
             run.Tick(default);
             if (run.Events.Any(e => e.Type == RunEventType.WaveEventStarted))
-                fired.Add(run.Ticks / RunClock.TicksPerSecond);
+                fired.Add(run.Ticks / RunClock.TicksPerClockSecond);
         }
 
         Assert.Equal([10, 20, 30], fired);
 
         var jumped = NewRun(Timeline(events: [new WaveEventSpec { At = "0:10", Every = "0:10", Kind = WaveEventKind.Ring, Pokemon = "diglett", Count = 1 }]));
-        jumped.AdvanceTime(RunClock.TicksPerSecond * 45);
+        jumped.AdvanceTime(RunClock.TicksPerClockSecond * 45);
         var firedAfterJump = 0;
-        while (jumped.Ticks < RunClock.TicksPerSecond * 50 - 1)
+        while (jumped.Ticks < RunClock.TicksPerClockSecond * 50 - 1)
         {
             jumped.Tick(default);
             firedAfterJump += jumped.Events.Count(e => e.Type == RunEventType.WaveEventStarted);
@@ -252,14 +252,14 @@ public class WaveTests
             new WaveEventSpec { At = "0:05", Kind = WaveEventKind.Swarm, Pokemon = "zubat", Count = 1 },
             new WaveEventSpec { At = "0:10", Every = "0:10", Kind = WaveEventKind.Ring, Pokemon = "diglett", Count = 1, Lifetime = 1 },
         ]));
-        run.AdvanceTime(RunClock.TicksPerSecond * 15);
+        run.AdvanceTime(RunClock.TicksPerClockSecond * 15);
         run.Spawner.SkipEventsBefore(run.Ticks);
 
         var fired = new List<(int Second, int Species)>();
-        while (run.Ticks < RunClock.TicksPerSecond * 25)
+        while (run.Ticks < RunClock.TicksPerClockSecond * 25)
         {
             run.Tick(default);
-            fired.AddRange(run.Events.Where(e => e.Type == RunEventType.WaveEventStarted).Select(e => (run.Ticks / RunClock.TicksPerSecond, e.SpeciesId)));
+            fired.AddRange(run.Events.Where(e => e.Type == RunEventType.WaveEventStarted).Select(e => (run.Ticks / RunClock.TicksPerClockSecond, e.SpeciesId)));
         }
 
         Assert.Equal([(20, 50)], fired);

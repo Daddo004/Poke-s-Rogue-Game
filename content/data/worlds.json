@@ -13,7 +13,8 @@
   // The first try had the boss at ×1.5 and ×2.2 on top of "hp" (×2.4 and ×5.3 in all at Ultra): in the simulation the
   // legendaries of Ultra outlasted ten minutes of the invincible pilot.
   "difficulties": {
-    "Normal": { "nameIt": "Normale", "missionCoins": 500 },
+    // 2026-10-27, after the faster clock: "un po' più facile". Normal had no multipliers (all 1).
+    "Normal": { "nameIt": "Normale", "hp": 0.9, "damage": 0.8, "missionCoins": 500 },
     "Hard": { "nameIt": "Difficile", "hp": 1.6, "damage": 1.4, "crowd": 1.2, "speed": 1.08, "extraDominants": 1,
       "bossRest": 0.85, "coins": 1.25, "shiny": 1.25, "missionCoins": 1000 },
     "Ultra": { "nameIt": "Ultra", "hp": 2.2, "damage": 1.8, "crowd": 1.4, "speed": 1.15, "dominantHp": 1.1, "extraDominants": 2,

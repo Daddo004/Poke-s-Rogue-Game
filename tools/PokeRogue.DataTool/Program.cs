@@ -21,6 +21,9 @@ switch (command)
     case "assets":
         await DownloadAssetsAsync();
         break;
+    case "carte":
+        await new PokeRogue.DataTool.Assets.CardArtDownloader(downloader, contentRoot).RunAsync();
+        break;
     case "all":
         await BuildDataAsync();
         await DownloadAssetsAsync();
@@ -55,6 +58,8 @@ switch (command)
 
               data      Download the PokeAPI CSV dump and generate content/generated/*.json
               assets    Download sprites, portraits, move FX, trainer sprites and cries
+              carte     Collectible cards (phase 10): ask the TCGdex API for the Italian TCG cards of every playable species,
+                        choose them by cards.json (content/generated/carte.json) and download their pictures; --force asks again
               all       Run every step
               bilancio  Simulate autopilot runs and write a balance report (Milestone B)
               banco     Measure every move alone at levels 1, 4 and 8 against steady waves (phase 2.8)
@@ -205,6 +210,7 @@ async Task DownloadAssetsAsync()
 {
     Console.WriteLine("Downloading assets (cached files are skipped)...");
     await new PokeRogue.DataTool.Assets.AssetDownloader(downloader, contentRoot, maxId).RunAsync();
+    await new PokeRogue.DataTool.Assets.CardArtDownloader(downloader, contentRoot).RunAsync();
 }
 
 void Write<T>(string fileName, T value, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo)

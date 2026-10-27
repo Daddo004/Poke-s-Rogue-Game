@@ -19,10 +19,10 @@ public static class UiFormat
         _ => string.Join(", ", items.Take(items.Count - 1)) + " e " + items[^1],
     };
 
-    /// <summary>Run time as mm:ss (hours roll into minutes).</summary>
+    /// <summary>Run time on the level's clock as mm:ss (hours roll into minutes).</summary>
     public static string Clock(int ticks)
     {
-        var seconds = ticks / RunClock.TicksPerSecond;
+        var seconds = ticks / RunClock.TicksPerClockSecond;
         return $"{seconds / 60:00}:{seconds % 60:00}";
     }
 }

@@ -53,7 +53,7 @@ public class WorldTests
                 var timeline = Worlds.Timeline(level.Id, Pokedex, TestContent.Moves.Value, difficulty);
                 Assert.NotNull(timeline.Boss);
                 Assert.Equal(15, timeline.Waves.Count);
-                Assert.Equal(RunClock.Seconds(15 * 60f), timeline.Waves[^1].ToTick);
+                Assert.Equal(RunClock.ClockSeconds(15 * 60f), timeline.Waves[^1].ToTick);
                 Assert.Equal(5 * (1 + Worlds.Difficulty(difficulty).ExtraDominants), timeline.Events.Count(e => e.Kind == WaveEventKind.Dominant));
                 Assert.All(timeline.MapItems, item => Assert.True(timeline.Map.Contains(item.Position, 30f), $"{level.Id}: an item lies outside the walls."));
             }
@@ -193,12 +193,12 @@ public class WorldTests
     public void At_night_the_waves_send_their_night_species()
     {
         var level = Worlds.Timeline("bosco-di-lecci", Pokedex, TestContent.Moves.Value);
-        Assert.False(level.IsNight(RunClock.Seconds(4 * 60f)));
-        Assert.True(level.IsNight(RunClock.Seconds(7 * 60f)));
-        Assert.Equal(0f, level.NightAmount(RunClock.Seconds(11 * 60f + 30f)));
+        Assert.False(level.IsNight(RunClock.ClockSeconds(4 * 60f)));
+        Assert.True(level.IsNight(RunClock.ClockSeconds(7 * 60f)));
+        Assert.Equal(0f, level.NightAmount(RunClock.ClockSeconds(11 * 60f + 30f)));
 
         var run = Run(level);
-        run.AdvanceTime(RunClock.Seconds(7 * 60f));
+        run.AdvanceTime(RunClock.ClockSeconds(7 * 60f));
         for (var i = 0; i < 60; i++)
             run.Tick(default);
 

@@ -48,7 +48,7 @@ public sealed class CreditsScene : MenuScene
         Add("POKÉMON SHOWDOWN CLIENT", Kind.Text);
         Add("", Kind.Space);
         Add("Font (SIL Open Font License)", Kind.Heading);
-        Add("M PLUS ROUNDED 1C, PIXELIFY SANS, SILKSCREEN, JERSEY 10, PRESS START 2P, VT323", Kind.Text);
+        Add("PIXELIFY SANS,SILKSCREEN, JERSEY 10, PRESS START 2P, VT323", Kind.Text);
         Add("", Kind.Space);
         Add("Librerie", Kind.Heading);
         Add("MONOGAME, FONTSTASHSHARP, NVORBIS, .NET", Kind.Text);

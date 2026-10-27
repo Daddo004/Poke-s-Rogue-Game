@@ -33,10 +33,11 @@ public sealed class XpBar(GameServices services)
             _flashTicks--;
     }
 
-    public void Draw(SpriteBatch batch, Player player)
+    /// <summary>The bar across <paramref name="width"/> layout pixels: the HUD's width, wider than the screen's when it is drawn smaller.</summary>
+    public void Draw(SpriteBatch batch, Player player, int width)
     {
         var p = services.Primitives;
-        var bar = new Rectangle(2, 2, services.Screen.Width - 4, 8);
+        var bar = new Rectangle(2, 2, width - 4, 8);
         var fill = _flashTicks > 0 && _flashTicks / 2 % 2 == 0 ? Color.White : Fill;
         UiDraw.Bar(batch, p, bar, _flashTicks > 0 ? 1f : _shown, fill, Back, Ink);
 

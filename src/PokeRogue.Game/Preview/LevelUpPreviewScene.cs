@@ -92,7 +92,7 @@ public sealed class LevelUpPreviewScene(GameServices services, string? variant, 
 
         batch.BeginVirtual(samplerState: SamplerState.PointClamp);
         if (!_evolution)
-            _xpBar.Draw(batch, _run.Player);
+            _xpBar.Draw(batch, _run.Player, Services.Screen.Width);
         var layout = _window.Layout == LevelUpLayout.Cards ? "B carte" : "A lista";
         var caption = _evolution ? "ANTEPRIMA 2.6  -  EVOLUZIONE DI UNA MOSSA"
             : _actions ? "ANTEPRIMA  -  RILANCIA, SALTA E BANDISCI"

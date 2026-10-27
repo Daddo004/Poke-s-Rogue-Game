@@ -125,4 +125,4 @@ https://github.com/PMDCollab/SpriteCollab
 - Pokémon Showdown client (fx, sprite allenatori) — https://github.com/smogon/pokemon-showdown-client
 
 ## Font (SIL Open Font License)
-- Silkscreen, Press Start 2P, VT323, Pixelify Sans, Jersey 10, M PLUS Rounded 1c — https://github.com/google/fonts
+- Silkscreen, Press Start 2P, VT323, Pixelify Sans, Jersey 10 — https://github.com/google/fonts

@@ -240,10 +240,10 @@ public sealed class WaveTimeline
     public const string Folder = "waves";
 
     /// <summary>Dominanti that come back at a higher difficulty arrive this long after the one before.</summary>
-    public static readonly int ExtraDominantGapTicks = RunClock.Seconds(40f);
+    public static readonly int ExtraDominantGapTicks = RunClock.ClockSeconds(40f);
 
-    /// <summary>Dusk and dawn last this long.</summary>
-    public static readonly int TwilightTicks = RunClock.Seconds(60f);
+    /// <summary>Dusk and dawn last this long on the clock.</summary>
+    public static readonly int TwilightTicks = RunClock.ClockSeconds(60f);
 
     private WaveTimeline(string id, string nameIt, int durationTicks, float hpPerMinute, float xpPerMinute, IReadOnlyList<Wave> waves, IReadOnlyList<WaveEvent> events,
         Enemies.BossDefinition? boss = null, float damagePerMinute = 0f)
@@ -396,7 +396,7 @@ public sealed class WaveTimeline
             return list.Select(s => new SpawnEntry(Species(s.Pokemon).Id, s.Weight)).ToList();
         }
 
-        var minute = RunClock.TicksPerSecond * 60;
+        var minute = RunClock.TicksPerClockMinute;
         var waves = new List<Wave>();
         foreach (var spec in file.Waves)
         {
@@ -422,7 +422,7 @@ public sealed class WaveTimeline
                 spec.Night is null ? null : Entries(spec.Night, what + " (notte)")));
         }
 
-        var duration = RunClock.Seconds(file.Minutes * 60f);
+        var duration = RunClock.ClockSeconds(file.Minutes * 60f);
         var events = new List<WaveEvent>();
         var eventSpecs = file.Events;
         if (eventSpecs.Count == 0 && file.Cast is { } cast)
@@ -547,7 +547,7 @@ public sealed class WaveTimeline
             Phases = spec.Phases.Select(p => p with { Rest = p.Rest * level.BossRest }).ToList(),
         };
 
-    /// <summary>"m:ss" (or "mm:ss") to ticks.</summary>
+    /// <summary>"m:ss" (or "mm:ss") on the level's clock to ticks.</summary>
     public static int ParseTime(string text, string fileId = "")
     {
         var parts = text.Split(':');
@@ -557,7 +557,7 @@ public sealed class WaveTimeline
             && int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out var seconds)
             && seconds < 60)
         {
-            return (minutes * 60 + seconds) * RunClock.TicksPerSecond;
+            return (minutes * 60 + seconds) * RunClock.TicksPerClockSecond;
         }
 
         throw new InvalidDataException($"Waves '{fileId}': '{text}' is not a time like \"2:30\".");
@@ -565,9 +565,9 @@ public sealed class WaveTimeline
 
     private static string FormatTime(int ticks)
     {
-        var seconds = ticks / RunClock.TicksPerSecond;
+        var seconds = ticks / RunClock.TicksPerClockSecond;
         return $"{seconds / 60}:{seconds % 60:00}";
     }
 
-    private static float Minutes(int tick) => tick / (float)(RunClock.TicksPerSecond * 60);
+    private static float Minutes(int tick) => RunClock.ClockMinutes(tick);
 }

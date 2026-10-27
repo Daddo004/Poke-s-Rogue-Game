@@ -78,7 +78,7 @@ public sealed class BossPreviewScene : Scene
         run.Player.Items.Add(new ItemInstance(items["magnet"]) { Level = 3 });
         run.Player.Items.Add(new ItemInstance(items["leftovers"]) { Level = 2 });
         run.Player.RecalculateStats();
-        run.AdvanceTime(RunClock.TicksPerSecond * 60 * 15);
+        run.AdvanceTime(RunClock.TicksPerClockMinute * 15);
 
         // A few of the forest's Pokémon around, to show the roar throwing them back.
         var keys = Services.Pokedex.Value.Species.ToDictionary(s => s.Key, s => s.Id);

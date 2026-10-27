@@ -119,7 +119,7 @@ public static class PlateSystem
                     multiplier *= effect.Power;
                     break;
                 case PlateEffectKind.Fury:
-                    multiplier *= 1f + effect.Power * Math.Min(effect.Count, run.Ticks / (RunClock.TicksPerSecond * 60f));
+                    multiplier *= 1f + effect.Power * Math.Min(effect.Count, RunClock.ClockMinutes(run.Ticks));
                     break;
             }
         }

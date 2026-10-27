@@ -143,7 +143,7 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
         p.Rect(batch, new Rectangle(0, 0, services.Screen.Width, services.Screen.Height), Color.Black * 0.6f);
         services.Input.Region(new Rectangle(0, 0, services.Screen.Width, services.Screen.Height), "novita");
 
-        var unlocks = report.NewCharacters.Count + report.NewTrainers.Count + report.Fossils.Count + report.Plates.Count;
+        var unlocks = report.NewCharacters.Count + report.NewTrainers.Count + report.Fossils.Count + report.Plates.Count + report.Packs.Count;
         var rows = Math.Min(report.Missions.Count, 6);
         var opened = OpenedText(report);
         var height = 52 + rows * 26 + (unlocks > 0 ? 70 : 0) + (opened is null ? 0 : 30);
@@ -206,6 +206,19 @@ public sealed class ResultsScreen(GameServices services, Hud hud)
                 PlateArt.DrawCell(batch, services, frame, plate, found: true, 0);
                 UiDraw.TextCentered(batch, small, "LASTRA", frame.Center.X, frame.Bottom + 1, Gold, Ink);
                 x += 48;
+            }
+
+            // Packs of collectible cards (phase 10): the line's portrait on a red pack, and how many.
+            foreach (var (line, count) in report.Packs.Take(7))
+            {
+                var frame = new Rectangle(x + 6, y + 14, 32, 46);
+                p.Rect(batch, frame, new Color(170, 44, 40));
+                p.Rect(batch, new Rectangle(frame.X, frame.Y, frame.Width, 4), new Color(220, 220, 230));
+                p.Rect(batch, new Rectangle(frame.X, frame.Bottom - 4, frame.Width, 4), new Color(220, 220, 230));
+                if (services.Sprites.Portrait(line.First.Id) is { } portrait)
+                    batch.Draw(portrait, new Rectangle(frame.X + 4, frame.Y + 9, 24, 24), Color.White);
+                UiDraw.TextCentered(batch, small, count == 1 ? "BUSTINA" : $"{count} BUSTINE", frame.Center.X, frame.Bottom + 1, Gold, Ink);
+                x += 52;
             }
 
             y += 70;
