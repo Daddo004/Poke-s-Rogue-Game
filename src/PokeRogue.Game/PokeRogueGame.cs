@@ -20,6 +20,10 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
     private readonly PreviewCapture _capture;
     private readonly SceneManager _scenes = new();
     private readonly FrameStats _stats = new();
+    private readonly bool _blendFrames;
+
+    /// <summary>Time not yet ticked away, in seconds (frame blending).</summary>
+    private double _pending;
 
     private SpriteBatch _batch = null!;
     private GameServices _services = null!;
@@ -39,7 +43,10 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
 
         // Captures need exactly one simulation tick per drawn frame: a fixed timestep would catch up after slow
         // loading frames with several updates per draw, so "--wait N" would no longer mean N ticks.
-        IsFixedTimeStep = !_capture.Active;
+        // Playing with vsync, a frame is drawn at every refresh of the monitor (144 Hz and up) while the game still
+        // ticks at 60 Hz on its own clock, and scenes blend the motion between ticks (phase 8.6).
+        _blendFrames = !_capture.Active && _graphics.SynchronizeWithVerticalRetrace;
+        IsFixedTimeStep = !_capture.Active && !_blendFrames;
         TargetElapsedTime = TimeSpan.FromSeconds(1.0 / TargetFps);
         IsMouseVisible = true;
         Window.AllowUserResizing = true;
@@ -157,6 +164,30 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
 
     protected override void Update(GameTime gameTime)
     {
+        if (!_blendFrames)
+        {
+            Step();
+            base.Update(gameTime);
+            return;
+        }
+
+        // As many 60 Hz ticks as the time since the last frame holds (none on most frames of a 144 Hz monitor); the
+        // remainder says how far the frame lies towards the next tick. A long stall (window dragged) is not caught up.
+        const double step = 1.0 / TargetFps;
+        _pending = Math.Min(_pending + gameTime.ElapsedGameTime.TotalSeconds, 0.25);
+        while (_pending >= step)
+        {
+            _pending -= step;
+            Step();
+        }
+
+        _services.FrameBlend = (float)(_pending / step);
+        base.Update(gameTime);
+    }
+
+    /// <summary>One 60 Hz tick of input, audio and the current scene.</summary>
+    private void Step()
+    {
         _stats.BeginUpdate();
         _services.Input.WindowActive = IsActive;
         _services.Input.Update();
@@ -173,7 +204,6 @@ public sealed class PokeRogueGame : Microsoft.Xna.Framework.Game
 
         _scenes.Update();
         _stats.EndUpdate();
-        base.Update(gameTime);
     }
 
     protected override void Draw(GameTime gameTime)

@@ -76,6 +76,12 @@ public sealed class GameServices(GraphicsDevice device, string contentRoot, Virt
     /// <summary>Player settings (phase 3.6). Captures and previews use the defaults and never save.</summary>
     public Settings Settings { get; set; } = new();
 
+    /// <summary>
+    /// How far the frame being drawn lies between the last tick and the next, 0–1 (phase 8.6). It is 1 when every frame
+    /// is one tick (captures, --novsync); scenes use it to blend motion between ticks (<see cref="Rendering.MotionBlend"/>).
+    /// </summary>
+    public float FrameBlend { get; set; } = 1f;
+
     /// <summary>Switches full screen on or off (set by <see cref="PokeRogueGame"/>).</summary>
     public Action<bool> SetFullScreen { get; set; } = _ => { };
 

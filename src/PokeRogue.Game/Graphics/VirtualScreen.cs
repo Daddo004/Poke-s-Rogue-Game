@@ -21,6 +21,14 @@ public sealed class VirtualScreen(GraphicsDevice device, int width, int height) 
     /// <summary>The zoom of the screen being drawn, for the batches that begin on it (one screen per game).</summary>
     public static int CurrentZoom { get; private set; } = 1;
 
+    /// <summary>
+    /// Rounds to the monitor's pixels rather than the game's (phase 8.6): at ×4 things glide a quarter of a game pixel
+    /// at a time instead of jumping four monitor pixels. Pixel art stays sharp, since the zoom is a whole number.
+    /// </summary>
+    public static float Snap(float value) => MathF.Round(value * CurrentZoom) / CurrentZoom;
+
+    public static Vector2 Snap(Vector2 value) => new(Snap(value.X), Snap(value.Y));
+
     public int Width { get; } = width;
 
     public int Height { get; } = height;

@@ -399,7 +399,12 @@ public sealed class RunRenderer
         var hpRatio = player.Hp / player.MaxHp;
         var feet = player.Position.ToXna();
         if (!run.IsOver && DrawPlayer)
-            UiDraw.Bar(batch, p, new Rectangle((int)feet.X - 13, (int)feet.Y + 5, 26, 4), hpRatio, UiDraw.HpColor(hpRatio), new Color(40, 24, 32), Ink);
+        {
+            var bar = new Point((int)MathF.Floor(feet.X), (int)MathF.Floor(feet.Y));
+            p.Follow(feet, bar.ToVector2());
+            UiDraw.Bar(batch, p, new Rectangle(bar.X - 13, bar.Y + 5, 26, 4), hpRatio, UiDraw.HpColor(hpRatio), new Color(40, 24, 32), Ink);
+            p.Nudge = Vector2.Zero;
+        }
         batch.End();
 
         batch.BeginVirtual(blendState: BlendState.Additive, samplerState: SamplerState.PointClamp, transformMatrix: Camera.Transform);
@@ -640,12 +645,12 @@ public sealed class RunRenderer
             if (!gem.Magnetized)
                 p.Rect(batch, new Rectangle((int)ground.X - 2, (int)ground.Y, 5, 1), Color.Black * 0.25f);
 
-            var topLeft = new Vector2(MathF.Round(ground.X - texture.Width / 2f), MathF.Round(ground.Y - texture.Height + bob));
+            var topLeft = VirtualScreen.Snap(new Vector2(ground.X - texture.Width / 2f, ground.Y - texture.Height + bob));
             batch.Draw(texture, topLeft, Color.White);
 
             // Occasional twinkle on the top facet.
             if ((_tick + gem.Serial * 37) % 100 < 5)
-                p.Rect(batch, new Rectangle((int)topLeft.X + 1, (int)topLeft.Y + 1, 1, 1), Color.White);
+                p.Rect(batch, topLeft + Vector2.One, Vector2.One, Color.White);
         }
     }
 
@@ -750,7 +755,7 @@ public sealed class RunRenderer
             if (loot.Kind == Core.Run.Pickups.LootKind.Coin)
             {
                 var coin = _services.Pickups.Coin;
-                batch.Draw(coin, new Vector2(MathF.Round(ground.X - coin.Width / 2f), MathF.Round(ground.Y - coin.Height - hop)), Color.White);
+                batch.Draw(coin, VirtualScreen.Snap(new Vector2(ground.X - coin.Width / 2f, ground.Y - coin.Height - hop)), Color.White);
                 continue;
             }
 
@@ -1040,8 +1045,12 @@ public sealed class RunRenderer
 
             var head = (_services.Sprites.Get(e.SpeciesId)?.HeadHeight ?? 16) * Spawner.DominantScale;
             var at = e.Position.ToXna() - new Vector2(18, head + 8);
-            UiDraw.Bar(batch, _services.Primitives, new Rectangle((int)at.X, (int)at.Y, 36, 4), e.Hp / e.MaxHp, EnemyVfx.AuraRed, new Color(40, 24, 32), Ink);
+            var whole = new Point((int)MathF.Floor(at.X), (int)MathF.Floor(at.Y));
+            _services.Primitives.Follow(at, whole.ToVector2());
+            UiDraw.Bar(batch, _services.Primitives, new Rectangle(whole.X, whole.Y, 36, 4), e.Hp / e.MaxHp, EnemyVfx.AuraRed, new Color(40, 24, 32), Ink);
         }
+
+        _services.Primitives.Nudge = Vector2.Zero;
     }
 
     /// <summary>Chests on the ground: a Ball that pops out of the fallen Dominante, then bobs under a column of light.</summary>

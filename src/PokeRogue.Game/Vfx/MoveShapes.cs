@@ -98,7 +98,7 @@ public sealed class MoveShapes(GraphicsDevice device)
     {
         const float step = MathF.Tau / 16f;
         var snapped = MathF.Round(radians / step) * step;
-        batch.Draw(texture, new Vector2(MathF.Round(center.X), MathF.Round(center.Y)), null, tint, snapped,
+        batch.Draw(texture, Graphics.VirtualScreen.Snap(center), null, tint, snapped,
             new Vector2(texture.Width / 2f, texture.Height / 2f), scale, SpriteEffects.None, 0f);
     }
 }

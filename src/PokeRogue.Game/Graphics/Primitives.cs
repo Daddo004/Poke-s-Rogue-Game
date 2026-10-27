@@ -18,7 +18,26 @@ public sealed class Primitives
 
     public Texture2D Pixel { get; }
 
-    public void Rect(SpriteBatch batch, Rectangle rect, Color color) => batch.Draw(Pixel, rect, color);
+    /// <summary>
+    /// A shift under one game pixel added to every <see cref="Rect"/>, so bars and labels laid out in whole pixels can
+    /// follow something that glides between them (phase 8.6). Set it with <see cref="Follow"/>, clear it after.
+    /// </summary>
+    public Vector2 Nudge { get; set; }
+
+    /// <summary>Shifts the following rectangles from <paramref name="whole"/> (where they were laid out) to the monitor pixel nearest <paramref name="exact"/>.</summary>
+    public void Follow(Vector2 exact, Vector2 whole) => Nudge = VirtualScreen.Snap(exact) - whole;
+
+    public void Rect(SpriteBatch batch, Rectangle rect, Color color)
+    {
+        if (Nudge == Vector2.Zero)
+            batch.Draw(Pixel, rect, color);
+        else
+            batch.Draw(Pixel, new Vector2(rect.X + Nudge.X, rect.Y + Nudge.Y), null, color, 0f, Vector2.Zero, new Vector2(rect.Width, rect.Height), SpriteEffects.None, 0f);
+    }
+
+    /// <summary>A rectangle at a position between game pixels, on the nearest monitor pixel.</summary>
+    public void Rect(SpriteBatch batch, Vector2 topLeft, Vector2 size, Color color) =>
+        batch.Draw(Pixel, VirtualScreen.Snap(topLeft), null, color, 0f, Vector2.Zero, size, SpriteEffects.None, 0f);
 
     public void Outline(SpriteBatch batch, Rectangle rect, Color color, int thickness = 1)
     {
@@ -34,7 +53,7 @@ public sealed class Primitives
         width = System.Math.Max(1, width);
         height = System.Math.Max(1, height);
         var texture = EllipseTexture(width, height);
-        batch.Draw(texture, new Vector2(MathF.Round(center.X - width / 2f), MathF.Round(center.Y - height / 2f)), color);
+        batch.Draw(texture, VirtualScreen.Snap(new Vector2(center.X - width / 2f, center.Y - height / 2f)), color);
     }
 
     /// <summary>Pixel ring (ellipse outline) made of small squares, e.g. the level-up shock wave.</summary>
@@ -44,9 +63,7 @@ public sealed class Primitives
         for (var i = 0; i < steps; i++)
         {
             var angle = i * MathF.Tau / steps;
-            var x = (int)MathF.Round(center.X + MathF.Cos(angle) * radiusX);
-            var y = (int)MathF.Round(center.Y + MathF.Sin(angle) * radiusY);
-            Rect(batch, new Rectangle(x, y, thickness, thickness), color);
+            Rect(batch, new Vector2(center.X + MathF.Cos(angle) * radiusX, center.Y + MathF.Sin(angle) * radiusY), new Vector2(thickness), color);
         }
     }
 

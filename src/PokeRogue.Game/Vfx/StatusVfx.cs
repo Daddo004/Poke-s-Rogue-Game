@@ -227,6 +227,7 @@ public sealed class StatusVfx
         var x = (int)MathF.Round(feet.X - width / 2f);
         var y = (int)MathF.Round(feet.Y) - height + 3;
         Color light = new(236, 250, 255), deep = new(70, 140, 210);
+        p.Follow(feet, new Vector2(MathF.Round(feet.X), MathF.Round(feet.Y)));
 
         // Translucent body, then edges lit from the top-left; the corners are chipped.
         p.Rect(batch, new Rectangle(x, y, width, height), new Color(170, 225, 255) * 0.36f);
@@ -238,6 +239,7 @@ public sealed class StatusVfx
         // Facets: two diagonal glints across the front.
         UiDraw.Line(batch, p, new Vector2(x + 2, y + height * 0.5f), new Vector2(x + width * 0.45f, y + 2), Color.White * 0.5f);
         UiDraw.Line(batch, p, new Vector2(x + 3, y + height * 0.8f), new Vector2(x + width * 0.3f, y + height * 0.55f), Color.White * 0.3f);
+        p.Nudge = Vector2.Zero;
     }
 
     // ---------------------------------------------------------------- drawing
@@ -309,7 +311,7 @@ public sealed class StatusVfx
                 continue;
 
             var feet = e.Position.ToXna() + Jitter(e);
-            var top = new Vector2(MathF.Round(feet.X), MathF.Round(feet.Y - HeadHeight(e.SpeciesId)));
+            var top = VirtualScreen.Snap(new Vector2(feet.X, feet.Y - HeadHeight(e.SpeciesId)));
             if (e.Status == StatusKind.Confusion)
                 DrawStars(batch, icons.Star, top, i);
 

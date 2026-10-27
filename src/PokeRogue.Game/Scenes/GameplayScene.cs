@@ -36,6 +36,7 @@ public sealed class GameplayScene : Scene
     public const string StartingMoveId = "thundershock";
 
     private readonly RunRenderer _renderer;
+    private readonly MotionBlend _motion = new();
     private readonly Hud _hud;
     private readonly LevelUpWindow _levelUpWindow;
     private readonly PauseMenu _pause;
@@ -232,6 +233,7 @@ public sealed class GameplayScene : Scene
     public override void Update()
     {
         var input = Services.Input;
+        _motion.Invalidate();
         switch (_phase)
         {
             case Phase.Paused:
@@ -372,6 +374,7 @@ public sealed class GameplayScene : Scene
                 : step == 0 && (input.Pressed(Keys.Q) || input.Pressed(Buttons.LeftShoulder) || input.Pressed(Buttons.RightShoulder));
             useTrainer |= _pressTrainer;
             _pressTrainer = false;
+            _motion.Capture(_run);
             _run.Tick(new PlayerInput(move, useAbility, useSpecial, useTrainer));
             _explored.Visit(_run.Player.Position);
             if (_run.Ticks % 30 == 0)
@@ -424,6 +427,20 @@ public sealed class GameplayScene : Scene
     }
 
     public override void Draw(SpriteBatch batch)
+    {
+        // Between two ticks, things are drawn part of the way along their last step (phase 8.6).
+        _motion.Apply(_run, Services.FrameBlend);
+        try
+        {
+            DrawScene(batch);
+        }
+        finally
+        {
+            _motion.Restore(_run);
+        }
+    }
+
+    private void DrawScene(SpriteBatch batch)
     {
         _renderer.Draw(batch, _run);
         if (_phase is Phase.Playing or Phase.Paused)

@@ -14,18 +14,22 @@ public sealed class Camera2D(int viewWidth, int viewHeight)
     /// <summary>Extra screen offset (screen shake), in virtual pixels.</summary>
     public Vector2 Shake { get; set; }
 
-    /// <summary>Top-left world pixel shown on screen, rounded so sprites never shimmer.</summary>
-    public Point Origin => new(
-        (int)MathF.Round(Position.X + Shake.X) - ViewWidth / 2,
-        (int)MathF.Round(Position.Y + Shake.Y) - ViewHeight / 2);
+    /// <summary>
+    /// Top-left world point shown on screen, rounded to the monitor's pixels so sprites never shimmer and still scroll
+    /// smoothly on a big screen (<see cref="VirtualScreen.Snap(Vector2)"/>, phase 8.6).
+    /// </summary>
+    public Vector2 Corner => VirtualScreen.Snap(Position + Shake) - new Vector2(ViewWidth / 2, ViewHeight / 2);
 
-    public Rectangle VisibleWorld => new(Origin.X, Origin.Y, ViewWidth, ViewHeight);
+    /// <summary>Top-left world pixel shown on screen, whole (culling).</summary>
+    public Point Origin => new((int)MathF.Floor(Corner.X), (int)MathF.Floor(Corner.Y));
 
-    public Matrix Transform => Matrix.CreateTranslation(-Origin.X, -Origin.Y, 0f);
+    public Rectangle VisibleWorld => new(Origin.X, Origin.Y, ViewWidth + 1, ViewHeight + 1);
 
-    public Vector2 WorldToScreen(Vector2 world) => world - Origin.ToVector2();
+    public Matrix Transform => Matrix.CreateTranslation(-Corner.X, -Corner.Y, 0f);
 
-    public Vector2 ScreenToWorld(Vector2 screen) => screen + Origin.ToVector2();
+    public Vector2 WorldToScreen(Vector2 world) => world - Corner;
+
+    public Vector2 ScreenToWorld(Vector2 screen) => screen + Corner;
 
     /// <summary>Frame-rate independent smoothing towards a target (1 = snap).</summary>
     public void Follow(Vector2 target, float stiffness = 1f) => Position = Vector2.Lerp(Position, target, MathHelper.Clamp(stiffness, 0f, 1f));

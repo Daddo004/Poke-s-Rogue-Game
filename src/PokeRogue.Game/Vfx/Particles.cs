@@ -88,7 +88,7 @@ public sealed class Particles(int capacity = 2048)
             var color = Color.Lerp(p.Start, p.End, t) * (1f - t * t);
             var size = System.Math.Max(1, (int)MathF.Round(p.Size * (1f - t * 0.5f)));
             var height = System.Math.Max(size, (int)MathF.Round(size * System.Math.Max(1f, p.Stretch) * (1f - t * 0.3f)));
-            primitives.Rect(batch, new Rectangle((int)MathF.Round(p.Position.X - size / 2f), (int)MathF.Round(p.Position.Y - height / 2f), size, height), color);
+            primitives.Rect(batch, new Vector2(p.Position.X - size / 2f, p.Position.Y - height / 2f), new Vector2(size, height), color);
         }
     }
 }

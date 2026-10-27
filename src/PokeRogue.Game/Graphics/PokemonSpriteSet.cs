@@ -123,5 +123,5 @@ public sealed class PokemonSpriteSet
         return 16;
     }
 
-    private static Vector2 Round(Vector2 v) => new(MathF.Round(v.X), MathF.Round(v.Y));
+    private static Vector2 Round(Vector2 v) => VirtualScreen.Snap(v);
 }
