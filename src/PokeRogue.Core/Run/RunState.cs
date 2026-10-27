@@ -557,8 +557,8 @@ public sealed class RunState
             CheckReaper(rules);
     }
 
-    /// <summary>Endless: the boss is behind, the field is clear of it, and the run goes on.</summary>
-    private void ContinueEndless()
+    /// <summary>Endless: the boss is behind, the field is clear of it, and the run goes on (also a run started past the limit).</summary>
+    public void ContinueEndless()
     {
         Boss = null;
         PastBoss = true;

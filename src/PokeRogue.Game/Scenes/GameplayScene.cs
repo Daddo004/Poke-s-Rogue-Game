@@ -113,6 +113,12 @@ public sealed class GameplayScene : Scene
     /// <summary>The endless mode (phase 9.3, --infinita): the boss does not end the run, and Darkrai the Reaper comes.</summary>
     public bool Endless { get; init; }
 
+    /// <summary>Playtests (--invincibile): the run starts with cheat F1 on.</summary>
+    public bool StartInvincible { get; init; }
+
+    /// <summary>Playtests (--livelli N): N levels up front, the cards picked as the autopilot would.</summary>
+    public int StartLevels { get; init; }
+
     /// <summary>
     /// The meta-progression (Block 6): the run gets the character's loadout and the trainer's grades from it, the missions
     /// it completes are announced, and its end is recorded (coins to the bank, Pokédex, rewards). Null for previews.
@@ -641,6 +647,16 @@ public sealed class GameplayScene : Scene
         {
             _run.AdvanceTime(StartTicks);
             _run.Spawner.SkipEventsBefore(StartTicks);
+            // An endless run started past the time limit (--infinita --da 29:50) has its boss behind it already.
+            if (_run.Endless && StartTicks >= _run.TimeLimitTicks)
+                _run.ContinueEndless();
+        }
+
+        for (var i = 0; i < StartLevels; i++)
+        {
+            _run.GrantLevel();
+            while (_run.LevelUpChoices is not null)
+                _run.ChooseLevelUp(AutoPilot.ChooseLevelUp(_run));
         }
 
         _setup?.Invoke(_run);
@@ -681,7 +697,7 @@ public sealed class GameplayScene : Scene
         if (_run.EndlessRules is { } endless)
             Services.Sprites.Get(endless.Reaper.SpeciesId);
 
-        if (Autopilot)
+        if (Autopilot || StartInvincible)
             _run.Player.Invincible = true;
         if (_initialSpawn > 0)
         {
